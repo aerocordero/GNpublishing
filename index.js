@@ -2,6 +2,7 @@ async function main() {
 	const mysql = require('mysql2');
 	const bluebird = require('bluebird');
 	const PDFDocument = require('pdfkit');
+	const PdfTable = require('voilab-pdf-table');
 	const parse = require('node-html-parser').parse;
 	const fs = require('fs');
 	const http = require('https');
@@ -16,16 +17,12 @@ async function main() {
 		downloadFile,
 		convertImage,
 		imageInfo,
-		getImgPropHeigth
+		getImgPropHeigth,
+		dbQuery,
 	} = require('./lib/utils');
 	
 	//config.db.Promise=bluebird;
 
-	const pool =  mysql.createPool(config.db);
-	const db=pool.promise();
-	const testData={
-		unit: require('./test-data/unit.json'),
-	}
 	
 	const colors={
 		unitTitle: '#02727D',
@@ -44,21 +41,111 @@ async function main() {
 		italic: 'fonts/Muli-Italic.ttf',
 	}
 	
+	const headerTitles=[
+		{titleLeft: 'Unit 1:', titleRight: 'Unit Overview', icon: 'images/icons/blue_overview.jpg'},
+		{titleLeft: 'Unit 1:', titleRight: 'Materials', icon: 'images/icons/TeachingResources_blue.jpg'},
+	];
+	
+	let currentTitle;
+	
+	const cleanUpHTML=(html) => {
+		const res=(html || '')
+			.replace(/(<a([^>]+)>)/ig, "")
+			.replace(/(<\/a>)/ig, "")
+			.replace(new RegExp('<\s*span style="font-weight: 400;"[^>]*>(.*?)<\s*/\s*span>', 'ig'), (match, str)=>{
+				console.log('regexp', match, str);
+				return str;
+			})
+			;
+		//console.log(res);
+	  	return res;
+
+	}
+	
 	
 	
 	console.log('Connected to the DB');
 	
-	
+	const modelId=11;
 	const unitId=17;
 	
-	const unit=testData.unit || (await db.query('SELECT * FROM `unit` t WHERE t.`unit_id` = ?', [unitId]))[0];
+	console.log('Loading data...');
+	const unit=(await dbQuery([
+		'SELECT * FROM `unit` t',
+		'WHERE t.`unit_id` = ?'
+	], [unitId]))[0];
+	
+	const model=(await dbQuery([
+		'SELECT * FROM `model` t',
+		'WHERE t.`model_id` = ?'
+	], [modelId]))[0];
+	
+	const lessons=await dbQuery([
+		'SELECT * FROM `lesson` t',
+		'INNER JOIN `unit_lesson_mapping` m',
+		'ON t.`lesson_id`=m.`lesson_id` AND m.`unit_id` = ?'
+	], [unitId]);
+	
+	const unitLessonIds=unit.lessons.split(',');
+	
+	lessons.forEach(lesson=>{
+		lesson.number='1.'+(unitLessonIds.indexOf(lesson.old_lesson_id)+1);
+	})
+	
+	const materialData=await dbQuery([
+		'SELECT * FROM `materials` t',
+		'INNER JOIN `lesson_materials_mapping` m',
+		'ON t.`material_id`=m.`material_id` AND m.`lesson_id` IN ('+lessons.map(l=>l.lesson_id).join(',')+')',
+		'ORDER BY t.name ASC'
+	], []);
+	let materials=_.values(_.groupBy(materialData, m=>m.material_id)).map(items=>{	
+		const item=items[0];
+		let quantity=0;
+		
+		items.forEach(item=>{
+			quantity+=(parseFloat(item.quantity) || 0);
+			item.lesson=lessons.find(l=>l.lesson_id==item.lesson_id);
+		});
+		return {
+			name: item.plural_name || item.name,
+			quantity,
+			lessons: _.sortBy(items.map(item=>{
+				return item.lesson.number;
+			}), number=>parseFloat(number)).join(', '),
+			alternative: items.filter(item=>item.alternative).map(item=>{
+				return item.lesson.number + ' - '+ item.alternative;
+			}).join(', '),
+			notes: items.filter(item=>item.notes).map(item=>{
+				return item.lesson.number + ' - '+ item.notes;
+			}).join(', '),
+			optionalInd: item.optionalInd
+		}
+	});
+	materials=_.sortBy(materials, m=>m.name);
+	
+	console.log('Loaded Unit "'+unit.name+'" and '+lessons.length+' lessons');
+	console.log(materials);
 	
 	//console.log(JSON.stringify(unit, null, 4));
-	console.log(unit);
+	//console.log(lessons);
+	//return;
 	//console.log((await db.query('SELECT * FROM `lesson` t WHERE t.`lesson_id` = ?', [2]))[0]);
 	
+	const convertHtml=(text)=>{
+		const unitLessonIds=unit.lessons.split(',')
+		return decodeHtml(text).replace(/\{\{([^\s]+)\}\}/g, (match, id)=>{
+			console.log(match, id);
+			const item=lessons.find(l=>l.old_lesson_id===id);
+			if (item){
+				return 'Lesson '+item.number+' '+item.name;
+			}
+			return '';
+		});
+	}
+	
 	const doc = new PDFDocument({
-  		bufferPages: true
+  		bufferPages: true,
+  		autoFirstPage: false 
   	});
 	let pageNum=1;
  
@@ -71,16 +158,19 @@ async function main() {
 		  .moveTo(60, 30)
 		  .font(fonts.semiBold)
 		  .fontSize(16)
-		  .text('Unit 1:', 60, 30);
+		  .text(currentTitle.titleLeft, 60, 30);
 	  
 		doc
 		  .font(fonts.semiBold)
 		  .fontSize(16)
-		  .text('Unit Overview', 370, 30);
+		  .text(currentTitle.titleRight, 70, 30, {
+		  	width: 410,
+		  	align: 'right'
+		  });
 	  
 	
 		doc
-		.image('images/unit_header.jpg', 490, 15, {
+		.image(currentTitle.icon, 490, 15, {
 		  width: 43,
 		  align: 'center',
 		  valign: 'center'
@@ -122,6 +212,7 @@ async function main() {
 				width: 465,
 				continued: false
 			});
+		
 	   	doc.x=textIdents.left;
 	   	doc.moveDown(0.3);
 	}
@@ -142,33 +233,48 @@ async function main() {
 	
 	const parseHTMLIntoBlocks=async(text)=>{
 		let textNodes=[];
-		await asyncForEach(text.childNodes, async(node)=>{
-			if (node.tagName!=='img'){
-				textNodes.push(node);
-			}
-			else {
-				let path=await downloadFile(node.getAttribute('src'));
-				//path=await convertImage(path, 'jpeg');
-				const imgInfo=await imageInfo(path);
-				
-				if (textNodes.length){
-					blocks.push({
-						type: 'p',
-						value: textNodes,
-						isHtml: true,
-					});
-					textNodes=[];
+		if (text.tagName==='p' || 1){
+			await asyncForEach(text.childNodes, async(node)=>{
+				if (node.tagName!=='img'){
+					textNodes.push(node);
 				}
+				else {
+					let path=await downloadFile(node.getAttribute('src'));
+					//path=await convertImage(path, 'jpeg');
+					const imgInfo=await imageInfo(path);
+				
+					if (textNodes.length){
+						blocks.push({
+							type: 'p',
+							value: textNodes,
+							isHtml: true,
+						});
+						textNodes=[];
+					}
 				
 				
+					blocks.push({
+						type: 'image',
+						value: path,
+						heigth: getImgPropHeigth(imgInfo, 465)
+					});
+				
+				}
+			})
+		}
+		
+		/*
+		if (node.tagName==='ul'){
+			await asyncForEach(text.childNodes, async(node)=>{
 				blocks.push({
-					type: 'image',
-					value: path,
-					heigth: getImgPropHeigth(imgInfo, 465)
+					type: 'list',
+					value: node,
+					isHtml: true,
 				});
-				
-			}
-		})
+			})
+		}
+		*/
+		
 		if (textNodes.length){
 			blocks.push({
 				type: 'p',
@@ -178,20 +284,203 @@ async function main() {
 			textNodes=[];
 		}
 	}
+	
+	const drawActions={
+		pageBreak: (doc, item)=>{
+			doc.addPage();
+		},
+		h1: (doc, item)=>{
+	  		currentTitle=headerTitles.find(t=>t.titleRight===item.value);
+			doc.addPage();
+			doc
+			  .font(fonts.regular)
+			  .fontSize(17)
+			  .fill('black')
+			  .text(item.value, textIdents.left, textIdents.top);
+			doc.moveDown(0.5);
+		},
+		h2: (doc, item)=>{
+			if (doc.y>660){
+				doc.addPage();
+			}
+			if (doc.y>200){
+				doc.moveDown(1);
+			}
+			addH2(doc, item.value);
+			doc.moveDown(0.2);
+			doc
+				.font(fonts.regular)
+				.fontSize(10)
+			  	.fill('black')
+		},
+		h3: (doc, item)=>{
+			doc
+			  .font(fonts.bold)
+			  .fontSize(10)
+			  .fill('black')
+			  .text(item.value, textIdents.left);
+			doc.moveDown(0.2);
+			doc
+				.font(fonts.regular)
+				.fontSize(10)
+			  	.fill('black')
+		},
+		p: (doc, item)=>{
+			if (item.isHtml){
+				const tagFonts={
+					em: fonts.italic,
+					b: fonts.bold,
+					strong: fonts.bold,
+				}
+				item.value.forEach(node=>{
+					if (node.tagName ==='li'){
+						const listText=convertHtml(node.text).replace(/\n/g, '').trim();
+						const lists=[];
+						//console.log('str:', node.childNodes, node.childNodes.map(node=>node.tagName));
+						if (!node.querySelector('ul')){
+							lists.push(convertHtml(node.text).replace(/\n/g, '').trim());
+						}
+						else {
+							node.childNodes.forEach(node=>{
+								//console.log('str inner:', node.childNodes.map(node=>node.tagName));
+								if (!node.childNodes.filter(node=>node.tagName==='li').length){
+								//if (node.childNodes.length<2){
+									const text=convertHtml(node.text).replace(/\n/g, '').trim();
+									if (text){
+										lists.push(text);
+									}
+									//console.log('text: ', text);
+								
+								}
+								else {
+									const texts=node.childNodes.map(n=>convertHtml(n.text).replace(/\n/g, '').trim());
+									if (texts.length){
+										lists.push(texts.filter(t=>t));
+									}
+								
+								}	
+							})
+						}
+						
+						//console.log(lists);
+						doc.fillColor('black')
+							.font(tagFonts[node.tagName] || fonts.regular)
+							.list(lists, {
+								bulletIndent: 50,
+								//textIndent: 20,
+								bulletRadius:3,
+							});	
+								
+					}
+					else {
+						//console.log(node);
+						const styles={};
+						(node.getAttribute && node.getAttribute('style') ? node.getAttribute('style').split(';') : []).map(item=>{
+							const arr=item.split(':');
+							if (arr && arr.length>1){
+								styles[arr[0].trim()]=arr[1].trim();
+							}
+						});
+						//console.log('styles', styles);
+						if (node.childNodes && node.childNodes[0] && node.childNodes[0].tagName==='strong'){
+							node.tagName='strong';
+						}
+						doc.fillColor(styles.color || 'black')
+							.font(tagFonts[node.tagName] || fonts.regular)
+							.lineGap(1.2)
+							.fontSize(10)
+					   .text(convertHtml(node.text)/*.trimStart()*/, {
+							width: 465,
+							continued: true,
+							lineBreak: true,
+							align: 'left'
+					   });
+					}
+					
+				});
+			}
+			else {
+				doc.fillColor('black')
+					.font(fonts.regular)
+					.lineGap(1.6)
+					.fontSize(10)
+			   .text(item.value, {
+					width: 465,
+					continued: true
+			   });
+			}
 		
-	writeHeader(doc);
+		   doc.text(' ', {
+				width: 465,
+				continued: false
+		   });
+		   doc.moveDown(0.2);
+		},
+		image:(doc, item)=>{
+			if (doc.y+item.heigth>840){
+				doc.addPage();
+			}
+			else {
+				doc.moveDown(0.5);
+			}
+			console.log(doc.x, doc.y);
+			doc.image(item.value, {width: 465});
+			doc.moveDown(0.5);
+		},
+		table: (doc, {columns, data})=>{
+			console.log({columns, data});
+			table = new PdfTable(doc, {
+                bottomMargin: 10
+            });
+            
+            doc
+				.font(fonts.regular)
+				.fontSize(8)
+			  	.fill('black')
+ 
+			table
+				// add some plugins (here, a 'fit-to-width' for a column)
+				.addPlugin(new (require('voilab-pdf-table/plugins/fitcolumn'))({
+					column: 'description'
+				}))
+				// set defaults to your columns
+				.setColumnsDefaults({
+					headerBorder: 'B',
+					align: 'left',
+					border: 'LTBR',
+					headerBorder: 'LTBR',
+					borderOpacity: 0.2,
+					headerBorderOpacity: 0.2,
+					headerPadding: 2,
+					padding: 2,
+					/*
+					headerRenderer: function (tb, data) {
+						doc.font(fonts.bold)
+						console.log(tb, data);
+                        return 'CHF ' + data.total;
+                    }*/
+				})
+				// add table columns
+				.addColumns(columns)
+				// add events (here, we draw headers on each new page)
+				.onPageAdded(function (tb) {
+					tb.addHeader();
+				})
+				.onHeaderAdd(tb=>{
+					tb.pdf.font(fonts.bold)
+				})
+				.onHeaderAdded(tb=>{
+					tb.pdf.font(fonts.regular)
+				})
+			table.addBody(data);
+			
+			doc.moveDown(1);
+		}
+	}
 	
-	doc
-	  .font(fonts.regular)
-	  .fontSize(17)
-	  .fill('black')
-	  .text('Unit Overview', textIdents.left, textIdents.top);
-	  
-	doc.moveDown(1);
-	  
-	addH2(doc, 'Introduction');
+	drawActions.h1(doc, {value:'Unit Overview'});
 	
-	doc.moveDown(0.3);
+	drawActions.h2(doc, {value:'Introduction'});
 	
 	const introductions=[
 		{title: 'Challenge', field:'introduction_challenge_description'},
@@ -223,17 +512,24 @@ async function main() {
 		{title: 'Science in Action', field:'science_in_action_description', breakAfter: true},
 		{title: 'Green Ninja Connections', field: 'connections_description', breakAfter: true},
 		{title: 'Home to School Connections', field: 'home_to_school'},
-		{title: 'Prior Knowledge', field: 'ngss_description', breakAfter: true},
+		{title: 'Prior Knowledge', field: 'prior_knowledge', breakAfter: true},
 		{title: 'Assessment', field: 'assessment'},
+		{title: 'Identifying Preconceptions', field: 'identifying_preconceptions'},
+		{title: 'Access and Equity', field: 'access_and_equity', breakAfter: true},
+		{title: 'Engineering Connections', field: 'eng_connections'},
+		{title: 'Resources'},
+		{title: 'Outside Educational Resources', field: 'outside_resources', headerType: 'h3'},
+		{title: 'Supplemental Resources', field: 'supplemental_resources', headerType: 'h3'},
+		{title: 'Technology and Teaching', field: 'tech_teaching'},
 		
 	], async(item)=>{
 		blocks.push({
-			type: 'h2',
+			type: item.headerType || 'h2',
 			value: item.title
 		})
-		const root=parse(unit[item.field]);
+		const root=parse(cleanUpHTML(unit[item.field]));
 	
-		await asyncForEach(root.childNodes.filter(node=>node.tagName==='p'), async (el)=>{
+		await asyncForEach(root.childNodes/*.filter(node=>node.tagName==='p')*/, async (el)=>{
 			await parseHTMLIntoBlocks(el);
 		});
 		if (item.breakAfter){
@@ -241,68 +537,89 @@ async function main() {
 				type: 'pageBreak'
 			})
 		}
+	});
+	blocks.push({
+		type: 'h1',
+		value: 'Materials'
 	})
-	console.log(blocks);
 	
-	const drawActions={
-		pageBreak: (doc, item)=>{
-			doc.addPage();
-		},
-		h2: (doc, item)=>{
-			if (doc.y>660){
-				doc.addPage();
-			}
-			addH2(doc, item.value);
-		},
-		p: (doc, item)=>{
-			if (item.isHtml){
-				const tagFonts={
-					em: fonts.italic,
-					b: fonts.bold,
-					strong: fonts.bold,
-				}
-				item.value.forEach(node=>{
-					doc.fillColor('black')
-						.font(tagFonts[node.tagName] || fonts.regular)
-						.lineGap(2)
-						.fontSize(10)
-				   .text(decodeHtml(node.text), {
-						width: 465,
-						continued: true,
-						lineBreak: true,
-						align: 'left'
-				   });
-				});
-			}
-			else {
-				doc.fillColor('black')
-					.font(fonts.regular)
-					.lineGap(4)
-					.fontSize(10)
-			   .text(item.value, {
-					width: 465,
-					continued: true
-			   });
-			}
+	await asyncForEach([
+		{title: 'Materials List Information', field:'materials_desc'},
+		{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
 		
-		   doc.text(' ', {
-				width: 465,
-				continued: false
-		   });
-		   doc.moveDown(0.2);
-		},
-		image:(doc, item)=>{
-			if (doc.y+item.heigth>840){
-				doc.addPage();
-			}
-			else {
-				doc.moveDown(0.5);
-			}
-			console.log(doc.x, doc.y);
-			doc.image(item.value, {width: 465});
-			doc.moveDown(0.5);
-		} 
-	}
+	], async(item)=>{
+		blocks.push({
+			type: item.headerType || 'h2',
+			value: item.title
+		})
+		const root=parse(cleanUpHTML(model[item.field]));
+	
+		await asyncForEach(root.childNodes/*.filter(node=>node.tagName==='p')*/, async (el)=>{
+			await parseHTMLIntoBlocks(el);
+		});
+		if (item.breakAfter){
+			blocks.push({
+				type: 'pageBreak'
+			})
+		}
+	});
+	
+	[{
+		title: 'Materials Provided by School/Teacher:',
+		data: materials.filter(m=>m.name && m.optionalInd===0)
+	},
+	{
+		title: 'Optional Materials',
+		data: materials.filter(m=>m.name && m.optionalInd===1),
+		headerType: 'h3'
+	}].forEach(mat=>{
+		blocks.push({
+			type: mat.headerType || 'h2',
+			value: mat.title
+		})
+	
+		blocks.push({
+			type: 'table',
+			columns: [
+				{
+					id: 'name',
+					header: 'Item',
+					width: 110,
+				},
+				{
+					id: 'quantity',
+					header: 'Quantity',
+					align: 'left',
+					width: 60,
+				},
+				{
+					id: 'lessons',
+					header: 'Lessons',
+					align: 'left',
+					width: 90,
+				},
+				{
+					id: 'alternative',
+					header: 'Alternative',
+					align: 'left',
+					width: 100,
+				},
+				{
+					id: 'notes',
+					header: 'Note',
+					align: 'left',
+					width: 110,
+				},
+			],
+			data: mat.data
+		})
+	})
+	
+	
+	
+	//console.log(blocks);
+	
+	
 	
 	
 	let currentH2;
