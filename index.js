@@ -386,7 +386,7 @@ async function main() {
 	
 	const addNewPage=(doc)=>{
 		
-		doc
+		/*doc
 			.font(fonts.regular)
 			.lineGap(4)
 			.fontSize(10)
@@ -395,19 +395,20 @@ async function main() {
 				width: 465,
 				continued: false
 			});
+		*/
 	   	writeHeader(doc);
+	   	/**/
+	   	doc.y=85;
 	   	doc
 			.font(fonts.regular)
 			.lineGap(4)
 			.fontSize(10)
 			.fill('black')
-			.text(' ', {
-				width: 465,
-				continued: false
-			});
+			
 		
-	   	doc.x=textIdents.left;
-	   	doc.moveDown(0.3);
+		
+	   	//doc.x=textIdents.left;
+	   	//doc.moveDown(0.3);
 	}
 	
 	doc.on('pageAdded', () => {
@@ -615,7 +616,8 @@ async function main() {
 					strong: fonts.bold,
 				}
 				const tagFeatures={
-					sup: ['sups'] 
+					sup: ['sups'],
+					sub: ['subs'],
 				}
 				item.value.forEach(node=>{
 					if (node.tagName ==='li'){
@@ -658,7 +660,10 @@ async function main() {
 								
 					}
 					else {
-						//console.log(node);
+						
+						console.log(node);
+						console.log(doc.x, doc.y);
+						console.log(doc.prevPage, pageNum, doc.prevY);
 						const styles={};
 						(node.getAttribute && node.getAttribute('style') ? node.getAttribute('style').split(';') : []).map(item=>{
 							const arr=item.split(':');
@@ -686,8 +691,11 @@ async function main() {
 							continued: true,
 							lineBreak: true,
 							align: 'left',
+							//wordSpacing: 0.1,
 							features: tagFeatures[node.tagName] || [],
 					   });
+					   doc.prevY=doc.y;
+					   doc.prevPage=pageNum;
 					   //console.log(node.tagName, tagFeatures[node.tagName]);
 					}
 					
@@ -728,21 +736,26 @@ async function main() {
 			}
 			let y=doc.y;
 			item.value.forEach(image=>{
-				if (doc.y+image.heigth>840 && image.x===textIdents.left){
+				if (doc.y+image.heigth>740 && image.x<textIdents.left+40){
 					doc.addPage();
+					y=doc.y;
 				}
-				else if (!image.x || image.x===textIdents.left) {
+				else if (!image.x || image.x<textIdents.left+40) {
 					doc.moveDown(0.5);
 					y=doc.y;
 				}
-				if (image.x && image.x > textIdents.left){
+				if (image.x && image.x > textIdents.left+40){
 					doc.y=y;
 				}
 				doc.x=image.x;				
+				//console.log(doc.x, doc.y, y, image.x);
+				const imgX = doc.x;
+				const imgY = doc.y;
 				doc.image(image.path, {width: image.width || 465});
+				doc.rect(imgX, imgY, image.width, image.heigth).stroke();
 			})
 			//console.log(doc.x, doc.y);
-			console.log(item);
+			//console.log(item);
 			doc.moveDown(0.5);
 		},
 		table: (doc, {columns, data, fontSize, hideHeaders, borderColor})=>{
@@ -877,7 +890,13 @@ async function main() {
 		   	});
 		   	
 		   	const y=doc.y;
+		   	
+		   	const imgX = doc.x;
+			const imgY = doc.y;
 			doc.image(value.imagePath, {width: width});
+			doc.rect(imgX, imgY, width, heigth).stroke();
+			
+			
 			const yAfterImage=doc.y;
 			
 			doc.fillColor('black')
@@ -1134,7 +1153,7 @@ async function main() {
 	});
 
 	
-	await asyncForEach(lessons/*.filter(l=>l.number==='1.6')*/, async (lesson)=>{
+	await asyncForEach(lessons.filter(l=>l.number==='1.10'), async (lesson)=>{
 		//await parseHTMLIntoBlocks(el);
 		let header={
 			titleLeft: 'Lesson Introduction', 
@@ -1345,6 +1364,9 @@ async function main() {
 					let x=textIdents.left;
 					const images=[];
 					const width=imgPaths.length > 1 ? 232 : 400;
+					if (imgPaths.length === 1){
+						x+=25;
+					}
 					await asyncForEach(imgPaths, async (imgPath)=>{
 						const imgInfo=await imageInfo(imgPath);
 						images.push({
