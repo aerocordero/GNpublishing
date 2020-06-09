@@ -335,35 +335,42 @@ async function main() {
 	
 	const doc = new PDFDocument({
   		bufferPages: true,
-  		autoFirstPage: false 
+  		autoFirstPage: false ,
+  		margins: {
+			top: 85,
+			bottom: 50,
+			left: 77,
+			right: 70
+		  }
   	});
 	let pageNum=0;
+	const headers={};
  
 	doc.pipe(fs.createWriteStream('output.pdf'));
 	
-	const writeHeader=(doc)=>{
-		if (!currentTitle){
+	const writeHeader=(doc, header)=>{
+		if (!header){
 			return;
 		}
-		doc.x=60;
+		//doc.x=60;
 		
 		doc
 		  .moveTo(60, 30)
 		  .font(fonts.semiBold)
 		  .fontSize(16)
-		  .text(currentTitle.titleLeft, 60, 30);
+		  .text(header.titleLeft, 60, 30);
 	  
 		doc
 		  .font(fonts.semiBold)
 		  .fontSize(16)
-		  .text(currentTitle.titleRight, 70, 30, {
+		  .text(header.titleRight, 70, 30, {
 		  	width: 410,
 		  	align: 'right'
 		  });
 	  
 	
 		doc
-		.image(currentTitle.icon, 490, 15, {
+		.image(header.icon, 490, 15, {
 		  width: 43,
 		  align: 'center',
 		  valign: 'center'
@@ -378,10 +385,13 @@ async function main() {
 		  .lineTo(550, 65)
 		  .lineTo(550, 68)
 		  .lineTo(55, 68)
-		  .fill(currentTitle.color || colors.unitTitle);
+		  .fill(header.color || colors.unitTitle);
 		
 		
 		
+	}
+	const saveHeader=()=>{
+		headers[pageNum]=currentTitle;
 	}
 	
 	const addNewPage=(doc)=>{
@@ -396,15 +406,16 @@ async function main() {
 				continued: false
 			});
 		*/
-	   	writeHeader(doc);
+	   	saveHeader();
 	   	/**/
-	   	doc.y=85;
+	   	//doc.y=85;
+	   	/*
 	   	doc
 			.font(fonts.regular)
 			.lineGap(4)
 			.fontSize(10)
 			.fill('black')
-			
+			*/
 		
 		
 	   	//doc.x=textIdents.left;
@@ -694,7 +705,9 @@ async function main() {
 							//wordSpacing: 0.1,
 							features: tagFeatures[node.tagName] || [],
 					   });
+					   doc.prevX=doc.x;
 					   doc.prevY=doc.y;
+					   console.log('doc.prevX', doc.prevX);
 					   doc.prevPage=pageNum;
 					   //console.log(node.tagName, tagFeatures[node.tagName]);
 					}
@@ -1485,6 +1498,7 @@ async function main() {
 	const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
 	for (i = range.start, end = range.start + range.count, range.start <= end; i < end; i++) {
 	  doc.switchToPage(i);
+	  writeHeader(doc, headers[i+1]);
 	  //doc.text(`Page ${i + 1} of ${range.count}`);
 	  doc.page.margins.bottom=0;
 	  doc
