@@ -38,7 +38,7 @@ async function main() {
 		lessonGreen: '#1E793C',
 		brown: '#634439',
 		black: 'black',
-		blue: '#25408F'
+		blue: '#26adca'
 	}
 	
 	const textIdents={
@@ -134,7 +134,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc") AND t.worksheet_language_id=1'
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id=1'
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
 		
@@ -337,6 +337,7 @@ async function main() {
 		});
 	}
 	let pageNum;
+	let startPagingPage;
 	let headers={};
 	let footers={};
 	
@@ -391,7 +392,7 @@ async function main() {
 	   	saveHeader();
 	}
 	
-	const parseHTMLIntoBlocks=async(text)=>{
+	const parseHTMLIntoBlocks=async(text, params)=>{
 		let textNodes=[];
 		if (text.tagName==='p' || 1){
 			await asyncForEach(text.childNodes, async(node)=>{
@@ -408,6 +409,7 @@ async function main() {
 							type: 'p',
 							value: textNodes,
 							isHtml: true,
+							params
 						});
 						textNodes=[];
 					}
@@ -440,13 +442,14 @@ async function main() {
 				type: 'p',
 				value: textNodes,
 				isHtml: true,
+				params,
 			});
 			textNodes=[];
 		}
 	}
 	const processObjectFieldsIntoBlocks=async(object, fields)=>{
 		return await asyncForEach(fields, async(item)=>{
-			if (!object[item.field] || !object[item.field].trim()){
+			if (item.field && (!object[item.field] || !object[item.field].trim())){
 				return;
 			}
 		
@@ -461,7 +464,7 @@ async function main() {
 			const root=parse(cleanUpHTML(object[item.field]));
 
 			await asyncForEach(root.childNodes, async (el)=>{
-				await parseHTMLIntoBlocks(el);
+				await parseHTMLIntoBlocks(el, item.params || {});
 			});
 			if (item.breakAfter){
 				blocks.push({
@@ -584,6 +587,9 @@ async function main() {
 		},
 		p: (doc, item)=>{
 			if (item.isHtml){
+				if (!item.params){
+					item.params={};
+				}
 				const tagFonts={
 					em: fonts.italic,
 					b: fonts.bold,
@@ -593,6 +599,7 @@ async function main() {
 					sup: ['sups'],
 					sub: ['subs'],
 				}
+				item.startPage=pageNum;
 				item.value.forEach(node=>{
 					if (node.tagName ==='li'){
 						const listText=convertHtml(node.text).replace(/\n/g, '').trim();
@@ -623,10 +630,11 @@ async function main() {
 							})
 						}
 						
-						//console.log(lists);
+						console.log(lists, item);
+						
 						doc.fillColor('black')
 							.font(tagFonts[node.tagName] || fonts.regular)
-							.list(lists, {
+							.list(lists, textIdents.left+(item.params.listsIdent || 0), doc.y, {
 								bulletIndent: 50,
 								//textIndent: 20,
 								bulletRadius:3,
@@ -635,9 +643,9 @@ async function main() {
 					}
 					else {
 						
-						console.log(node);
-						console.log(doc.x, doc.y);
-						console.log(doc.prevPage, pageNum, doc.prevY);
+						//console.log(node);
+						//console.log(doc.x, doc.y);
+						//console.log(doc.prevPage, pageNum, doc.prevY);
 						const styles={};
 						(node.getAttribute && node.getAttribute('style') ? node.getAttribute('style').split(';') : []).map(item=>{
 							const arr=item.split(':');
@@ -660,7 +668,7 @@ async function main() {
 							.font(tagFonts[node.tagName] || fonts.regular)
 							.lineGap(1.2)
 							.fontSize(10)
-					   .text(convertHtml(node.text)/*.trimStart()*/, textIdents.left, doc.y, {
+					   .text(convertHtml(node.text)/*.trimStart()*/, textIdents.left+(item.params.ident || 0), doc.y, {
 							width: 465,
 							continued: true,
 							lineBreak: true,
@@ -670,7 +678,7 @@ async function main() {
 					   });
 					   doc.prevX=doc.x;
 					   doc.prevY=doc.y;
-					   console.log('doc.prevX', doc.prevX);
+					   //console.log('doc.prevX', doc.prevX);
 					   doc.prevPage=pageNum;
 					   //console.log(node.tagName, tagFeatures[node.tagName]);
 					}
@@ -687,11 +695,12 @@ async function main() {
 					continued: true
 			   });
 			}
-		
-		   doc.text(' ', {
+			doc.text(' ', {
 				width: 465,
 				continued: false
-		   });
+		    });
+		    item.endPage=pageNum;
+		   
 		   //doc.moveDown(0.2);
 		},
 		image:(doc, item)=>{
@@ -730,6 +739,7 @@ async function main() {
 				doc.image(image.path, {width: image.width || 465});
 				doc.rect(imgX, imgY, image.width, image.heigth).stroke();
 			})
+			doc.x=textIdents.left;
 			//console.log(doc.x, doc.y);
 			//console.log(item);
 			doc.moveDown(0.5);
@@ -790,7 +800,9 @@ async function main() {
 		sectionCover: (doc, {title, image, color, addContents})=>{
 			currentTitle=null;
 			doc.addPage();
-			
+			if (!startPagingPage){
+				startPagingPage=pageNum-1;
+			}
 			doc.x=60;
 		
 			doc
@@ -849,14 +861,24 @@ async function main() {
 		
 			const width=170;
 			const heigth=getImgPropHeigth(imgInfo, width);
-			if (doc.y+(heigth+30)>750){
+			const text=value.text ? 'Notes \n \n'+value.text : '';
+			const textOptions={
+				width: 465-(width+15),
+				continued: false
+		   	};
+			
+			const textHeight=doc.heightOfString(text, textOptions);
+			const maxHeight=textHeight > heigth ? textHeight : heigth;
+			
+			if (doc.y+(maxHeight+30)>750){
 				doc.addPage();
 			}
 			else {
 				doc.moveDown(0.5);
 			}
+			const startPage=pageNum;
 			if (file && !file.page){
-				file.page='Page '+pageNum+' (Visual Reference)';
+				file.page='Page '+(pageNum-startPagingPage)+' (Visual Reference)';
 			}
 			
 			doc.fillColor('black')
@@ -882,12 +904,9 @@ async function main() {
 				.font(fonts.regular)
 				.lineGap(0.6)
 				.fontSize(10)
-		   	.text(value.text ? 'Notes \n \n'+value.text : '', textIdents.left+width+15, y,{
-				width: 465-(width+15),
-				continued: false
-		   	});
+		   	.text(text, textIdents.left+width+15, y, textOptions);
 		   	doc.x=textIdents.left;
-		   	doc.y=yAfterImage > doc.y ? yAfterImage : doc.y 
+		   	doc.y=yAfterImage > doc.y && startPage===pageNum ? yAfterImage : doc.y 
 		   	
 			doc.moveDown(0.5);
 		},
@@ -906,7 +925,7 @@ async function main() {
 			doc.moveDown(1);
 		},
 		contentsPush: (doc, {title, level, color})=>{
-			contents.push({title, level, color, pageNum});
+			contents.push({title, level, color, pageNum:pageNum-startPagingPage});
 			//console.log(doc.page);
 		},
 		contents: (doc)=>{
@@ -918,7 +937,7 @@ async function main() {
 			doc
 			  .font(fonts.bold)
 			  .fontSize(24)
-			  .text('Table of Contents', textIdents.left, 40, {
+			  .text('Table of Contents', textIdents.left, 30, {
 				width: 465,
 				align: 'left',
 				continued: false
@@ -985,9 +1004,14 @@ async function main() {
 			})
 			//console.log(doc.page);
 		},
-		lessonFiles: (doc, {value, file})=>{
+		lessonFiles: (doc, {value, file, contentsObj})=>{
+			let contentsPushed;
 			value.forEach(image=>{
 				doc.addPage();
+				if (contentsObj && !contentsPushed){
+					drawActions.contentsPush(doc, contentsObj);
+					contentsPushed=true;
+				}
 				doc.x=12;
 				doc.y=0;
 				doc.image(image.path, {width: 600});
@@ -1003,7 +1027,7 @@ async function main() {
 					leftText: file.fileTitle
 				};
 			});
-			file.page='Page '+pageNum;
+			file.page='Page '+(pageNum-startPagingPage);
 			//console.log(file);
 		}
 	}
@@ -1045,7 +1069,7 @@ async function main() {
 			type: 'introductions',
 			value:[
 				{title: 'Challenge', field:'introduction_challenge_description'},
-				{title: 'Phenomena', field:'introduction_phenomena_description'},
+				//{title: 'Phenomena', field:'introduction_phenomena_description'},
 				{title: 'Science Methods', field:'introduction_science_methods_description'},
 				{title: 'Culminating Experience', field:'introduction_culminating_experience_description'},
 			],
@@ -1065,9 +1089,21 @@ async function main() {
 			{title: 'Access and Equity', field: 'access_and_equity', breakAfter: true},
 			{title: 'Engineering Connections', field: 'eng_connections'},
 			{title: 'Resources'},
-			{title: 'Outside Educational Resources', field: 'outside_resources', headerType: 'h3'},
-			{title: 'Supplemental Resources', field: 'supplemental_resources', headerType: 'h3'},
-			{title: 'Technology and Teaching', field: 'tech_teaching'},
+			{title: 'Outside Educational Resources', field: 'outside_resources', headerType: 'h3', 
+				params: {
+					listsIdent: 13
+				}
+			},
+			{title: 'Supplemental Resources', field: 'supplemental_resources', headerType: 'h3', 
+				params: {
+					listsIdent: 13
+				}
+			},
+			{title: 'Technology and Teaching', field: 'tech_teaching', 
+				params: {
+					listsIdent: 13
+				}
+			},
 		]);
 	
 		blocks.push({
@@ -1162,7 +1198,7 @@ async function main() {
 		});
 
 	
-		await asyncForEach(lessons.filter(l=>l.number==='1.18'), async (lesson)=>{
+		await asyncForEach(lessons/*.filter(l=>l.number==='1.21')*/, async (lesson)=>{
 		
 			let header={
 				titleLeft: 'Lesson Introduction', 
@@ -1298,8 +1334,8 @@ async function main() {
 			
 					blocks.push({
 						type: 'list',
-						value: materials.map(item=>{
-							return parseFloat(item.quantity)+' - '+item.name.replace('\n', ' ');
+						value: materials.filter(item=>item.name).map(item=>{
+							return (item.quantity ? parseFloat(item.quantity)+' - ' : '')+item.name.replace('\n', ' ');
 						}),
 						ident: 20,
 					});
@@ -1343,7 +1379,11 @@ async function main() {
 			}
 		
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Teacher Prep', field:'teacher_prep'},
+				{title: 'Teacher Prep', field:'teacher_prep', 
+					params: {
+						listsIdent: 13
+					}
+				},
 			]);
 		
 		
@@ -1360,7 +1400,8 @@ async function main() {
 			});
 		
 		
-			await asyncForEach(lesson.activityPlan, async (plan)=>{
+			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan)=>{
+				console.log(plan);
 				await processObjectFieldsIntoBlocks(plan, [
 					{
 						title: plan.header.trim(), 
@@ -1377,12 +1418,18 @@ async function main() {
 					if (file.type==='pdf'){
 						const imgPaths=await convertPptxPdf(path, file);
 						//const imgPaths=await convertPdf(path);
-						console.log(imgPaths);
+						//console.log(imgPaths);
 						let x=textIdents.left;
 						const images=[];
+						/*
 						const width=imgPaths.length > 1 ? 232 : 400;
 						if (imgPaths.length === 1){
 							x+=25;
+						}
+						*/
+						const width=232;
+						if (imgPaths.length === 1){
+							x+=109;
 						}
 						await asyncForEach(imgPaths, async (item)=>{
 							const imgInfo=await imageInfo(item.imagePath);
@@ -1438,13 +1485,15 @@ async function main() {
 					type: 'h2',
 					value: 'Vocabulary',
 				});
-		
-				blocks.push({
-					type: 'list',
-					value: lesson.vocab.map(item=>{
-						return item.word+' - '+item.definition;
-					}),
-					ident: 20,
+				
+				let vocabHtml='';
+				lesson.vocab.forEach(item=>{
+					vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition+'</p>';
+				})				
+				await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
+					await parseHTMLIntoBlocks(el, {
+						ident: 0,
+					});
 				});
 			}
 		
@@ -1469,8 +1518,21 @@ async function main() {
 			color: colors.brown,
 			addContents: true,
 		});
-		
+		let currLessonId;
 		await asyncForEach(unit.files.filter(file=>file.type==='pdf'), async (file)=>{
+			let contentsObj;
+			if (currLessonId!==file.lesson_id){
+				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
+				if (lesson){
+					contentsObj={
+						title: 'Lesson '+lesson.number+' '+lesson.name+' Files', 
+						level: 1, 
+						color: colors.black
+					}
+					currLessonId=file.lesson_id;
+				}
+				
+			}
 			const path=await downloadFile(file.path);
 			const imgPaths=await convertPptxPdf(path, file);
 			//const imgPaths=await convertPdf(path);
@@ -1496,7 +1558,8 @@ async function main() {
 			blocks.push({
 				type: 'lessonFiles',
 				value: images,
-				file
+				file,
+				contentsObj
 			});
 		});
 		
@@ -1508,7 +1571,7 @@ async function main() {
 			autoFirstPage: false ,
 			margins: {
 				top: 85,
-				bottom: 50,
+				bottom: 45,
 				left: 77,
 				right: 70
 			  }
@@ -1527,6 +1590,25 @@ async function main() {
 		});
 	
 		let currentH2;
+		
+		blocks.forEach((item, i)=>{
+			if (item.type=='p' && blocks[i+1] && ['h1', 'pageBreak', 'sectionCover'].indexOf(blocks[i+1].type)>=0 && item.startPage && item.endPage && item.startPage<item.endPage){
+				item.lastParagraph=true;
+				const needToMove=item.startPage<item.endPage;
+				let breakIndex=i;
+				if (blocks[i-1] && blocks[i-1].type==='h2'){
+					blocks[i-1].lastParagraph=true;
+					breakIndex=i-1;
+				}
+				if (needToMove && blocks[breakIndex].type!=='pageBreak' && blocks[breakIndex-1].type!=='pageBreak') {	
+					console.log(breakIndex);
+					blocks.splice(breakIndex, 0, {
+						type: 'pageBreak',
+					})					
+				}
+			}
+		});
+		
 		blocks.forEach((item, i)=>{
 			if (item.type=='h2'){
 				currentH2=item;
@@ -1548,10 +1630,11 @@ async function main() {
 			}
 			if (item.type=='p' && item.isTitle && blocks[i+1] && blocks[i+1].type==='list' && doc.y>670){
 				doc.addPage();
-			}
+			}			
 			drawActions[item.type](doc, item);
+			console.log(item);
 		});
-		console.log(contents);
+		//console.log(contents);
 	
 		//adding page numbers
 		const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
@@ -1560,22 +1643,25 @@ async function main() {
 		  writeHeader(doc, headers[i+1]);
 		  //doc.text(`Page ${i + 1} of ${range.count}`);
 		  doc.page.margins.bottom=0;
-		  doc
-			.font(fonts.regular)
-			.fontSize(9)
-			.fill('black')
-			.text(i+1, textIdents.left, 750, {
-				width: 465,
-				continued: false,
-				align: 'center'
-			});
-			if (footers[i+1]){
-				doc
-				  .font(fonts.regular)
-				  .fontSize(8)
-				  .text(footers[i+1].leftText, textIdents.left, 730);
+		  if (i+1 > startPagingPage){
+		  	doc
+				.font(fonts.regular)
+				.fontSize(9)
+				.fill('black')
+				.text(i+1-startPagingPage, textIdents.left, 750, {
+					width: 465,
+					continued: false,
+					align: 'center'
+				});
+				if (footers[i+1]){
+					doc
+					  .font(fonts.regular)
+					  .fontSize(8)
+					  .text(footers[i+1].leftText, textIdents.left, 730);
+				}
 			}
-		}
+		  }
+		  
 		if (contentsPage && contents.length){
 			doc.switchToPage(contentsPage-1);
 			drawActions.contents(doc);
