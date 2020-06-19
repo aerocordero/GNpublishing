@@ -13,6 +13,7 @@ async function main() {
 	const http = require('https');
 	const _ = require('lodash');
 	const Jimp = require('jimp');
+	const argv = require('yargs').argv;
 	
 	const config = require('./config.json');
 	
@@ -26,11 +27,14 @@ async function main() {
 		dbQuery,
 		closeDbConnection,
 		convertPdf,
+		processObjectFieldsIntoBlocks,
+		parseHTMLIntoBlocks,
+		cleanUpHTML
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
+	const PDFUtilsObj  = require('./lib/pdf-utils');
 	
 	//config.db.Promise=bluebird;
-
 	
 	const colors={
 		unitTitle: '#02727D',
@@ -53,6 +57,8 @@ async function main() {
 		italic: 'fonts/Muli-Italic.ttf',
 	}
 	
+	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);		
+	
 	const headerTitles=[
 		{titleLeft: 'Unit 1:', titleRight: 'Unit Overview', icon: 'images/icons/blue_overview.jpg'},
 		{titleLeft: 'Unit 1:', titleRight: 'Materials', icon: 'images/icons/TeachingResources_blue.jpg'},
@@ -61,29 +67,12 @@ async function main() {
 	let currentTitle;
 	let contentsPage;
 	
-	const cleanUpHTML=(html) => {
-		let res=(html || '')
-			.replace(/(<a([^>]+)>)/ig, "")
-			.replace(/(<\/a>)/ig, "")
-			.replace(new RegExp('<\s*span style="font-weight: 400;"[^>]*>(.*?)<\s*/\s*span>', 'ig'), (match, str)=>{
-				console.log('regexp', match, str);
-				return str;
-			})
-			;
-		//console.log(res);
-		if (res.indexOf('<')<0){
-			res='<p>'+res+'</p>';
-		}
-	  	return res;
-
-	}
-	
-	
 	
 	console.log('Connected to the DB');
 	
 	const modelId=11;
 	const unitId=17;
+	const printLessonNum=argv.lesson;
 	
 	console.log('Loading data...');
 	const unit=(await dbQuery([
@@ -152,12 +141,40 @@ async function main() {
 		], [lesson.lesson_id]);
 		
 	});
+	const allWorkShets=[];	
 	
 	const unitLessonIds=unit.lessons.split(',');
+	
+	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
+		obj.files=[];
+		fields.forEach(field=>{
+			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-z\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
+				console.log('old_lesson_id', old_lesson_id, str);
+				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
+				console.log('regexp_'+field, match, str, str1);
+				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1);
+				console.log(workshet);
+				if (!workshet){
+					console.log('Workshet "'+str1+'" is not found');
+				}
+				if (workshet){
+					if (lesson.lesson_id===fileLesson.lesson_id){
+						obj.files.push(workshet);
+					}					
+					//return workshet.fileTitle;
+					return '%'+workshet.worksheet_id+'%';
+				}
+				return str;
+			});
+		})
+	}
 	
 	lessons.forEach(lesson=>{
 		lesson.index=unitLessonIds.indexOf(lesson.old_lesson_id);
 		lesson.number='1.'+(lesson.index+1);
+		lesson.worksheet.forEach(file=>{
+			allWorkShets.push(file);
+		})
 	});
 	lessons=_.sortBy(lessons, l=>l.index);
 	
@@ -172,20 +189,13 @@ async function main() {
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
+		console.log(lesson.worksheet);
 		lesson.activityPlan.forEach(item=>{
 			item.files=[];
-			item.content=item.content.replace(new RegExp('\(\{\{'+lesson.old_lesson_id+'\}\}([a-z\-\.]+)\)', 'igm'), (match, str, str1, str2)=>{
-				//console.log(item.content);
-				console.log('regexp', match, str, str1);
-				const workshet=lesson.worksheet.find(file=>file.fileNameWithExt===str1);
-				if (workshet){
-					item.files.push(workshet);
-					return workshet.fileTitle;
-				}
-				return str;
-			});
-			//console.log(item.content);
-		})
+			lessonWorkshetTextReplace(lesson, item, ['content']);			
+			console.log(item.content);
+		});
+		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep']);
 	});
 	//return;
 	
@@ -327,8 +337,8 @@ async function main() {
 	
 	const convertHtml=(text)=>{
 		const unitLessonIds=unit.lessons.split(',')
-		return decodeHtml(text).replace(/\{\{([^\s]+)\}\}/g, (match, id)=>{
-			console.log(match, id);
+		return decodeHtml(text).replace(/\\n/g, '').replace(/\{\{([^\s]+)\}\}/g, (match, id)=>{
+			//console.log(match, id);
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
 				return 'Lesson '+item.number+' '+item.name;
@@ -340,6 +350,10 @@ async function main() {
 	let startPagingPage;
 	let headers={};
 	let footers={};
+	
+	const isRightPage=()=>{
+		return pageNum%2>0;
+	}
 	
 	const writeHeader=(doc, header)=>{
 		if (!header){
@@ -392,92 +406,6 @@ async function main() {
 	   	saveHeader();
 	}
 	
-	const parseHTMLIntoBlocks=async(text, params)=>{
-		let textNodes=[];
-		if (text.tagName==='p' || 1){
-			await asyncForEach(text.childNodes, async(node)=>{
-				if (node.tagName!=='img'){
-					textNodes.push(node);
-				}
-				else {
-					let path=await downloadFile(node.getAttribute('src'));
-					//path=await convertImage(path, 'jpeg');
-					const imgInfo=await imageInfo(path);
-				
-					if (textNodes.length){
-						blocks.push({
-							type: 'p',
-							value: textNodes,
-							isHtml: true,
-							params
-						});
-						textNodes=[];
-					}
-				
-				
-					blocks.push({
-						type: 'image',
-						value: path,
-						heigth: getImgPropHeigth(imgInfo, 465)
-					});
-				
-				}
-			})
-		}
-		
-		/*
-		if (node.tagName==='ul'){
-			await asyncForEach(text.childNodes, async(node)=>{
-				blocks.push({
-					type: 'list',
-					value: node,
-					isHtml: true,
-				});
-			})
-		}
-		*/
-		
-		if (textNodes.length){
-			blocks.push({
-				type: 'p',
-				value: textNodes,
-				isHtml: true,
-				params,
-			});
-			textNodes=[];
-		}
-	}
-	const processObjectFieldsIntoBlocks=async(object, fields)=>{
-		return await asyncForEach(fields, async(item)=>{
-			if (item.field && (!object[item.field] || !object[item.field].trim())){
-				return;
-			}
-		
-			if (item.title){
-				blocks.push(_.extend(item.params || {}, {
-					type: item.headerType || 'h2',
-					value: item.title,
-					rightText: item.titleRight
-				}))
-			}
-		
-			const root=parse(cleanUpHTML(object[item.field]));
-
-			await asyncForEach(root.childNodes, async (el)=>{
-				await parseHTMLIntoBlocks(el, item.params || {});
-			});
-			if (item.breakAfter){
-				blocks.push({
-					type: 'pageBreak'
-				})
-			}
-			if (item.lineAfter){
-				blocks.push({
-					type: 'line'
-				})
-			}
-		});
-	}
 	const drawActions={
 		pageBreak: (doc, item)=>{
 			if (item.headerTitle){
@@ -486,6 +414,10 @@ async function main() {
 			doc.addPage();
 		},
 		h1: (doc, item)=>{
+			if (item.startOnRightSide && isRightPage()){
+				currentTitle=null;
+				doc.addPage();
+			}
 	  		currentTitle=item.headerTitle || headerTitles.find(t=>t.titleRight===item.value);
 			doc.addPage();
 			doc
@@ -586,34 +518,101 @@ async function main() {
 			  	.fill('black')
 		},
 		p: (doc, item)=>{
+			const params=item.params || {};
+			let ident=params.ident || 0;
+			let width=params.width || 465;
+			let moveDown=params.moveDown || 0;
+			let addSpaceAfter=params.addSpaceAfter!==undefined ? params.addSpaceAfter : true;
 			if (item.isHtml){
-				if (!item.params){
-					item.params={};
+				if (doc.y>725){
+					doc.addPage();
 				}
+				const convertHTMLString=(str)=>{
+					//console.log('convertHTMLString', _.keys( params), str)
+					if (item.params && item.params.replaceFn){
+						str=item.params.replaceFn(str);
+					}
+					return convertHtml(str);
+				}
+			
+				let parentTagName='';
+				let parentClass='';				
+				if (item.parentEl && item.parentEl.getAttribute){
+					parentTagName=item.parentEl.tagName;
+					parentClass=item.parentEl.getAttribute('class') || '';
+				}
+				
 				const tagFonts={
 					em: fonts.italic,
 					b: fonts.bold,
 					strong: fonts.bold,
+					semiBold: fonts.semiBold,
 				}
 				const tagFeatures={
 					sup: ['sups'],
 					sub: ['subs'],
 				}
 				item.startPage=pageNum;
-				item.value.forEach(node=>{
-					if (node.tagName ==='li'){
-						const listText=convertHtml(node.text).replace(/\n/g, '').trim();
+				if (parentTagName === 'div' && parentClass.indexOf('tips-box') >=0) {
+					const boxColors={
+						sep: ['#82B1D4', '#25408F'],
+						ccc: ['#DAE2CA', '#7DA953']
+					}
+					const boxType=parentClass.indexOf('sep') > 0 ? 'sep' : 'ccc';
+					ident=12;
+					moveDown=0.2;
+					const boxH=doc.heightOfString(item.value.map(n=>n.text).filter(txt=>txt && txt!=='\n').join('\n'), {
+						width: 465-(ident*2),
+						//continued: false
+					})+(ident*2)+20;
+					if (boxH+doc.y>750){
+						doc.addPage();
+						//doc.y+=ident;
+					}
+					doc.y+=ident*2;
+					
+					const rect={
+						x: doc.x,
+						y: doc.y-ident,
+						h: boxH
+					}
+					doc
+					  .save()
+					  .lineWidth(2)
+					  .roundedRect(rect.x, rect.y, 465, rect.h, 10)    
+					  .fill(boxColors[boxType][0])
+					  .roundedRect(rect.x, rect.y, 465, rect.h, 10)
+					  .stroke(boxColors[boxType][1]);
+					  
+					doc
+					  .font(fonts.bold)
+					  .fontSize(12)
+					  .fill('black')
+					  .text('3-D Instructional Reminder', textIdents.left+ident);
+					doc.moveDown(0.2);
+					doc
+						.font(fonts.regular)
+						.fontSize(10)
+						.fill('black')
+					
+				}
+				item.value.forEach((node, index)=>{
+					console.log('tagName', node.tagName, parentTagName, parentClass);
+					console.log(node.text);
+					if (parentTagName ==='ul' && node.tagName ==='li'){
+						const listText=convertHTMLString(node.text).replace(/\n/g, '').trim();
 						const lists=[];
 						//console.log('str:', node.childNodes, node.childNodes.map(node=>node.tagName));
 						if (!node.querySelector('ul')){
-							lists.push(convertHtml(node.text).replace(/\n/g, '').trim());
+							lists.push(convertHTMLString(node.text).replace(/\n/g, '').trim());
 						}
 						else {
 							node.childNodes.forEach(node=>{
 								//console.log('str inner:', node.childNodes.map(node=>node.tagName));
 								if (!node.childNodes.filter(node=>node.tagName==='li').length){
 								//if (node.childNodes.length<2){
-									const text=convertHtml(node.text).replace(/\n/g, '').trim();
+									const text=convertHTMLString(node.text).replace(/\n/g, '').trim();
+									
 									if (text){
 										lists.push(text);
 									}
@@ -621,7 +620,7 @@ async function main() {
 								
 								}
 								else {
-									const texts=node.childNodes.map(n=>convertHtml(n.text).replace(/\n/g, '').trim());
+									const texts=node.childNodes.map(n=>convertHTMLString(n.text).replace(/\n/g, '').trim());
 									if (texts.length){
 										lists.push(texts.filter(t=>t));
 									}
@@ -630,19 +629,40 @@ async function main() {
 							})
 						}
 						
-						console.log(lists, item);
+						//console.log(lists, item);
 						
 						doc.fillColor('black')
 							.font(tagFonts[node.tagName] || fonts.regular)
-							.list(lists, textIdents.left+(item.params.listsIdent || 0), doc.y, {
+							.list(lists, textIdents.left+(params.listsIdent || 0), doc.y, {
 								bulletIndent: 50,
 								//textIndent: 20,
 								bulletRadius:3,
 							});	
+						
+						if (node.addSpaceAfter !==undefined && !node.addSpaceAfter){
+							addSpaceAfter=false;
+						}
+						else {
+							addSpaceAfter=true;
+						}
 								
 					}
+					else if (parentTagName === 'div'){	
+						if (node.rawText!=='\n'){
+							console.log(node.childNodes);
+							drawActions.p(doc, {
+								value: node.childNodes,
+								isHtml: true,
+								parentEl: node,
+								params: _.extend(params, {
+									ident:ident,
+									width: 465-(ident*2),
+								})
+							});
+						}
+					}
 					else {
-						
+						let str=node.text;						
 						//console.log(node);
 						//console.log(doc.x, doc.y);
 						//console.log(doc.prevPage, pageNum, doc.prevY);
@@ -657,10 +677,13 @@ async function main() {
 						if (node.childNodes && node.childNodes[0] && node.childNodes[0].tagName==='strong'){
 							node.tagName='strong';
 						}
+						if (parentClass && parentClass.indexOf('bold-text') >=0) {
+							node.tagName='semiBold';
+						}						
 						if (node.tagName==='br'){
 							//doc.moveDown(0.2);
 							doc.text(' ', textIdents.left, doc.y, {
-								width: 465,
+								width,
 								continued: false
 						   });
 						}
@@ -668,8 +691,8 @@ async function main() {
 							.font(tagFonts[node.tagName] || fonts.regular)
 							.lineGap(1.2)
 							.fontSize(10)
-					   .text(convertHtml(node.text)/*.trimStart()*/, textIdents.left+(item.params.ident || 0), doc.y, {
-							width: 465,
+					   .text(convertHTMLString(str)/*.trimStart()*/, textIdents.left+(ident || 0), doc.y, {
+							width,
 							continued: true,
 							lineBreak: true,
 							align: 'left',
@@ -691,17 +714,24 @@ async function main() {
 					.lineGap(1.6)
 					.fontSize(10)
 			   .text(item.value, textIdents.left+(item.ident || 0), doc.y,{
-					width: 465,
+					width,
 					continued: true
 			   });
 			}
-			doc.text(' ', {
-				width: 465,
-				continued: false
-		    });
+			if (addSpaceAfter){
+				doc.text(' ', {
+					width,
+
+					continued: false
+				});
+			}
+			
 		    item.endPage=pageNum;
+		   	if (moveDown){
+		   		doc.moveDown(moveDown);
+		   	}
+		   	doc.x=textIdents.left;
 		   
-		   //doc.moveDown(0.2);
 		},
 		image:(doc, item)=>{
 			if (doc.y+item.heigth>840){
@@ -711,7 +741,7 @@ async function main() {
 				doc.moveDown(0.5);
 			}
 			//console.log(doc.x, doc.y);
-			console.log(item);
+			//console.log(item);
 			doc.image(item.value, {width: item.width || 465});
 			doc.moveDown(0.5);
 		},
@@ -800,6 +830,9 @@ async function main() {
 		sectionCover: (doc, {title, image, color, addContents})=>{
 			currentTitle=null;
 			doc.addPage();
+			if (!isRightPage()){
+				doc.addPage();
+			}
 			if (!startPagingPage){
 				startPagingPage=pageNum-1;
 			}
@@ -878,7 +911,9 @@ async function main() {
 			}
 			const startPage=pageNum;
 			if (file && !file.page){
-				file.page='Page '+(pageNum-startPagingPage)+' (Visual Reference)';
+				file.pageNum=pageNum-startPagingPage;
+				file.page='Page '+file.pageNum+' (Visual Reference)';	
+				file.inlinePageRef='digital access required';	
 			}
 			
 			doc.fillColor('black')
@@ -934,74 +969,7 @@ async function main() {
 				contentsPage=pageNum;
 				return;
 			}
-			doc
-			  .font(fonts.bold)
-			  .fontSize(24)
-			  .text('Table of Contents', textIdents.left, 30, {
-				width: 465,
-				align: 'left',
-				continued: false
-			  });
-			drawActions.line(doc);
 			
-			doc.moveDown(0.2);
-			
-			contents.forEach(item=>{
-				const y=doc.y;
-				let lineStart;
-				const lineY=doc.y+11;
-				if (item.level===0){
-					doc
-					  .font(fonts.bold)
-					  .fontSize(12)
-					  .fillColor(item.color || 'black')
-					  .text(item.title, textIdents.left, y, {
-						align: 'left'
-					  });
-					lineStart=doc.x+(item.title.length*6)+8;
-					doc
-					  .font(fonts.bold)
-					  .fontSize(12)
-					  .text(item.pageNum, 70, y, {
-						width: 460,
-						align: 'right'
-					  });
-					  
-					doc.lineWidth(1.5)
-						.strokeColor(item.color)
-					   	.moveTo(lineStart, lineY)
-					   	.lineTo(520-((item.pageNum+'').length*6), lineY)
-					   	.dash(2, {space: 2})
-					   	.stroke();
-				}
-				if (item.level===1){
-					doc
-					  .font(fonts.regular)
-					  .fontSize(10)
-					  .fillColor(item.color || 'black')
-					  .text(item.title, textIdents.left+20, y, {
-						width: 465,
-						align: 'left'
-					  });
-					lineStart=doc.x+(item.title.length*5)+5;
-					doc
-					  .font(fonts.regular)
-					  .fontSize(10)
-					  .text(item.pageNum, 70, y, {
-						width: 460,
-						align: 'right'
-					  });
-					  
-					doc.lineWidth(1)
-						.strokeColor(item.color || 'black')
-					   	.moveTo(lineStart, lineY-2)
-					   	.lineTo(520-((item.pageNum+'').length*6), lineY-2)
-					   	.dash(2, {space: 2})
-					   	.stroke();
-				}
-
-			   //doc.moveDown(0.1);
-			})
 			//console.log(doc.page);
 		},
 		lessonFiles: (doc, {value, file, contentsObj})=>{
@@ -1027,7 +995,9 @@ async function main() {
 					leftText: file.fileTitle
 				};
 			});
-			file.page='Page '+(pageNum-startPagingPage);
+			file.pageNum=pageNum-startPagingPage;
+			file.page='Page '+file.pageNum;
+			file.inlinePageRef='page '+file.pageNum;	
 			//console.log(file);
 		}
 	}
@@ -1053,6 +1023,7 @@ async function main() {
 		blocks.push({
 			type: 'h1',
 			value:'Unit Overview',
+			startOnRightSide: true,
 		});
 		blocks.push({
 			type: 'contentsPush',
@@ -1104,7 +1075,7 @@ async function main() {
 					listsIdent: 13
 				}
 			},
-		]);
+		], blocks);
 	
 		blocks.push({
 			type: 'h1',
@@ -1120,7 +1091,7 @@ async function main() {
 		await processObjectFieldsIntoBlocks(model, [
 			{title: 'Materials List Information', field:'materials_desc'},
 			{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
-		]);
+		], blocks);
 	
 		//'materialLsKit', 'materialLsTeacher', 'materialLsOptional'
 		[{
@@ -1186,8 +1157,8 @@ async function main() {
 	
 		const tableDescr=parse(`<sup>1</sup> — items that students are encouraged to bring in from home <br /><sup>2</sup> — items that will run out eventually <br /><sup>3</sup> — replacements items in Green Ninja kit <br /><sup>4</sup> — items included in Green Ninja kit <br />`);
 
-		await parseHTMLIntoBlocks(tableDescr);
-		console.log(tableDescr);	
+		await parseHTMLIntoBlocks(tableDescr, {}, blocks);
+		//console.log(tableDescr);	
 	
 		blocks.push({
 			type: 'sectionCover',
@@ -1198,7 +1169,9 @@ async function main() {
 		});
 
 	
-		await asyncForEach(lessons/*.filter(l=>l.number==='1.21')*/, async (lesson)=>{
+		await asyncForEach(lessons.filter(l=>{
+			return printLessonNum ? l.number==printLessonNum : true;
+		}), async (lesson)=>{
 		
 			let header={
 				titleLeft: 'Lesson Introduction', 
@@ -1206,19 +1179,34 @@ async function main() {
 				icon: 'images/icons/Lesson_green.jpg',
 				color: colors.lessonGreen
 			};
+			
+			const workshetReplaceFn=(str)=>{
+				console.log('forRegexp: ', str);
+				return str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
+					console.log('regexp2', match, str, str1);
+					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
+					console.log(workshet);
+					if (workshet){
+						return workshet.fileTitle+' ('+workshet.inlinePageRef+')';
+					}
+					return '';
+				}).replace(/\) \(from /igm, '; from ');
+			}
+			
 			blocks.push({
 				type: 'h1',
 				value: 'Lesson '+lesson.number+' '+lesson.name,
 				headerTitle: header,
 				paddingBottom: 0.1,
-				addContents: true
+				addContents: true,
+				startOnRightSide: true,
 			});
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: '', field:'description'},
 				{title: 'Phenomenon', field:'phenomenon'},
 				{title: 'Learning Objectives', field:'objectives'},
-			]);
+			], blocks);
 		
 			if (lesson.pe.length){
 				blocks.push({
@@ -1259,7 +1247,7 @@ async function main() {
 				cccHtml+='<p>The below PE(s), SEP(s), DCI(s), and CCC(s) are emphasized in this lesson but are not associated with the above PE(s).</p>';
 				cccHtml+='<p>Crosscutting Concept(s)</p>';				
 				await asyncForEach(parse(cccHtml).childNodes, async (el)=>{
-					await parseHTMLIntoBlocks(el);
+					await parseHTMLIntoBlocks(el, {}, blocks);
 				});
 				lesson.ccc.forEach(ccc=>{
 
@@ -1280,7 +1268,7 @@ async function main() {
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Common Core and CA ELD Standards', field:'common_core'},
-			]);
+			], blocks);
 		
 			[
 				{title: 'COMMON CORE - ELA/Literacys', field:'ccl'},
@@ -1303,17 +1291,20 @@ async function main() {
 				}
 			});
 		
-			blocks.push({
-				type: 'h2',
-				value: 'Materials',
-				headerTitle: {
-					titleLeft: 'Lesson Prep', 
-					titleRight: 'Lesson '+lesson.number, 
-					icon: 'images/icons/Lesson_green.jpg',
-					color: colors.lessonGreen
-				},
-				paddingBottom: 0.1
-			});
+			if (lesson.materials.length){
+				blocks.push({
+					type: 'h2',
+					value: 'Materials',
+					headerTitle: {
+						titleLeft: 'Lesson Prep', 
+						titleRight: 'Lesson '+lesson.number, 
+						icon: 'images/icons/Lesson_green.jpg',
+						color: colors.lessonGreen
+					},
+					paddingBottom: 0.1
+				});
+			}
+			
 		
 			/*
 			if (lesson.materials.filter(item=>(item.plural_name || item.name)).length){
@@ -1381,10 +1372,11 @@ async function main() {
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Teacher Prep', field:'teacher_prep', 
 					params: {
-						listsIdent: 13
+						listsIdent: 13,
+						replaceFn: workshetReplaceFn,
 					}
 				},
-			]);
+			], blocks);
 		
 		
 			blocks.push({
@@ -1401,7 +1393,7 @@ async function main() {
 		
 		
 			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan)=>{
-				console.log(plan);
+				//console.log(plan);
 				await processObjectFieldsIntoBlocks(plan, [
 					{
 						title: plan.header.trim(), 
@@ -1409,10 +1401,11 @@ async function main() {
 						titleRight: '~ '+plan.time, 
 						headerType: 'lessonPlanHeader',
 						params: {
-							resetCurentH2: true
+							resetCurentH2: true,
+							replaceFn: workshetReplaceFn,
 						}
 					},
-				]);
+				], blocks);
 				await asyncForEach(plan.files, async (file)=>{
 					const path=await downloadFile(file.path);
 					if (file.type==='pdf'){
@@ -1454,7 +1447,7 @@ async function main() {
 					}
 					if (file.type==='pptx'){
 						const pptData=await convertPptxPdf(path, file);
-						console.log(pptData);
+						//console.log(pptData);
 						await asyncForEach(pptData, async (item)=>{
 							const imgInfo=await imageInfo(item.imagePath);
 							blocks.push({
@@ -1477,8 +1470,14 @@ async function main() {
 			});
 		
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Teacher Tips', field:'anticipated_challenges'},
-			]);
+				{
+					title: 'Teacher Tips', 
+					field:'anticipated_challenges',
+					params: {
+						replaceFn: workshetReplaceFn,
+					}
+				},
+			], blocks);
 		
 			if (lesson.vocab && lesson.vocab.length){
 				blocks.push({
@@ -1493,20 +1492,20 @@ async function main() {
 				await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 					await parseHTMLIntoBlocks(el, {
 						ident: 0,
-					});
+					}, blocks);
 				});
 			}
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Tying It All Together', field:'all_together'},
 				{title: 'Content Knowledge', field:'background'},
-			]);
+			], blocks);
 		
 		
 		
 		
 			if (lesson.number==='1.6'){
-				console.log(lesson.activityPlan);
+
 			}
 		
 		});
@@ -1517,6 +1516,9 @@ async function main() {
 			image: 'images/lesson-files.jpg',
 			color: colors.brown,
 			addContents: true,
+		});
+		blocks.push({
+			type: 'pageBreak',
 		});
 		let currLessonId;
 		await asyncForEach(unit.files.filter(file=>file.type==='pdf'), async (file)=>{
@@ -1630,9 +1632,20 @@ async function main() {
 			}
 			if (item.type=='p' && item.isTitle && blocks[i+1] && blocks[i+1].type==='list' && doc.y>670){
 				doc.addPage();
-			}			
+			}		
+			//const textLen=node.text.length;		
+			if (item.type=='p' && _.isArray(item.value) && blocks[i-1].type==='p'){
+				const textHeight=doc.heightOfString((item.value || []).map(n=>n.text).join(''), {
+					width: 465,
+				});		
+				console.log('textHeight', textHeight, doc.y, item.value)		;
+				if (textHeight+doc.y>750 && textHeight+doc.y < 770){
+					doc.addPage();
+				}	
+			}	
+			
 			drawActions[item.type](doc, item);
-			console.log(item);
+			//console.log(item);
 		});
 		//console.log(contents);
 	
@@ -1664,7 +1677,81 @@ async function main() {
 		  
 		if (contentsPage && contents.length){
 			doc.switchToPage(contentsPage-1);
-			drawActions.contents(doc);
+			//drawActions.contents(doc);
+			
+			doc
+			  .font(fonts.bold)
+			  .fontSize(24)
+			  .text('Table of Contents', textIdents.left, 30, {
+				width: 465,
+				align: 'left',
+				continued: false
+			  });
+			drawActions.line(doc);
+			
+			doc.moveDown(0.2);
+			
+			contents.forEach(item=>{
+				const y=doc.y;
+				let lineStart;
+				const lineY=doc.y+11;
+				if (item.level===0){
+					doc
+					  .font(fonts.bold)
+					  .fontSize(12)
+					  .fillColor(item.color || 'black')
+					  .text(item.title, textIdents.left, y, {
+						align: 'left'
+					  });
+					lineStart=doc.x+(item.title.length*6)+8;
+					doc
+					  .font(fonts.bold)
+					  .fontSize(12)
+					  .text(item.pageNum, 70, y, {
+						width: 460,
+						align: 'right'
+					  });
+					  
+					doc.lineWidth(1.5)
+						.strokeColor(item.color)
+					   	.moveTo(lineStart, lineY)
+					   	.lineTo(520-((item.pageNum+'').length*6), lineY)
+					   	.dash(2, {space: 2})
+					   	.stroke();
+				}
+				if (item.level===1){
+					doc
+					  .font(fonts.regular)
+					  .fontSize(10)
+					  .fillColor(item.color || 'black')
+					  .text(item.title, textIdents.left+20, y, {
+						width: 465,
+						align: 'left'
+					  });
+					lineStart=doc.x+(item.title.length*5)+5;
+					doc
+					  .font(fonts.regular)
+					  .fontSize(10)
+					  .text(item.pageNum, 70, y, {
+						width: 460,
+						align: 'right'
+					  });
+					  
+					doc.lineWidth(1)
+						.strokeColor(item.color || 'black')
+					   	.moveTo(lineStart, lineY-2)
+					   	.lineTo(520-((item.pageNum+'').length*6), lineY-2)
+					   	.dash(2, {space: 2})
+					   	.stroke();
+				}
+
+			   doc.moveDown(0.1);
+			   if (doc.y > 750){
+			   		doc.switchToPage(contentsPage);
+			   		doc.y=80;
+			   }
+			})
+			
 		}
 	
 		doc.end();
