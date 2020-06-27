@@ -9,9 +9,7 @@ Lesson 2.11-a-front-page-news-project-worksheet
 Lesson 2.13-a-evolution-event-article-example
 Lesson 2.13-b-evolution-article-assessment-worksheet
 Lesson 2.14-a-baseline-vertebrate-diagram
-Lesson 2.15-e-comparative-anatomy-phenomenon-image
 Lesson 2.16-b-mammal-forelimb-graphic
-Lesson 2.17-a-embryonic-development-phenomenon-image
 Lesson 2.18-b-embryonic-development-venn-diagram
 Lesson 2.18-e-create-a-creature-worksheet
 Lesson 2.19-a-creature-stories-worksheet
@@ -19,7 +17,6 @@ Lesson 2.21-a-mass-extinctions-article-one
 Lesson 2.21-b-mass-extinctions-article-two
 Lesson 2.21-c-mass-extinctions-article-three
 Lesson 2.21-d-mass-extinction-research-worksheet
-Lesson 2.21-f-vertebrate-diagram-phenomenon-two-image.pdf
 Lesson 2.23-b-extinction-survival-details-habitat
 Lesson 2.23-c-extinction-survival-details-size
 Lesson 2.23-d-extinction-survival-details-diet

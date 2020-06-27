@@ -57,33 +57,64 @@ async function main() {
 		boldItalic: 'fonts/Muli-BoldItalic.ttf',
 	}
 	
-	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);		
 	
-	PDFUtils.headerTitles=[
-		{titleLeft: 'Unit 1:', titleRight: 'Unit Overview', icon: 'images/icons/blue_overview.jpg'},
-		{titleLeft: 'Unit 1:', titleRight: 'Standards', icon: 'images/icons/unitStandards.jpg'},
-		{titleLeft: 'Unit 1:', titleRight: 'Materials', icon: 'images/icons/TeachingResources_blue.jpg'},
-	];	
 	
 	console.log('Connected to the DB');
 	
-	const modelId=11;
-	const unitId=17;
+	const modelId=19;
+	const unitId=35;
 	const printLessonNum=argv.lesson;
 	const customPages=initCustomPages('custom-pages');
 	
 	console.log('Loading data...');
-	const unit=(await dbQuery([
-		'SELECT * FROM `unit` t',
-		'WHERE t.`unit_id` = ?'
-	], [unitId]))[0];
-	unit.files=[];
 	
 	const model=(await dbQuery([
 		'SELECT * FROM `model` t',
 		'WHERE t.`model_id` = ?'
 	], [modelId]))[0];
+	
+	const unit=(await dbQuery([
+		'SELECT * FROM `unit` t',
+		'WHERE t.`unit_id` = ?'
+	], [unitId]))[0];
+	unit.files=[];
 	unit.number=model.unit_id.split(',').indexOf(unit.unit_id+"")+1;
+	
+	unit.review=(await dbQuery([
+		'SELECT * FROM `unit_review` t',
+		'WHERE t.`unit_id` = ?'
+	], [unitId]));
+	
+	await asyncForEach(unit.review, async (item)=>{
+		item.activityPlan=await dbQuery([
+			'SELECT *',
+			'FROM unit_review_activity_plan t',
+			'WHERE t.unit_review_id = ?'
+		], [item.unit_review_id]);
+	});
+	
+	unit.reviewWorkshet=await dbQuery([
+		'SELECT *',
+		'FROM unit_worksheet_mapping m',
+		'JOIN worksheet_unit_review t ON m.worksheet_unit_review_id = t.worksheet_unit_review_id',
+		'WHERE m.unit_id = ? AND t.worksheet_language_id=1'
+	], [unitId]);
+	const reviewFilesRoot=parse(unit.review[0].files).querySelectorAll('li');
+	unit.reviewWorkshet.forEach(item=>{
+		const pathArr=item.path.split('/');
+		item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
+		item.fileNameWithExt=item.fileName+'.'+item.type;
+		item.fileTitle=item.fileName;
+		
+		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
+		
+		item.textIndex=unit.review[0].files.indexOf(item.fileName);
+		if(node){
+			item.title=node.querySelector('em').text.replace(model.display_name, '').replace('Unit '+unit.number, '').trim();
+		}
+		
+	})
+	unit.reviewWorkshet=_.sortBy(unit.reviewWorkshet, file=>file.textIndex);
 	
 	let lessons=await dbQuery([
 		'SELECT * FROM `lesson` t',
@@ -98,6 +129,10 @@ async function main() {
 		unit.commonCoreStandards[key]=[];		
 	})
 	
+	const epConcepts=(await dbQuery([
+		'SELECT * FROM `EP_concepts` t'
+	], []))[0];
+	
 	await asyncForEach(lessons, async (lesson)=>{
 		lesson.pe=await dbQuery([
 			'SELECT pe.title, lpm.progressions, pe.pe_id, pe.description, pe.statements',
@@ -109,6 +144,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_ccc_mapping_new m',
 			'JOIN CCC_NEW t ON m.ccc_id = t.id',
+			'JOIN pe_ccc pe ON pe.ccc_id = t.id',
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);
 		lesson.ccm=await dbQuery([
@@ -130,6 +166,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_dci_mapping_new m',
 			'JOIN DCI_NEW t ON m.dci_id = t.id',
+			'JOIN pe_dci pe ON pe.dci_id = t.id',
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);
 		lesson.dci=_.sortBy(lesson.dci, item=>item.priority);
@@ -137,6 +174,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_sep_mapping_new m',
 			'JOIN SEP_NEW t ON m.sep_id = t.id',
+			'JOIN pe_sep pe ON pe.sep_id = t.id',
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);		
 		lesson.sep=_.sortBy(lesson.sep, item=>item.priority);
@@ -144,6 +182,13 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_eld_mapping_new m',
 			'JOIN ELD_NEW t ON m.eld_id = t.id',
+			'WHERE m.lesson_id = ?'
+		], [lesson.lesson_id]);		
+		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
+		lesson.epc=await dbQuery([
+			'SELECT *',
+			'FROM lesson_epc_mapping m',
+			'JOIN environmental_principle t ON m.environmental_principle_id = t.environmental_principle_id',
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);		
 		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
@@ -196,6 +241,9 @@ async function main() {
 			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-z\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
+				if (!fileLesson){
+					return str;
+				}
 				//console.log('regexp_'+field, match, str, str1);
 				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1);
 				//console.log(workshet);
@@ -232,6 +280,10 @@ async function main() {
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
+			item.isOnline=item.fileName.indexOf('checkpoint')>0;
+			if (item.isOnline){
+				item.page='Online Dynamic Content';
+			}
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
 		//console.log(lesson.worksheet);
@@ -360,6 +412,15 @@ async function main() {
 	
 	console.log('Loaded Unit "'+unit.name+'" and '+lessons.length+' lessons');
 	await closeDbConnection();
+	
+	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);		
+	
+	PDFUtils.headerTitles=[
+		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Overview', icon: 'images/icons/blue_overview.jpg'},
+		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Standards', icon: 'images/icons/unitStandards.jpg'},
+		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Materials', icon: 'images/icons/TeachingResources_blue.jpg'},
+		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Resources', icon: 'images/icons/unitsupport_blue.jpg'},		
+	];	
 	
 	PDFUtils.convertHtml=(text)=>{
 		const unitLessonIds=unit.lessons.split(',')
@@ -657,11 +718,122 @@ async function main() {
 		});
 		
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h1', breakAfter: true, params:{
+			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h1', 
+				params:{
 				dontChangeCurrentTitle: true
 			}},
 		], blocks);
+		
+		
 				
+		blocks.push({
+			type: 'h2',
+			value: 'NGSS LESSON MAPPING LEGEND',
+			headerTitle: PDFUtils.headerTitles.find(t=>t.titleRight==='Standards')
+		});
+		
+		await processObjectFieldsIntoBlocks(customPages['ngss-lesson-mapping'], [
+			{title: '', field:'intro', 
+				params: {
+					
+				}
+			},
+			{title: 'Performance Expectation (PE)', field:'pe', 
+				headerType: 'h3',
+				params: {
+					marginTop: 0.6,
+					titleColor: colors.green,
+					lineGap: 0.4,
+				}
+			},
+			{title: 'Science and Engineering Practice (SEP)', field:'sep', 
+				headerType: 'h3',
+				params: {
+					marginTop: 0.6,
+					titleColor: colors.green,
+					lineGap: 0.4,
+				}
+			},
+			{title: 'Crosscutting Concepts (CCC)', field:'ccc', 
+				headerType: 'h3',
+				params: {
+					marginTop: 0.6,
+					titleColor: colors.green,
+					lineGap: 0.4,
+				}
+			},			
+		], blocks);		
+		
+		blocks.push({
+			type: 'pageBreak',
+		});
+		
+		blocks.push({
+			type: 'p',
+			value: 'The mapping below outlines how our lessons have aligned to Californiaâ€™s NGSS and EP&Cs.',
+			isHtml: false
+		});
+		blocks.push({
+			type: 'p',
+			value: '',
+			isHtml: false
+		});
+		
+		//
+		
+		blocks.push({
+			type: 'table',
+			//hideHeaders: true,
+			headerColor: colors.lessonGreen,
+			columns: [
+				{
+					id: 'lesson',
+					header: model.display_name+' Unit '+unit.number,
+					width: 55,
+				},
+				{
+					id: 'pe',
+					header: 'PE',
+					align: 'left',
+					width: 110,
+				},
+				{
+					id: 'sep',
+					header: 'SEP',
+					align: 'left',
+					width: 71,
+				},
+				{
+					id: 'dci',
+					header: 'DCI',
+					align: 'left',
+					width: 71,
+				},
+				{
+					id: 'ccc',
+					header: 'CCC',
+					align: 'left',
+					width: 71,
+				},
+				{
+					id: 'epc',
+					header: 'EP&C',
+					align: 'left',
+					width: 71,
+				},
+			],
+			data: lessons.map(lesson=>{
+				lesson.ep=[];
+				return {
+					lesson: 'Lesson '+lesson.number,
+					pe: lesson.pe.map(item=>item.title).join(', '),
+					sep: lesson.sep.map(item=>item.title).join(', '),
+					dci: lesson.dci.map(item=>item.title).join(', '),
+					ccc: lesson.ccc.map(item=>item.title).join(', '),
+					epc: lesson.epc.map(item=>item.title.split('-')[0]).join(', '),
+				}
+			})
+		})
 	
 		blocks.push({
 			type: 'h1',
@@ -693,7 +865,7 @@ async function main() {
 			title: 'Materials in Green Ninja Kit:',
 			data: materials.materialLsKit,
 			headerType: 'h2'
-		}].forEach(mat=>{
+		}].filter(mat=>mat.data.length).forEach(mat=>{
 			blocks.push({
 				type: mat.headerType || 'h2',
 				value: mat.title
@@ -741,10 +913,42 @@ async function main() {
 			})
 		})
 	
-		const tableDescr=parse(`<sup>1</sup> Ñ items that students are encouraged to bring in from home <br /><sup>2</sup> Ñ items that will run out eventually <br /><sup>3</sup> Ñ replacements items in Green Ninja kit <br /><sup>4</sup> Ñ items included in Green Ninja kit <br />`);
+		const tableDescr=parse(`<sup>1</sup> â€” items that students are encouraged to bring in from home <br /><sup>2</sup> â€” items that will run out eventually <br /><sup>3</sup> â€” replacements items in Green Ninja kit <br /><sup>4</sup> â€” items included in Green Ninja kit <br />`);
 
 		await parseHTMLIntoBlocks(tableDescr, {}, blocks);
-		//console.log(tableDescr);	
+		//console.log(tableDescr);			
+		
+		
+		
+		await asyncForEach(unit.review, async (review)=>{
+			await processObjectFieldsIntoBlocks(review, [
+				{title: review.name, field:'description', headerType:'h1'},
+			], blocks);
+			blocks.push({
+				type: 'contentsPush',
+				title: 'Unit Resources', 
+				level: 1, 
+				color: colors.black
+			});
+			blocks.push({
+				type: 'h2',
+				value: 'Content', 
+			});
+			blocks.push({
+				type: 'p',
+				value: 'You can use the following resources either as a review toward the end of the unit, or during the unit to supplement particular topics.', 
+				isHtml: false,
+			});			
+			
+			await asyncForEach(review.activityPlan, async (plan)=>{
+				await processObjectFieldsIntoBlocks(plan, [
+					{title: plan.header, field:'content'},
+				], blocks);				
+			});		
+		});		
+	
+		
+		
 	
 		blocks.push({
 			type: 'sectionCover',
@@ -794,6 +998,7 @@ async function main() {
 				{title: 'Learning Objectives', field:'objectives'},
 			], blocks);
 		
+			/*
 			if (lesson.pe.length){
 				blocks.push({
 					type: 'h2',
@@ -876,30 +1081,83 @@ async function main() {
 					});
 				}
 			});
+			*/
+			
+			if (lesson.worksheet.length){
+				blocks.push({
+					type: 'h2',
+					value: 'Files'
+				});
+			
+				blocks.push({
+					type: 'table',
+					fontSize: 10,
+					hideHeaders: true,
+					borderColor: colors.lessonGreen,
+					columns: [
+						{
+							id: 'fileTitle',
+							header: false,
+							width: 310,
+							align: 'left',
+							padding: [4,30,4,4],
+							renderer: function (tb, data) {								
+								return data.fileTitle;
+							},
+							cellAdded: (tb, data, cell, pos)=>{
+								console.log(tb, data);
+								if (data.isOnline){
+									const doc=tb.pdf;
+									const textWidth=doc.widthOfString(data.fileTitle);
+									let x=pos.x+(textWidth<280 ? textWidth : 270);
+									let strNum=parseInt(textWidth/270);
+									doc.image('images/icons/noun_Refresh_1299685.png', x, pos.y-30-(1*strNum), {
+										  width: 30,
+										  align: 'center',
+										  valign: 'center'
+									});
+								}								
+							}
+
+						},
+						{
+							id: 'page',
+							header: '',
+							width: 155,
+						},
+					],
+					data: lesson.worksheet.filter((file, index)=>{
+						const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
+						return !existing;
+					}),
+				});
+				lesson.worksheet.forEach(file=>{
+					if (!unit.files.find(f=>f.fileName===file.fileName)){
+						unit.files.push(file);
+					}
+				});
+			}
+			
+			await processObjectFieldsIntoBlocks(lesson, [
+				{title: 'Links', field:'links'},
+			], blocks);
 		
 			if (lesson.materials.length){
 				blocks.push({
 					type: 'h2',
 					value: 'Materials',
+					/*
 					headerTitle: {
 						titleLeft: 'Lesson Prep', 
 						titleRight: 'Lesson '+lesson.number, 
 						icon: 'images/icons/Lesson_green.jpg',
 						color: colors.lessonGreen
-					},
-					paddingBottom: 0.1
+					},*/
+					//paddingBottom: 0.1
 				});
-			}
-			
+			}			
 		
-			/*
-			if (lesson.materials.filter(item=>(item.plural_name || item.name)).length){
-				blocks.push({
-					type: 'h2',
-					value: 'Materials'
-				});
-			}
-			*/
+			
 		
 			['For the teacher', 'For each student', 'For each group of 4 students'].forEach((title, forWhomInd)=>{
 				const materials=lesson.materials.filter(item=>(item.plural_name || item.name) && item.forWhomInd===forWhomInd);
@@ -919,41 +1177,7 @@ async function main() {
 				}
 			})
 		
-			if (lesson.worksheet.length){
-				blocks.push({
-					type: 'h2',
-					value: 'Files'
-				});
 			
-				blocks.push({
-					type: 'table',
-					fontSize: 10,
-					hideHeaders: true,
-					borderColor: colors.lessonGreen,
-					columns: [
-						{
-							id: 'fileTitle',
-							header: false,
-							width: 310,
-							align: 'left',
-						},
-						{
-							id: 'page',
-							header: '',
-							width: 155,
-						},
-					],
-					data: lesson.worksheet.filter((file, index)=>{
-						const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
-						return !existing;
-					}),
-				});
-				lesson.worksheet.forEach(file=>{
-					if (!unit.files.find(f=>f.fileName===file.fileName)){
-						unit.files.push(file);
-					}
-				});
-			}
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Teacher Prep', field:'teacher_prep', 
@@ -1162,6 +1386,7 @@ async function main() {
 	
 	console.log('Generating publication PDF...');
 	PDFUtils.generatePdf('output.pdf', blocks);
+	PDFUtils.generatePdf('TC '+model.display_name+' Unit '+unit.number+'.pdf', blocks);
 }
 main().then(res=>{
 	console.log('done');
