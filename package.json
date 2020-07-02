@@ -22,6 +22,7 @@
     "pdfkit": "^0.11.0",
     "pptx2pdf": "^1.0.10",
     "shelljs": "^0.8.4",
+    "superagent": "^5.3.1",
     "textract": "^2.5.0",
     "voilab-pdf-table": "^0.5.0",
     "yargs": "^15.3.1"
