@@ -1,7 +1,5 @@
 /*
-	node workbook.js --model=19 --unit=35
-	node workbook.js --model=19 --unit=24
-
+	node workbook.js --model=<modelId> --unit=<unitId> [--dest-path="<path_to_dest_pdf_file>"] [--first-export] [--flush-cache]
 */
 
 async function main() {
@@ -31,10 +29,15 @@ async function main() {
 		cleanUpHTML,
 		initCustomPages,
 		getImgInfoAndRotate,
-		parseHtml
+		parseHtml,
+		flushCache
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
+	
+	if (argv.flushCache){
+		flushCache();
+	}
 	
 	//config.db.Promise=bluebird;
 	
@@ -930,7 +933,7 @@ async function main() {
 		await asyncForEach(phenomenonFiles, async (file)=>{
 			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(item.file)===0);
 			let contentsObj;
-			console.log(file);
+			//console.log(file);
 			if (currLessonId!==file.lesson_id){
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 				if (lesson){
@@ -946,7 +949,7 @@ async function main() {
 			const path=await downloadFile(file.path);
 			const imgPaths=await convertPptxPdf(path, file);
 			//const imgPaths=await convertPdf(path);
-			console.log(imgPaths);
+			//console.log(imgPaths);
 			let x=textIdents.left;
 			const images=[]; 
 			const width=465;
@@ -971,7 +974,7 @@ async function main() {
 				file,
 				contentsObj,
 				leftIdent: 0,
-				width: 600,
+				width: 612,
 				bottomBoxY: 725,
 				headerParams: {
 					//type: 'nameClassDate',
@@ -994,7 +997,7 @@ async function main() {
 		await asyncForEach(allWorkShets.filter(file=>{
 			const excludedEnds=['presentation','transcripts','exit-ticket','key'];
 			return file.worksheet_language_id==1 
-				&& file.for_student 
+				&& (argv.firstExport || (!argv.firstExport && file.for_student))
 				&& file.type==='pdf' 
 				&& (!roadMapImg || (roadMapImg && file.id!==roadMapImg.id)) 
 				&& !phenomenonFiles.find(f=>f.id===file.id)
@@ -1003,7 +1006,7 @@ async function main() {
 		}), async (file)=>{
 			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(fileName.trim())===0);
 			let contentsObj;
-			console.log(file);
+			//console.log(file);
 			if (currLessonId!==file.lesson_id){
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 				if (lesson){
@@ -1016,10 +1019,11 @@ async function main() {
 				}
 				
 			}
+			//
 			const path=await downloadFile(file.path);
 			const imgPaths=await convertPptxPdf(path, file);
 			//const imgPaths=await convertPdf(path);
-			console.log(imgPaths);
+			//console.log(imgPaths);
 			let x=textIdents.left;
 			const images=[]; 
 			const width=465;
@@ -1039,16 +1043,17 @@ async function main() {
 				}
 			});
 			if (images && images.length && images[0]){
+				const width=images[0].rotated ? 590 : 612
 				blocks.push({
 					type: 'lessonFiles',
 					value: images,
 					file,
 					contentsObj,
-					leftIdent: 0,
-					width: images[0].rotated ? 590 : 612,
+					leftIdent: (612-width)/2,
+					width,
 					bottomBoxY: images[0].rotated ? 745 : 735,
 					rightBoxX: images[0].rotated ? 548 : 600,
-					leftBoxWidth: images[0].rotated ? 60 : 0,
+					leftBoxWidth: images[0].rotated ? 55 : 0,
 					headerParams: {
 						type: file.for_print ? 'nameClassDate' : '',
 						topWhiteOverlayHeight: 55,
@@ -1236,7 +1241,7 @@ async function main() {
 	console.log('Generating temp PDF file...');
 	PDFUtils.generatePdf('temp.pdf', blocks);
 	
-	const pdfFileName='Workbook '+model.display_name+' Unit '+unit.number+'.pdf';
+	const pdfFileName=argv.destPath || 'Workbook '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
 	PDFUtils.generatePdf(pdfFileName, blocks);
 }
