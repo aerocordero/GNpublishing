@@ -74,7 +74,7 @@ async function main() {
 	const modelId=argv.model;//19;
 	const unitId=argv.unit;//35;
 	const printLessonNum=argv.lesson;
-	const gdAssetsPath="/Users/ilyavlasov/Google Drive/Ilya's Review/Outputs/Workbook/Workbook Assets/"
+	const gdAssetsPath=config.gdAssetsPath;
 	
 	//const customPages=initCustomPages(__dirname+'/custom-pages-workbook');
 	
