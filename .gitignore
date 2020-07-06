@@ -4,6 +4,10 @@
 /test-data
 /tmp
 /output.pdf
+/config.json
 
 # dependencies
 /node_modules
+*.pdf
+*.log
+*.zip

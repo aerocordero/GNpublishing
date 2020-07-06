@@ -62,10 +62,10 @@ async function main() {
 	
 	console.log('Connected to the DB');
 	
-	const modelId=19;
-	const unitId=35;
+	const modelId=argv.model || 19;
+	const unitId=argv.unit || 35;
 	const printLessonNum=argv.lesson;
-	const customPages=initCustomPages(__dirname+'/custom-pages');
+	const customPages=await initCustomPages(__dirname+'/custom-pages');
 	
 	console.log('Loading data...');
 	
@@ -1420,7 +1420,7 @@ async function main() {
 	PDFUtils.generatePdf('temp.pdf', blocks);
 	
 	console.log('Generating publication PDF...');
-	PDFUtils.generatePdf('output.pdf', blocks);
+	//PDFUtils.generatePdf('output.pdf', blocks);
 	PDFUtils.generatePdf('TC '+model.display_name+' Unit '+unit.number+'.pdf', blocks);
 }
 main().then(res=>{
