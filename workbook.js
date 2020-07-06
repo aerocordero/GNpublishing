@@ -685,7 +685,7 @@ async function main() {
 			
 		}
 		if (image){
-			doc.y-=15;
+			//doc.y-=15;
 			console.log(image);
 			PDFUtils.drawActions.image(doc, {
 				value: image,
@@ -743,7 +743,7 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 0,
-			title: 'About this Workbook',
+			title: 'About This Workbook',
 			contentsTitle: null,
 			text: customPagesGlobal.About.content,
 			//textFontSize:12, 
@@ -896,7 +896,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'h2',
-			value:'Notes/Ideas for the Culminating Experience:',
+			value:'Use this space to jot down notes and ideas for the Culminating Experience.',
 			headerTitle: {
 				leftTitle: '',	
 			},
@@ -917,8 +917,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 2,
-			title: 'Phenomenon Visuals',
-			contentsTitle: 'Section 2: Phenomenon Visuals',
+			title: 'Phenomena Visuals',
+			contentsTitle: 'Section 2: Phenomena Visuals',
 			text: customPagesGlobal.Section2.content,
 			textFontSize:11, 
 			image: customPagesGlobal.Section2.image,
@@ -1192,6 +1192,7 @@ async function main() {
 			await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
+					moveDown: 0.4
 					//fontSize: 11,
 				}, blocks);
 			});
