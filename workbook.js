@@ -753,6 +753,9 @@ async function main() {
 		blocks.push({
 			type: 'contents',
 		});
+		blocks.push({
+			type: 'setStartPagingPage',
+		});		
 		
 		/*
 		blocks.push({
