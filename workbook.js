@@ -40,7 +40,7 @@ async function main() {
 		flushCache();
 	}
 	console.log('Google Drive folder syncing...')
-	await GDFolderSync();
+	await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
 	
 	const colors={
 		unitTitle: '#FF5609',
@@ -98,7 +98,7 @@ async function main() {
 	}
 	//console.log(unit);
 	//return
-	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/Workbook/Workbook Assets/Custom Pages");
+	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/workbook");
 	//console.log(customPagesGlobal);
 	//return;
 	
