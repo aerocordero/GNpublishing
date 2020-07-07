@@ -9,7 +9,6 @@
   "author": "Ilya Vlasov",
   "license": "ISC",
   "dependencies": {
-    "@pdftron/pdfnet-node": "^7.1.1-1",
     "bluebird": "^3.7.2",
     "esm": "^3.2.25",
     "express": "^4.17.1",
