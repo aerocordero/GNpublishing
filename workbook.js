@@ -30,7 +30,8 @@ async function main() {
 		initCustomPages,
 		getImgInfoAndRotate,
 		parseHtml,
-		flushCache
+		flushCache,
+		GDFolderSync
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -38,8 +39,8 @@ async function main() {
 	if (argv.flushCache){
 		flushCache();
 	}
-	
-	//config.db.Promise=bluebird;
+	console.log('Google Drive folder syncing...')
+	await GDFolderSync();
 	
 	const colors={
 		unitTitle: '#FF5609',
@@ -97,7 +98,7 @@ async function main() {
 	}
 	//console.log(unit);
 	//return
-	const customPagesGlobal=await initCustomPages(gdAssetsPath+"Custom Pages");
+	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/Workbook/Workbook Assets/Custom Pages");
 	//console.log(customPagesGlobal);
 	//return;
 	
@@ -757,6 +758,7 @@ async function main() {
 			type: 'setStartPagingPage',
 		});		
 		
+		
 		/*
 		blocks.push({
 			type: 'contentsPush',
@@ -899,7 +901,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'h2',
-			value:'Use this space to jot down notes and ideas for the Culminating Experience.',
+			value:'Use this space to jot down notes and ideas about solving the Unit Challenge.',
 			headerTitle: {
 				leftTitle: '',	
 			},
@@ -1190,12 +1192,13 @@ async function main() {
 			
 			let vocabHtml='';
 			unit.vocab.forEach(item=>{
-				vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition+'</p>';
+				vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition.trim()+'</p>';
 			})				
 			await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
-					moveDown: 0.4
+					moveDown: 0.4,
+					width: 525,
 					//fontSize: 11,
 				}, blocks);
 			});

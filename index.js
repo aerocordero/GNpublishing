@@ -72,7 +72,7 @@ app.use('/', async(req, res, next)=>{
 		})
 	});
 	let html=`
-		<h1>Workbook</h1>
+		<h1>Workbook Export</h1>
 		<form method="GET" action="/workbook">
 			<label>Select Unit:</label>
 			<select name="model_unit">
@@ -87,14 +87,6 @@ app.use('/', async(req, res, next)=>{
 			<button type="submit">Generate PDF</button>
 		</form>
 	`;
-	/*
-	models.forEach(model=>{
-		html+='<h2>'+model.display_name+'</h2>'
-		model.units.forEach(unit=>{
-			html+='<a href="/workbook?model='+model.model_id+'&unit='+unit.unit_id+'">'+model.display_name+' Unit '+unit.number+'</a><br/>';
-		})
-	});
-	*/
 	res.send(html);
 	res.end();
 });
