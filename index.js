@@ -14,8 +14,14 @@ const app = express();
 
 
 var port = process.env.PORT || 9000;
+let inProgress=false;
 
 app.use('/workbook', async(req, res, next)=>{
+	if (inProgress){
+		res.send('Error! PDF processing is already in progress');
+		res.end();
+		return;
+	}
 	const params=req.query;
 	console.log(params);
 	if (params.model_unit){
@@ -40,7 +46,9 @@ app.use('/workbook', async(req, res, next)=>{
 		+(params.firstExport ? ' --first-export' : '')
 		+(params.flushCache ? ' --flush-cache' : '')
 		+' --dest-path="'+destFilePath+'"'
+	inProgress=true;
 	shell.exec(cmd);
+	inProgress=false;
 	res.download(destFilePath);
 });
 
@@ -49,7 +57,7 @@ app.use('/', async(req, res, next)=>{
 	console.log(params);
 	const modelIds=[11, 9, 19];
 	let models=(await dbQuery([
-		'SELECT * FROM `model` t',
+		'SELECT model_id, display_name, unit_id FROM `model` t',
 		'WHERE t.`model_id` IN ('+modelIds.join(',')+')'
 	], []));
 	//console.log(models);
@@ -57,7 +65,7 @@ app.use('/', async(req, res, next)=>{
 	
 	await asyncForEach(models, async(model)=>{
 		model.units=(await dbQuery([
-			'SELECT * FROM `unit` t',
+			'SELECT unit_id FROM `unit` t',
 			'WHERE t.`unit_id` IN ('+model.unit_id+')'
 		], []));
 		model.units.forEach(unit=>{
