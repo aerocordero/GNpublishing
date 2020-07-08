@@ -39,6 +39,9 @@ async function main() {
 	if (argv.flushCache){
 		flushCache();
 	}
+	else if (argv.flushDbCache){
+		flushCache(true);
+	}
 	console.log('Google Drive folder syncing...')
 	await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
 	
@@ -650,11 +653,11 @@ async function main() {
 		  
 			  doc
 			  .save()
-			  .moveTo(300, top+50)
+			  .moveTo(290, top+50)
 			  //.lineTo(50, 40)
-			  .lineTo(320, top+50)
-			  .lineTo(320, top+52)
-			  .lineTo(300, top+52)
+			  .lineTo(330, top+50)
+			  .lineTo(330, top+52)
+			  .lineTo(290, top+52)
 			  .fill(color);		
 		}
 
@@ -1206,9 +1209,13 @@ async function main() {
 		
 		const addPages=customPagesGlobal.AdditionalResources;
 		const addPagesTitles=['Science and Engineering Practices', 'Crosscutting Concepts'];
+		const addPagesY=[
+			70, 85
+		]
 		await asyncForEach(addPages['SEP-CCC-Images'], async (img, index)=>{
 			console.log(img);
 			const title=addPagesTitles[index];
+			const field='text'+(index+1);
 			blocks.push({
 				type: 'h1',
 				headerTitle: {titleLeft: title},
@@ -1225,11 +1232,11 @@ async function main() {
 				type: 'image',
 				value: img.imagePath,
 				width: 550,
-				x:40,
-				y:90
+				x:31,
+				y:addPagesY[index]
 			});	
 			await processObjectFieldsIntoBlocks(addPages, [
-				{title: '', field:'text'+(index+1), 
+				{title: '', field, 
 					params: {
 					
 					}

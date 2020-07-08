@@ -4,6 +4,7 @@
 const express = require('express');
 const shell = require('shelljs');
 const _ = require('lodash');
+const config = require('./config.json');
 const {
 		dbQuery,
 		closeDbConnection,
@@ -45,6 +46,7 @@ app.use('/workbook', async(req, res, next)=>{
 	const cmd='node workbook.js --model='+params.model+' --unit='+params.unit
 		+(params.firstExport ? ' --first-export' : '')
 		+(params.flushCache ? ' --flush-cache' : '')
+		+(config.alwaysFlushDBCache ? ' --flush-db-cache' : '')
 		+' --dest-path="'+destFilePath+'"'
 	inProgress=true;
 	shell.exec(cmd);
