@@ -844,7 +844,7 @@ async function main() {
 			
 		if (roadMapImg){
 			const roadMapImgPath=await downloadFile(roadMapImg.path);
-			const roadMapImgPaths=await convertPptxPdf(roadMapImgPath, roadMapImg);
+			const roadMapImgPaths=await convertPptxPdf(roadMapImgPath, roadMapImg, false, !!argv.firstExport);
 			//const imgPaths=await convertPdf(path);
 
 			await asyncForEach(roadMapImgPaths, async (item)=>{
@@ -955,7 +955,7 @@ async function main() {
 				
 			}
 			const path=await downloadFile(file.path);
-			const imgPaths=await convertPptxPdf(path, file);
+			const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 			//const imgPaths=await convertPdf(path);
 			//console.log(imgPaths);
 			let x=textIdents.left;
@@ -1029,7 +1029,7 @@ async function main() {
 			}
 			//
 			const path=await downloadFile(file.path);
-			const imgPaths=await convertPptxPdf(path, file);
+			const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 			//const imgPaths=await convertPdf(path);
 			//console.log(imgPaths);
 			let x=textIdents.left;
@@ -1100,7 +1100,7 @@ async function main() {
 			};
 
 			const path=await downloadFile(file.path);
-			const imgPaths=await convertPptxPdf(path, file);
+			const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 			//const imgPaths=await convertPdf(path);
 			console.log(imgPaths);
 			let x=0;
