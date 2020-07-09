@@ -1252,8 +1252,8 @@ async function main() {
 	await generateBlocks();
 	console.log('Created '+blocks.length+' blocks');
 	
-	console.log('Generating temp PDF file...');
-	PDFUtils.generatePdf('temp.pdf', blocks);
+	//console.log('Generating temp PDF file...');
+	//PDFUtils.generatePdf('temp.pdf', blocks);
 	
 	const pdfFileName=argv.destPath || 'Workbook '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
