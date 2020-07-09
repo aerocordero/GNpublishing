@@ -445,7 +445,7 @@ async function main() {
 			fontSize: 24,
 		},
 		level0: {
-			font: fonts.regular,
+			font: fonts.bold,
 			fontSize: 12,
 		},
 		level1: {
