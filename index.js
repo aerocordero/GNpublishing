@@ -90,12 +90,13 @@ app.use('/', async(req, res, next)=>{
 	let pdfs=[];
 	fs.readdirSync(resPath).forEach(file=>{
 		const stats=fs.lstatSync(resPath+'/'+file);
+		//console.log(file, stats);
 		const nameArr=file.split('.');
 		const ext=nameArr.splice(nameArr.length-1, 1)[0];
 		if (ext==='pdf'){
 			pdfs.push({
 				filename: file,
-				date: moment(stats.atime).format('L LT'),
+				date: moment(stats.mtime).format('L LT'),
 				size: filesize(stats.size)
 			})
 		}
