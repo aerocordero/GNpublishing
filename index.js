@@ -7,6 +7,7 @@ const _ = require('lodash');
 const config = require('./config.json');
 const fs = require('fs');
 const moment=require('moment');
+const filesize=require('filesize');
 const {
 		dbQuery,
 		closeDbConnection,
@@ -95,6 +96,7 @@ app.use('/', async(req, res, next)=>{
 			pdfs.push({
 				filename: file,
 				date: moment(stats.atime).format('L LT'),
+				size: filesize(stats.size)
 			})
 		}
 	});
@@ -116,7 +118,7 @@ app.use('/', async(req, res, next)=>{
 		</form>
 		<br />
 		<h1>Previous exports</h1>
-		`+pdfs.map(item=>'<a href="/result/'+item.filename+'">'+item.filename+'</a> '+item.date+'<br />').join('');
+		`+pdfs.map(item=>'<a href="/result/'+item.filename+'">'+item.filename+'</a> ('+item.size+') '+item.date+'<br />').join('');
 	
 	res.send(html);
 	res.end();
