@@ -43,7 +43,10 @@ async function main() {
 		flushCache(true);
 	}
 	console.log('Google Drive folder syncing...')
-	await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
+	if (!argv.noGdSync){
+		await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
+	}
+	
 	
 	const colors={
 		unitTitle: '#FF5609',
