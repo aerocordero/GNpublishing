@@ -5,6 +5,8 @@ const express = require('express');
 const shell = require('shelljs');
 const _ = require('lodash');
 const config = require('./config.json');
+const fs = require('fs');
+const moment=require('moment');
 const {
 		dbQuery,
 		closeDbConnection,
@@ -16,6 +18,8 @@ const app = express();
 
 var port = process.env.PORT || 9000;
 let inProgress=false;
+
+app.use('/result', express.static('./result'));
 
 app.use('/workbook', async(req, res, next)=>{
 	if (inProgress){
@@ -81,6 +85,20 @@ app.use('/', async(req, res, next)=>{
 			modelUnits.push({val:model.model_id+'_'+unit.unit_id, label:model.display_name+' Unit '+unit.number})
 		})
 	});
+	const resPath='./result';
+	let pdfs=[];
+	fs.readdirSync(resPath).forEach(file=>{
+		const stats=fs.lstatSync(resPath+'/'+file);
+		const nameArr=file.split('.');
+		const ext=nameArr.splice(nameArr.length-1, 1)[0];
+		if (ext==='pdf'){
+			pdfs.push({
+				filename: file,
+				date: moment(stats.atime).format('L LT'),
+			})
+		}
+	});
+	pdfs=_.sortBy(pdfs, f=>f.filename);
 	let html=`
 		<h1>Workbook Export</h1>
 		<form method="GET" action="/workbook">
@@ -96,7 +114,10 @@ app.use('/', async(req, res, next)=>{
 			</label><br/><br/>
 			<button type="submit">Generate PDF</button>
 		</form>
-	`;
+		<br />
+		<h1>Previous exports</h1>
+		`+pdfs.map(item=>'<a href="/result/'+item.filename+'">'+item.filename+'</a> '+item.date+'<br />').join('');
+	
 	res.send(html);
 	res.end();
 });
