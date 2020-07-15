@@ -16,6 +16,10 @@ const {
 
 const app = express();
 
+const statePath=__dirname+'/state.json';
+//const db=pool.promise();
+const state=fs.existsSync(statePath) ? require(statePath) : {};
+
 
 var port = process.env.PORT || 9000;
 let inProgress=false;
