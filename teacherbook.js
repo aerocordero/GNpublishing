@@ -60,8 +60,8 @@ async function main() {
 	}
 	
 	const textIdents={
-		left: 77,
-		top: 85
+		left: 65,
+		top: 70
 	}
 	
 	const fonts={
@@ -70,6 +70,7 @@ async function main() {
 		semiBold: 'fonts/Muli-SemiBold.ttf',
 		italic: 'fonts/Muli-Italic.ttf',
 		boldItalic: 'fonts/Muli-BoldItalic.ttf',
+		arial: 'fonts/arial-unicode-ms.ttf', 
 	}
 	
 	
@@ -161,20 +162,26 @@ async function main() {
 			'FROM lesson_ccc_mapping_new m',
 			'JOIN CCC_NEW t ON m.ccc_id = t.id',
 			'JOIN pe_ccc pe ON pe.ccc_id = t.id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ?',
+			'GROUP BY m.ccc_id',
+			'ORDER BY t.short_title'
 		], [lesson.lesson_id]);
 		lesson.ccm=await dbQuery([
 			'SELECT *',
 			'FROM lesson_ccm_mapping_new m',
 			'JOIN CCM_NEW t ON m.ccm_id = t.id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ?',
+			'GROUP BY m.ccm_id',
+			//'ORDER BY t.short_title'
 		], [lesson.lesson_id]);
 		lesson.ccm=_.sortBy(lesson.ccm, item=>item.priority);
 		lesson.ccl=await dbQuery([
 			'SELECT *',
 			'FROM lesson_ccl_mapping_new m',
 			'JOIN CCL_NEW t ON m.ccl_id = t.id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ?',
+			'GROUP BY m.ccl_id',
+			//'ORDER BY t.short_title'
 		], [lesson.lesson_id]);		
 		lesson.ccl=_.sortBy(lesson.ccl, item=>item.priority);
 		
@@ -183,7 +190,9 @@ async function main() {
 			'FROM lesson_dci_mapping_new m',
 			'JOIN DCI_NEW t ON m.dci_id = t.id',
 			'JOIN pe_dci pe ON pe.dci_id = t.id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ?',
+			'GROUP BY m.dci_id',
+			'ORDER BY t.short_title'
 		], [lesson.lesson_id]);
 		lesson.dci=_.sortBy(lesson.dci, item=>item.priority);
 		lesson.sep=await dbQuery([
@@ -191,7 +200,9 @@ async function main() {
 			'FROM lesson_sep_mapping_new m',
 			'JOIN SEP_NEW t ON m.sep_id = t.id',
 			'JOIN pe_sep pe ON pe.sep_id = t.id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ?',
+			'GROUP BY m.sep_id',
+			'ORDER BY short_title'
 		], [lesson.lesson_id]);		
 		lesson.sep=_.sortBy(lesson.sep, item=>item.priority);
 		lesson.eld=await dbQuery([
@@ -430,6 +441,8 @@ async function main() {
 	await closeDbConnection();
 	
 	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);		
+	
+	PDFUtils.textWidth=490;
 	
 	PDFUtils.headerTitles=[
 		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Overview', icon: 'images/icons/Unit Overview.png'},
@@ -726,7 +739,7 @@ async function main() {
 			},
 		], blocks);
 
-		
+		//return; 
 		blocks.push({
 			type: 'h1',
 			value: 'NGSS Standards',
@@ -758,6 +771,7 @@ async function main() {
 			await asyncForEach(parse(peHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
+					brFontSize: 1
 				}, blocks);
 			});
 		}
@@ -875,7 +889,7 @@ async function main() {
 		});
 		
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h1', 
+			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h2', 
 				params:{
 				dontChangeCurrentTitle: true
 			}},
@@ -938,6 +952,7 @@ async function main() {
 		
 		//
 		
+		
 		blocks.push({
 			type: 'table',
 			//hideHeaders: true,
@@ -958,29 +973,30 @@ async function main() {
 					id: 'sep',
 					header: 'SEP',
 					align: 'left',
-					width: 71,
+					width: 81,
 				},
 				{
 					id: 'dci',
 					header: 'DCI',
 					align: 'left',
-					width: 71,
+					width: 81,
 				},
 				{
 					id: 'ccc',
 					header: 'CCC',
 					align: 'left',
-					width: 71,
+					width: 81,
 				},
 				{
 					id: 'epc',
 					header: 'EP&C',
 					align: 'left',
-					width: 71,
+					width: 81,
 				},
 			],
 			data: lessons.map(lesson=>{
 				lesson.ep=[];
+				
 
 				return {
 					lesson: 'Lesson '+lesson.number,
@@ -992,18 +1008,22 @@ async function main() {
 				}
 			})
 		})
+		//return;
 		
 	
 		blocks.push({
 			type: 'h1',
-			value: 'Materials'
+			value: 'Materials',
+			addContents: true,
 		});
+		/*
 		blocks.push({
 			type: 'contentsPush',
 			title: 'Materials', 
 			level: 1, 
 			color: colors.black
 		});
+		*/
 	
 		await processObjectFieldsIntoBlocks(model, [
 			{title: 'Materials List Information', field:'materials_desc'},
@@ -1067,7 +1087,7 @@ async function main() {
 						id: 'notes',
 						header: 'Note',
 						align: 'left',
-						width: 110,
+						width: 130,
 					},
 				],
 				data: mat.data
@@ -1110,7 +1130,7 @@ async function main() {
 	
 		
 		
-		return;
+		//return;
 		blocks.push({
 			type: 'sectionCover',
 			title: 'Lesson Guides',
@@ -1120,49 +1140,88 @@ async function main() {
 		});
 
 		
-		await asyncForEach(lessons.filter(l=>{
+		await asyncForEach(lessons.filter((l, i)=>{
+			//return i<9;
 			return printLessonNum ? l.number==printLessonNum : true;
 		}), async (lesson)=>{
 			
 			let header={
-				titleLeft: 'Lesson Introduction', 
-				titleRight: 'Lesson '+lesson.number, 
+				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
+				titleRight: '', 
 				icon: 'images/icons/Lesson Plan.png',
 				color: colors.lessonGreen
 			};
 			
 			const workshetReplaceFn=(str)=>{
 				//console.log('forRegexp: ', str);
-				return str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
+				const images=[];
+				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
 					//console.log(workshet);
 					if (workshet){
+						(workshet.images || []).forEach(img=>images.push(img));
 						return workshet.fileTitle+' ('+workshet.inlinePageRef+')';
 					}
 					return '';
 				}).replace(/\) \(from /igm, '; from ');
+				return {
+					string,
+					images
+				};
 			}
 			
 			blocks.push({
 				type: 'h1',
-				value: 'Lesson '+lesson.number+' '+lesson.name,
+				value: 'Lesson Introduction',
 				headerTitle: header,
 				paddingBottom: 0.1,
-				addContents: true,
 				startOnRightSide: true,
 			});
+			if (lesson.phenomenon){
+				blocks.push({
+					type: 'introductions',
+					value:[
+						{title: 'Unit Challenge', field:'phenomenon'},
+					],
+					color: 'black',
+					fontSize: 10,
+					paddingBottom: 0.01,
+					titleFont: fonts.bold,
+					moveDown: 0,
+					data: lesson
+				});
+			}
+			
+			
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: '', field:'description'},
-				{title: 'Phenomenon', field:'phenomenon'},
-				{title: 'Learning Objectives', field:'objectives'},
+				//{title: 'phenomenon', field:'phenomenon'},
+				{title: 'Learning Objectives', field:'objectives', headerType:'h2', params: {
+					//ident:100,
+					//width: 350
+				}},
 			], blocks);
-		
+			
+			blocks.push({
+				type: 'contentsPush',
+				title: 'Lesson '+lesson.number+' '+lesson.name, 
+				level: 1, 
+				color: colors.black
+			});
+			
+			
+			blocks.push({
+				type: 'h2',
+				value: 'Teaching Resource'
+			});	
+			
 			
 			if (lesson.worksheet.length){
+				
 				blocks.push({
-					type: 'h2',
+					type: 'h3',
 					value: 'Files'
 				});
 			
@@ -1171,11 +1230,12 @@ async function main() {
 					fontSize: 10,
 					hideHeaders: true,
 					borderColor: colors.lessonGreen,
+					leftIdent: 80,
 					columns: [
 						{
 							id: 'fileTitle',
 							header: false,
-							width: 310,
+							width: 290,
 							align: 'left',
 							padding: [4,30,4,4],
 							renderer: function (tb, data) {								
@@ -1216,12 +1276,12 @@ async function main() {
 			}
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Links', field:'links'},
+				{title: 'Links', field:'links', headerType:'h3'},
 			], blocks);
 		
 			if (lesson.materials.length){
 				blocks.push({
-					type: 'h2',
+					type: 'h3',
 					value: 'Materials',
 					/*
 					headerTitle: {
@@ -1261,6 +1321,7 @@ async function main() {
 					params: {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
+						dontShowImagesAfter: true,
 					}
 				},
 			], blocks);
@@ -1268,32 +1329,14 @@ async function main() {
 		
 			blocks.push({
 				type: 'h2',
-				value: '',
-				headerTitle: {
-					titleLeft: 'Lesson Plan', 
-					titleRight: 'Lesson '+lesson.number, 
-					icon: 'images/icons/Lesson Plan.png',
-					color: colors.lessonGreen
-				},
+				value: 'Lesson Plan',
+				//headerTitle: header,
 				paddingBottom: 0.0
 			});
 		
-		
-			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan)=>{
+			let planTotalTime=0;
+			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan, planIndex)=>{
 				//console.log(plan);
-				await processObjectFieldsIntoBlocks(plan, [
-					{
-						title: plan.header.trim(), 
-						field:'content', 
-						titleRight: '~ '+plan.time, 
-						headerType: 'lessonPlanHeader',
-						params: {
-							resetCurentH2: true,
-							replaceFn: workshetReplaceFn,
-							processListsAsBlocks: true
-						}
-					},
-				], blocks);
 				await asyncForEach(plan.files, async (file)=>{
 					const path=await downloadFile(file.path);
 					if (file.type==='pdf'){
@@ -1325,40 +1368,78 @@ async function main() {
 								x=textIdents.left;
 							}
 						});
-					
-						blocks.push({
+						file.images=[{
 							type: 'images',
 							value: images,
 							width: 200,
-							dontAttachParagraphToImage: true,
-						});
+							firstRowHeight: images[0].heigth,
+							dontAttachParagraphToImage: false,
+						}];
 					}
 					if (file.type==='pptx'){
 						const pptData=await convertPptxPdf(path, file);
 						//console.log(pptData);
+						file.images=[];
 						await asyncForEach(pptData, async (item)=>{
 							const imgInfo=await imageInfo(item.imagePath);
-							blocks.push({
+							file.images.push({
 								type: 'pptSlide',
 								value: item,
 								file,
 								imgInfo,
-								dontAttachParagraphToImage: true,
+								dontAttachParagraphToImage: false,
 							});
 						});
 					}
 				});
+				await processObjectFieldsIntoBlocks(plan, [
+					{
+						title: plan.header.trim(), 
+						field:'content', 
+						titleRight: '~ '+plan.time, 
+						headerType: 'lessonPlanHeader',
+						params: {
+							resetCurentH2: true,
+							replaceFn: workshetReplaceFn,
+							processListsAsBlocks: true,
+							planIndex,
+							imgParams: {
+								width: 390,
+								align: 'center'
+							}
+						}
+					},
+				], blocks);
+				
 				blocks.push({
 					type: 'line',
 				});
+				planTotalTime+=parseInt(plan.time);
 			});
-		
+			if (planTotalTime){
+				blocks.push({
+					type: 'lessonPlanHeader',
+					value: 'Total Time', 
+					rightText: '~ '+planTotalTime+' minutes',
+					planIndex:100500,
+					moveDownAfter: 0.001
+				});
+				blocks.push({
+					type: 'line',
+				});
+			}
+			
 			await processObjectFieldsIntoBlocks(lesson, [
 				{
 					title: 'Teacher Tips', 
 					field:'anticipated_challenges',
 					params: {
 						replaceFn: workshetReplaceFn,
+						dontShowImagesAfter: true,
+						imgParams: {
+							width: 390,
+							align: 'center'
+						}
 					}
 				},
 			], blocks);
@@ -1366,32 +1447,30 @@ async function main() {
 
 
 			blocks.push({
-				type: 'h1',
+				type: 'h2',
 				value: 'Background for Teachers',
-				headerTitle: {
-					titleLeft: 'Teacher Resources', 
-					titleRight: 'Lesson '+lesson.number, 
-					icon: 'images/icons/Lesson Plan.png',
-					color: colors.lessonGreen
-				},
-				paddingBottom: 0.1,
-				addContents: false,
-				startOnRightSide: false,
 			});
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Content Knowledge', field:'background'},
-				{title: 'Access and Equity', field:'access_equity'},
-				{title: 'Home to School Connections', field:'home_to_school'},
-				{title: 'Safety Guidelines', field:'safety_guidelines'},
-				{title: 'Student Prior Experience', field:'prior_experience'},
-				{title: 'Student Preconceptions', field:'student_preconceptions'},
+				{title: 'Content Knowledge', field:'background', headerType: 'h3',
+					params: {
+						imgParams: {
+							width: 400,
+							align: 'center'
+						}
+					}
+				},
+				{title: 'Access and Equity', field:'access_equity', headerType: 'h3'},
+				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h3'},
+				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h3'},
+				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h3'},
+				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h3'},
 			], blocks);
 			
 			if (lesson.pe.length){
 				blocks.push({
 					type: 'h2',
-					value: 'NGSS Standards'
+					value: 'Standards'
 				})
 	
 				blocks.push({
@@ -1429,7 +1508,7 @@ async function main() {
 				await asyncForEach(parse(cccHtml).childNodes, async (el)=>{
 					await parseHTMLIntoBlocks(el, {}, blocks);
 				});
-				lesson.ccc.forEach(ccc=>{
+				_.values(_.groupBy(lesson.ccc, ccc=>ccc.title+ccc.description)).map(items=>items[0]).forEach(ccc=>{
 
 					blocks.push({
 						type: 'p',
