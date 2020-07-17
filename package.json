@@ -15,7 +15,7 @@
     "filesize": "^6.1.0",
     "hasha": "^5.2.0",
     "jimp": "^0.12.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "moment": "^2.27.0",
     "mysql2": "^2.1.0",
     "node-html-parser": "^1.2.16",
