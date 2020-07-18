@@ -50,7 +50,8 @@ async function main() {
 		lessonFiles: '#FF5609',
 		brown: '#634439',
 		black: 'black',
-		blue: '#26adca'
+		blue: '#26adca',
+		orange: '#ff5609'
 	}
 	
 	const gradeColors={
@@ -71,6 +72,11 @@ async function main() {
 		italic: 'fonts/Muli-Italic.ttf',
 		boldItalic: 'fonts/Muli-BoldItalic.ttf',
 		arial: 'fonts/arial-unicode-ms.ttf', 
+	}
+	
+	const icons={
+		onlineContent:'images/icons/Dynamic_Icon_TC.png',
+		studentContent: 'images/icons/Student_Icon_TC.png'
 	}
 	
 	
@@ -265,7 +271,7 @@ async function main() {
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
 		fields.forEach(field=>{
-			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-z\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
+			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
 				if (!fileLesson){
@@ -276,6 +282,7 @@ async function main() {
 				//console.log(workshet);
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
+					//console.log('regexp_'+field, match, str, str1);
 				}
 				if (workshet){
 					if (lesson.lesson_id===fileLesson.lesson_id){
@@ -309,7 +316,7 @@ async function main() {
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
 			item.isOnline=item.fileName.indexOf('checkpoint')>0;
 			if (item.isOnline){
-				item.page='Online Dynamic Content';
+				item.page=customPages.messages.onlineContent;
 			}
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
@@ -443,6 +450,31 @@ async function main() {
 	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);		
 	
 	PDFUtils.textWidth=490;
+	const contentWidth=540;	
+	
+	PDFUtils.tocStyles={
+		title: {
+			color: 'black',
+			idents: [textIdents.left-10, 40],
+			font: fonts.bold,
+			fontSize: 24,
+		},
+		level0: {
+			font: fonts.bold,
+			fontSize: 12,
+		},
+		level1: {
+			font: fonts.regular,
+			fontSize: 10,
+		},
+		leftIdent: textIdents.left-10,
+		levelIdent: 5,
+		width: contentWidth-45,
+		lineParams: {
+			leftIdent: textIdents.left-10,
+			width: contentWidth+20
+		}
+	}
 	
 	PDFUtils.headerTitles=[
 		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Overview', icon: 'images/icons/Unit Overview.png'},
@@ -470,7 +502,7 @@ async function main() {
 		unit.files=[];
 		
 		const coverIndex=((_.keys(gradeColors).indexOf(model.display_name)*6)+unit.number-1);
-		console.log(customPages.TeacherHighlight['tc-highlight-pages'][coverIndex]);
+		//console.log(customPages.TeacherHighlight['tc-highlight-pages'][coverIndex]);
 		
 		blocks.push({
 			type: 'pageBreak',
@@ -538,6 +570,34 @@ async function main() {
 				},
 			});
 		});
+		
+		const legenda=[
+			{icon: icons.onlineContent, text: customPages.messages.onlineContent},
+			{icon: icons.studentContent, text: customPages.messages.studentContent},
+		]
+		blocks.push({
+			type: 'custom',
+			drawFn: (doc)=>{
+				let y=doc.y+20;
+				legenda.forEach(item=>{
+					const x=40;
+					
+					doc.image(item.icon, x, y, {
+						  width: 30,
+						  align: 'center',
+						  valign: 'center'
+					});
+					doc
+					  .font(fonts.regular)
+					  .fontSize(10)
+					  .fill('black')
+					  .text('— '+item.text, x+29, y+7);
+					//doc.moveDown(item.marginBottom || 0.2);
+					y+=25;
+				});
+				doc.moveDown(1);
+			}
+		});	
 		
 		blocks.push({
 			type: 'h1',
@@ -1094,7 +1154,12 @@ async function main() {
 			})
 		})
 	
-		const tableDescr=parse(`<sup>1</sup> — items that students are encouraged to bring in from home <br /><sup>2</sup> — items that will run out eventually <br /><sup>3</sup> — replacements items in Green Ninja kit <br /><sup>4</sup> — items included in Green Ninja kit <br />`);
+		const tableDescr=parse(`
+			<sup>1</sup> — items that students are encouraged to bring in from home<br />
+			<sup>2</sup> — items that will run out eventually<br />
+			<sup>3</sup> — replacements items in Green Ninja kit<br />
+			<sup>4</sup> — items included in Green Ninja kit<br />
+		`);
 
 		await parseHTMLIntoBlocks(tableDescr, {}, blocks);
 		//console.log(tableDescr);			
@@ -1230,17 +1295,18 @@ async function main() {
 					fontSize: 10,
 					hideHeaders: true,
 					borderColor: colors.lessonGreen,
-					leftIdent: 80,
+					//leftIdent: 80,
 					columns: [
 						{
 							id: 'fileTitle',
 							header: false,
-							width: 290,
+							width: 320,
 							align: 'left',
-							padding: [4,30,4,4],
+							padding: [4,10,4,4],
 							renderer: function (tb, data) {								
 								return data.fileTitle;
 							},
+							/*
 							cellAdded: (tb, data, cell, pos)=>{
 								//console.log(tb, data);
 								if (data.isOnline){
@@ -1255,12 +1321,39 @@ async function main() {
 									});
 								}								
 							}
+							*/
 
 						},
 						{
 							id: 'page',
 							header: '',
 							width: 155,
+							renderer: function (tb, data) {								
+								return data.isOnline ? '' : data.page;
+							},
+							cellAdded: (tb, data, cell, pos)=>{
+								const doc=tb.pdf;
+								const textWidth=doc.widthOfString(data.page || '');
+								let x=pos.x+(data.isOnline ? 0 : textWidth);
+								if (!data.page){
+									x-=4;
+								}
+								//console.log(pos);
+								if (data.isOnline){
+									doc.image(icons.onlineContent, x, pos.baseY-3, {
+										  width: 20,
+										  align: 'center',
+										  valign: 'center'
+									});
+								}	
+								if (data.for_student && data.type==='pdf'){
+									doc.image(icons.studentContent, x, pos.baseY-3, {
+										  width: 20,
+										  align: 'center',
+										  valign: 'center'
+									});
+								}								
+							}
 						},
 					],
 					data: lesson.worksheet.filter((file, index)=>{
@@ -1273,7 +1366,35 @@ async function main() {
 						unit.files.push(file);
 					}
 				});
+				const legenda=[
+					{icon: icons.onlineContent, text: customPages.messages.onlineContent},
+					{icon: icons.studentContent, text: customPages.messages.studentContent},
+				]
+				blocks.push({
+					type: 'custom',
+					drawFn: (doc)=>{
+						let y=doc.y-10;
+						legenda.forEach(item=>{
+							const x=textIdents.left-5;
+							
+							doc.image(item.icon, x, y, {
+								  width: 25,
+								  align: 'center',
+								  valign: 'center'
+							});
+							doc
+							  .font(fonts.regular)
+							  .fontSize(9)
+							  .fill('black')
+							  .text('— '+item.text, x+23, y+5);
+							//doc.moveDown(item.marginBottom || 0.2);
+							y+=20;
+						});
+						doc.moveDown(1);
+					}
+				});	
 			}
+			//return;
 			
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Links', field:'links', headerType:'h3'},
@@ -1373,6 +1494,10 @@ async function main() {
 							value: images,
 							width: 200,
 							firstRowHeight: images[0].heigth,
+							highlightFirstImage: file.isOnline ? {
+								color: colors.orange,
+								icon: icons.onlineContent
+							} : null,
 							dontAttachParagraphToImage: false,
 						}];
 					}
@@ -1380,7 +1505,7 @@ async function main() {
 						const pptData=await convertPptxPdf(path, file);
 						//console.log(pptData);
 						file.images=[];
-						await asyncForEach(pptData, async (item)=>{
+						await asyncForEach(pptData, async (item, index)=>{
 							const imgInfo=await imageInfo(item.imagePath);
 							file.images.push({
 								type: 'pptSlide',
@@ -1388,6 +1513,10 @@ async function main() {
 								file,
 								imgInfo,
 								dontAttachParagraphToImage: false,
+								highlight: file.isOnline && index===0 ? {
+									color: colors.orange,
+									icon: icons.onlineContent
+								} : null,
 							});
 						});
 					}
