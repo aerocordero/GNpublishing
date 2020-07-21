@@ -20,7 +20,7 @@ async function main() {
 		downloadFile,
 		convertImage,
 		imageInfo,
-		getImgPropHeigth,
+		getImgPropheight,
 		dbQuery,
 		closeDbConnection,
 		convertPdf,
@@ -43,7 +43,7 @@ async function main() {
 		flushCache(true);
 	}
 	console.log('Google Drive folder syncing...')
-	if (!argv.noGdSync){
+	if (argv.gdSync || argv.gdSync===undefined){
 		await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
 	}
 	
@@ -801,10 +801,13 @@ async function main() {
 		});
 		//
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: '', field:'student_unit_storyboard', paragraphsToPull: 1, params: {
-				//fontSize:11
-			}},
+			{title: '', field:'student_unit_storyboard', 
+				paragraphsToPull: 1, 
+				params: {
+				}
+			},
 		], blocks);		
+		
 		
 		blocks.push({
 			type: 'p',
@@ -841,6 +844,7 @@ async function main() {
 			level: 1, 
 			color: colors.black
 		});
+		
 		
 		const roadMapImg=allWorkShets.find(file=>file.fileTitle.indexOf('roadmap')>0 && file.type=='pdf');
 		
@@ -885,7 +889,8 @@ async function main() {
 			{title: '', field:'student_unit_roadmap', /*paragraphsToPull: 1,*/ params: {
 				//fontSize:11
 				imgParams: {
-					marginTop: 2
+					marginTop: 2,
+					fitToPage: true,
 				}
 			}},
 		], blocks);
@@ -969,7 +974,7 @@ async function main() {
 				const imgInfo=await imageInfo(item.imagePath);
 				images.push({
 					path: item.imagePath,
-					heigth: getImgPropHeigth(imgInfo, width),
+					height: getImgPropheight(imgInfo, width),
 					width,
 					x
 				})
@@ -1043,7 +1048,7 @@ async function main() {
 				const imgInfo=await getImgInfoAndRotate(item.imagePath);
 				images.push({
 					path: item.imagePath,
-					heigth: getImgPropHeigth(imgInfo, width),
+					height: getImgPropheight(imgInfo, width),
 					rotated: imgInfo.rotated,
 					width,
 					x
@@ -1114,7 +1119,7 @@ async function main() {
 				const imgInfo=await imageInfo(item.imagePath);
 				images.push({
 					path: item.imagePath,
-					heigth: getImgPropHeigth(imgInfo, width),
+					height: getImgPropheight(imgInfo, width),
 					rotated: imgInfo.rotated,
 					width,
 					x
