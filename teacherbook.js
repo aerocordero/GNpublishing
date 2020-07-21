@@ -21,7 +21,7 @@ async function main() {
 		downloadFile,
 		convertImage,
 		imageInfo,
-		getImgPropHeigth,
+		getImgPropheight,
 		dbQuery,
 		closeDbConnection,
 		convertPdf,
@@ -29,7 +29,8 @@ async function main() {
 		parseHTMLIntoBlocks,
 		cleanUpHTML,
 		initCustomPages,
-		GDFolderSync
+		GDFolderSync,
+		getImgInfoAndRotate
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -166,7 +167,7 @@ async function main() {
 		lesson.ccc=await dbQuery([
 			'SELECT *',
 			'FROM lesson_ccc_mapping_new m',
-			'JOIN CCC_NEW t ON m.ccc_id = t.id',
+			'JOIN CCC_NEW_copy t ON m.ccc_id = t.id',
 			'JOIN pe_ccc pe ON pe.ccc_id = t.id',
 			'WHERE m.lesson_id = ?',
 			'GROUP BY m.ccc_id',
@@ -194,7 +195,7 @@ async function main() {
 		lesson.dci=await dbQuery([
 			'SELECT *',
 			'FROM lesson_dci_mapping_new m',
-			'JOIN DCI_NEW t ON m.dci_id = t.id',
+			'JOIN DCI_NEW_copy t ON m.dci_id = t.id',
 			'JOIN pe_dci pe ON pe.dci_id = t.id',
 			'WHERE m.lesson_id = ?',
 			'GROUP BY m.dci_id',
@@ -204,7 +205,7 @@ async function main() {
 		lesson.sep=await dbQuery([
 			'SELECT *',
 			'FROM lesson_sep_mapping_new m',
-			'JOIN SEP_NEW t ON m.sep_id = t.id',
+			'JOIN SEP_NEW_copy t ON m.sep_id = t.id',
 			'JOIN pe_sep pe ON pe.sep_id = t.id',
 			'WHERE m.lesson_id = ?',
 			'GROUP BY m.sep_id',
@@ -221,7 +222,7 @@ async function main() {
 		lesson.epc=await dbQuery([
 			'SELECT *',
 			'FROM lesson_epc_mapping m',
-			'JOIN environmental_principle t ON m.environmental_principle_id = t.environmental_principle_id',
+			'JOIN environmental_principle_copy t ON m.environmental_principle_id = t.environmental_principle_id',
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);		
 		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
@@ -271,13 +272,14 @@ async function main() {
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
 		fields.forEach(field=>{
-			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
+			//console.log(obj[field]);
+			obj[field]=obj[field].replace(new RegExp('\(\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
 				if (!fileLesson){
 					return str;
 				}
-				//console.log('regexp_'+field, match, str, str1);
+				console.log('regexp_'+field, match, str, str1);
 				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1.trim());
 				//console.log(workshet);
 				if (!workshet){
@@ -287,7 +289,8 @@ async function main() {
 				if (workshet){
 					if (lesson.lesson_id===fileLesson.lesson_id){
 						obj.files.push(workshet);
-					}					
+					}
+					console.log(workshet);					
 					//return workshet.fileTitle;
 					return '%'+workshet.worksheet_id+'%';
 				}
@@ -315,8 +318,12 @@ async function main() {
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
 			item.isOnline=item.fileName.indexOf('checkpoint')>0;
+			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
 				item.page=customPages.messages.onlineContent;
+			}
+			if (item.isOnlineAccess){
+				item.page=customPages.messages.onlineAccessContent;
 			}
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
@@ -356,11 +363,52 @@ async function main() {
 	], [unitId]);
 	
 	
-	const materialData=materialsQtySet(materialDataRaw);	
+	const materialData=materialsQtySet(_.cloneDeep(materialDataRaw));	
 
 	lessons.forEach(lesson=>{
 		lesson.materials=materialData.materialsListUnitOverview.filter(item=>item.lesson_id===lesson.lesson_id);
 	})
+	
+	const processMaterialItemName=(item, quantity)=>{
+		let name=item.name;
+		if (item.plural_name && quantity>1){
+			name=item.plural_name;
+		}
+		const nameArr=[{
+			text: name,
+			params: {
+				continued: true
+			}
+		}];
+		item.providerKit=item.provider==='Kit';
+		
+		const markers=['student_can_bring', 'runsOutInd', 'kitReplacementInd', 'providerKit'];
+		
+		markers.forEach(key=>{
+			if (item[key]){
+				nameArr.push({
+					text: ' '+(markers.indexOf(key)+1),
+					params: {
+						features: ['sups'],
+						continued: true
+					}
+				})
+			}
+		});
+		const dimentionsFields=['dimensions_wide', 'dimensions_len', 'dimensions_high'];
+	
+		if (dimentionsFields.find(field=>item[field]>0) || (item.other_specs || parseFloat(item.weight))){
+			const otherSpecs=item.other_specs ? item.other_specs : (parseFloat(item.weight) ? parseFloat(item.weight)+' '+item.specifications_unit : '');
+			const dimentions=dimentionsFields.filter(field=>item[field]>0).map(field=>parseFloat(item[field]));
+			nameArr.push({
+				text: '\n('+(otherSpecs ? otherSpecs : dimentions.join(' x ')+' '+item.specifications_unit)+')',
+				params: {
+					features: []
+				}
+			})
+		}
+		return nameArr;
+	};
 	
 	let materials={};
 	['materialLsKit', 'materialLsTeacher', 'materialLsOptional'].map(key=>{
@@ -377,7 +425,7 @@ async function main() {
 				item.lesson=lessons.find(l=>l.lesson_id==item.lesson_id);
 			});
 		
-		
+			const nameArr=processMaterialItemName(item, quantity);
 		
 			if (quantity && item.plural_quantity_unit && item.quantity_unit){
 				quantity+=' '+(quantity > 1 ? item.plural_quantity_unit : item.quantity_unit);
@@ -391,41 +439,10 @@ async function main() {
 				return item.lesson.number + ' - '+ item.notes;
 			}).join(', ');
 			*/
-			const notes=item.notes.map(n=>unit.number+'.'+n.lesson_sequence + ' - '+ n.note).join(', ');
+			const notes=item.notes.map(n=>unit.number+'.'+n.lesson_sequence + ' - '+ n.note).join(',\n');
 			const alternative=item.alternative.map(n=>unit.number+'.'+n.lesson_sequence + ' - '+ n.alternative).join(', ');
 			
-			const nameArr=[{
-				text: name,
-				params: {
-					continued: true
-				}
-			}];
 			
-			const markers=['student_can_bring', 'runsOutInd', 'kitReplacementInd'];
-			
-			markers.forEach(key=>{
-				if (item[key]){
-					nameArr.push({
-						text: ' '+(markers.indexOf(key)+1),
-						params: {
-							features: ['sups'],
-							continued: true
-						}
-					})
-				}
-			});
-			const dimentionsFields=['dimensions_wide', 'dimensions_len', 'dimensions_high'];
-		
-			if (dimentionsFields.find(field=>item[field]>0) || (item.other_specs || parseFloat(item.weight))){
-				const otherSpecs=item.other_specs ? item.other_specs : (parseFloat(item.weight) ? parseFloat(item.weight)+' '+item.specifications_unit : '');
-				const dimentions=dimentionsFields.filter(field=>item[field]>0).map(field=>parseFloat(item[field]));
-				nameArr.push({
-					text: '\n('+(otherSpecs ? otherSpecs : dimentions.join(' x ')+' '+item.specifications_unit)+')',
-					params: {
-						features: []
-					}
-				})
-			}
 			
 			
 			return _.extend(item, {
@@ -475,12 +492,23 @@ async function main() {
 			width: contentWidth+20
 		}
 	}
+	PDFUtils.headerTextStyles={
+		h1: {
+			fontSize: 17,
+			font: fonts.regular,
+			color: 'black',
+			startOnNewPage: false,
+			dontChangeCurrentTitle: true,
+			paddingBottom: 0.0,
+			startOnRightSide: false
+		}
+	};
 	
 	PDFUtils.headerTitles=[
-		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Overview', icon: 'images/icons/Unit Overview.png'},
-		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Standards', icon: 'images/icons/Standards.png'},
-		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Materials', icon: 'images/icons/Materials.png'},
-		{titleLeft: 'Unit '+unit.number+':', titleRight: 'Unit Resources', icon: 'images/icons/Unit Resources.png'},		
+		{titleLeft: 'Unit Overview', titleRight: '', icon: 'images/icons/Unit Overview.png'},
+		{titleLeft: 'Standards', titleRight: '', icon: 'images/icons/Standards.png'},
+		{titleLeft: 'Materials', titleRight: '', icon: 'images/icons/Materials.png'},
+		{titleLeft: 'Unit Resources', titleRight: '', icon: 'images/icons/Unit Resources.png'},		
 	];	
 	
 	PDFUtils.convertHtml=(text)=>{
@@ -527,6 +555,8 @@ async function main() {
 			leftIdent: 50,
 			topIdent: 60,
 			fontSize: 20,
+			paddingBottom: 0.5,
+			startOnNewPage: true,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
@@ -602,6 +632,7 @@ async function main() {
 		blocks.push({
 			type: 'h1',
 			value:'What Makes Green Ninja Special?',
+			startOnNewPage: true,
 			startOnRightSide: false,
 			noHeader:true,
 			color: colors.greenNinja,
@@ -609,6 +640,7 @@ async function main() {
 			leftIdent: 50,
 			topIdent: 60,
 			fontSize: 20,
+			paddingBottom: 0.5,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
@@ -683,10 +715,12 @@ async function main() {
 			type: 'h1',
 			value:'How a Unit Works - Teacher and Student Perspective',
 			startOnRightSide: false,
+			startOnNewPage: true,
 			noHeader:true,
 			color: colors.lessonGreen,
 			leftIdent: 30,
 			fontSize: 20,
+			paddingBottom: 0.5,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.HowUnitWorks, [
@@ -703,35 +737,41 @@ async function main() {
 		blocks.push({
 			type: 'h1',
 			value:'Differentiation Learning Support',
+			startOnNewPage: true,
 			startOnRightSide: false,
 			noHeader:true,
 			color: colors.lessonGreen,
-			leftIdent: 30,
+			leftIdent: 45,
 			fontSize: 20,
+			paddingBottom: 0.5,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.DifferentiationLearningSupport, [
 			{title: 'Differentiation and Special Learning Needs', field:'differentiation', 
 				params: {
-					width: 545,
-					leftTextIdent: 35,
+					width: 529,
+					leftTextIdent: 45,
 					lineGap: 0.6,
 				}
 			},
 			{title: 'Creating a Climate for Differentiated Instruction', field:'creating-a-climate', 
 				params: {
 					processListsAsBlocks: true,
-					width: 545,
-					leftTextIdent: 35,
+					width: 529,
+					leftTextIdent: 45,
+					addSpaceAfterSize: 7,
 					lineGap: 0.6,
+					moveDown: 0.5,
 				}
 			},
 			{title: 'Additional Support for Differentiated Learning', field:'additional-support', 
 				params: {
 					processListsAsBlocks: true,
-					width: 545,
-					leftTextIdent: 35,
+					addSpaceAfterSize: 7,
+					width: 529,
+					leftTextIdent: 45,
 					lineGap: 0.6,
+					moveDown: -0.0001,
 				}
 			},					
 		], blocks);		
@@ -739,18 +779,17 @@ async function main() {
 		
 		blocks.push({
 			type: 'h1',
-			value:'Unit Overview',
+			value:'Introduction',
 			startOnRightSide: false,
+			startOnNewPage: true,
+			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Unit Overview'),
+			paddingBottom: 0.3,
 		});
 		blocks.push({
 			type: 'contentsPush',
 			title: 'Unit Overview', 
 			level: 1, 
 			color: colors.black
-		});
-		blocks.push({
-			type: 'h2',
-			value:'Introduction',
 		});
 	
 		blocks.push({
@@ -765,29 +804,34 @@ async function main() {
 		});
 	
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'Unit Storyline', field:'unit_storyboard'},
-			{title: 'Unit Roadmap', field:'unit_roadmap'},
-			{title: 'Science Background', field:'background_description'},
-			{title: 'Science in Action', field:'science_in_action_description', breakAfter: true},
-			{title: 'Green Ninja Connections', field: 'connections_description', breakAfter: true},
-			{title: 'Home to School Connections', field: 'home_to_school',
+			{title: 'Unit Storyline', field:'unit_storyboard', headerType:'h1', params:{
+				dontChangeCurrentTitle: true,
+				imgParams: {
+					
+				}
+			}},
+			{title: 'Unit Roadmap', field:'unit_roadmap', headerType:'h1'},
+			{title: 'Science Background', field:'background_description', headerType:'h1'},
+			{title: 'Science in Action', field:'science_in_action_description', breakAfter: true, headerType:'h1'},
+			{title: 'Green Ninja Connections', field: 'connections_description', breakAfter: true, headerType:'h1'},
+			{title: 'Home to School Connections', field: 'home_to_school', headerType:'h1',
 				params: {
 					//processListsAsBlocks: true,
 					//lineGap: 1.6,
 				}
 			},
-			{title: 'Prior Knowledge', field: 'prior_knowledge', breakAfter: true},
-			{title: 'Assessment', field: 'assessment'},
-			{title: 'Identifying Preconceptions', field: 'identifying_preconceptions'},
-			{title: 'Access and Equity', field: 'access_and_equity'},
-			{title: 'Engineering Connections', field: 'eng_connections'},
-			{title: 'Resources'},
-			{title: 'Outside Educational Resources', field: 'outside_resources', headerType: 'h3', 
+			{title: 'Prior Knowledge', field: 'prior_knowledge', breakAfter: true, headerType:'h1'},
+			{title: 'Assessment', field: 'assessment', headerType:'h1'},
+			{title: 'Identifying Preconceptions', field: 'identifying_preconceptions', headerType:'h1'},
+			{title: 'Access and Equity', field: 'access_and_equity', headerType:'h1'},
+			{title: 'Engineering Connections', field: 'eng_connections', headerType:'h1'},
+			{title: 'Resources', headerType:'h1'},
+			{title: 'Outside Educational Resources', field: 'outside_resources', headerType: 'h2', 
 				params: {
 					listsIdent: 13
 				}
 			},
-			{title: 'Supplemental Resources', field: 'supplemental_resources', headerType: 'h3', 
+			{title: 'Supplemental Resources', field: 'supplemental_resources', headerType: 'h2', 
 				params: {
 					listsIdent: 13
 				}
@@ -798,12 +842,13 @@ async function main() {
 				}
 			},
 		], blocks);
+		
 
-		//return; 
 		blocks.push({
 			type: 'h1',
 			value: 'NGSS Standards',
-			headerTitle: PDFUtils.headerTitles.find(t=>t.titleRight==='Standards')
+			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
+			startOnNewPage: true,
 		});
 		blocks.push({
 			type: 'contentsPush',
@@ -866,6 +911,7 @@ async function main() {
 					type: 'h3',
 					value: c.title,
 					isHtml:false,
+					font: fonts.regular,
 					ident: 0,
 					marginTop: 1
 				});
@@ -877,21 +923,24 @@ async function main() {
 							value: category,
 							isHtml:false,
 							ident: 0,
+							marginTop: 0.5,
+							marginBottom: 0.001,
 						});
 					}
 					blocks.push({
 						type: 'list',
 						value: _.keys(_.groupBy(items, item=>item.title)),
-						ident: 15,
 						notMoveDownAfter: true
 					});
 				});				
 			}
 		})
+		//return;
 		
 		await processObjectFieldsIntoBlocks(unit, [
 			{title: 'Common Core and CA ELD Standards', field:'common_core', headerType:'h1', breakAfter: true, params:{
-				dontChangeCurrentTitle: true
+				dontChangeCurrentTitle: true,
+				startOnNewPage: true,
 			}},
 			//{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
 		], blocks);
@@ -936,7 +985,6 @@ async function main() {
 					blocks.push({
 						type: 'list',
 						value: _.keys(_.groupBy(items, item=>item.title)),
-						ident: 15,
 						notMoveDownAfter: true
 					});
 				});	
@@ -949,7 +997,7 @@ async function main() {
 		});
 		
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h2', 
+			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h1', 
 				params:{
 				dontChangeCurrentTitle: true
 			}},
@@ -958,9 +1006,10 @@ async function main() {
 		
 				
 		blocks.push({
-			type: 'h2',
+			type: 'h1',
 			value: 'NGSS LESSON MAPPING LEGEND',
-			headerTitle: PDFUtils.headerTitles.find(t=>t.titleRight==='Standards')
+			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
+			startOnNewPage: true
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.NgssLessonMapping, [
@@ -1073,37 +1122,38 @@ async function main() {
 	
 		blocks.push({
 			type: 'h1',
-			value: 'Materials',
-			addContents: true,
+			value: 'Materials List Information',
+			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Materials'),
+			startOnNewPage: true
 		});
-		/*
 		blocks.push({
 			type: 'contentsPush',
 			title: 'Materials', 
 			level: 1, 
 			color: colors.black
 		});
-		*/
 	
 		await processObjectFieldsIntoBlocks(model, [
-			{title: 'Materials List Information', field:'materials_desc'},
-			{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
+			{title: '', field:'materials_desc'},
+			{title: 'Safety Guidelines', field:'materials_safety_guidelines', headerType:'h1'},
 		], blocks);
 	
 		//'materialLsKit', 'materialLsTeacher', 'materialLsOptional'
 		[{
 			title: 'Materials Provided by School/Teacher:',
-			data: materials.materialLsTeacher
+			data: materials.materialLsTeacher,
+			headerType: 'h1',
+			startOnNewPage: true
 		},
 		{
 			title: 'Optional Materials',
 			data: materials.materialLsOptional,
-			headerType: 'h3'
+			headerType: 'h2'
 		},
 		{
 			title: 'Materials in Green Ninja Kit:',
 			data: materials.materialLsKit,
-			headerType: 'h2'
+			headerType: 'h1'
 		}].filter(mat=>mat.data.length).forEach(mat=>{
 			blocks.push({
 				type: mat.headerType || 'h2',
@@ -1152,14 +1202,20 @@ async function main() {
 				],
 				data: mat.data
 			})
-		})
+		});
+		
+		const materialsSupLegenda=[
+			{val: 1, text: 'items that students are encouraged to bring in from home'},
+			{val: 2, text: 'items that will run out eventually'},
+			{val: 3, text: 'replacements items in Green Ninja kit'},
+			{val: 4, text: 'items included in Green Ninja kit'},
+		];
 	
-		const tableDescr=parse(`
-			<sup>1</sup> — items that students are encouraged to bring in from home<br />
-			<sup>2</sup> — items that will run out eventually<br />
-			<sup>3</sup> — replacements items in Green Ninja kit<br />
-			<sup>4</sup> — items included in Green Ninja kit<br />
-		`);
+		const tableDescr=parse(
+			materialsSupLegenda.map(item=>{
+				return '<sup>'+item.val+'</sup> — '+item.text+'<br />'
+			}).join('')
+		);
 
 		await parseHTMLIntoBlocks(tableDescr, {}, blocks);
 		//console.log(tableDescr);			
@@ -1167,8 +1223,17 @@ async function main() {
 		
 		
 		await asyncForEach(unit.review, async (review)=>{
+			blocks.push({
+				type: 'h1',
+				value: review.name,
+				headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Unit Resources'),
+				startOnNewPage: true
+			});
 			await processObjectFieldsIntoBlocks(review, [
-				{title: review.name, field:'description', headerType:'h1'},
+				{
+					title: '', 
+					field:'description', 
+				},
 			], blocks);
 			blocks.push({
 				type: 'contentsPush',
@@ -1188,7 +1253,14 @@ async function main() {
 			
 			await asyncForEach(review.activityPlan, async (plan)=>{
 				await processObjectFieldsIntoBlocks(plan, [
-					{title: plan.header, field:'content'},
+					{title: plan.header, field:'content', params: {
+						replaceFn: (str)=>{
+							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
+								return '('+str+') - Online access required.';
+							});
+							return string;
+						}
+					}},
 				], blocks);				
 			});		
 		});		
@@ -1242,7 +1314,9 @@ async function main() {
 				headerTitle: header,
 				paddingBottom: 0.1,
 				startOnRightSide: true,
+				startOnNewPage: true
 			});
+			/*
 			if (lesson.phenomenon){
 				blocks.push({
 					type: 'introductions',
@@ -1251,19 +1325,21 @@ async function main() {
 					],
 					color: 'black',
 					fontSize: 10,
-					paddingBottom: 0.01,
+					paddingBottom: 0.5,
 					titleFont: fonts.bold,
 					moveDown: 0,
 					data: lesson
 				});
 			}
+			*/
 			
 			
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: '', field:'description'},
-				//{title: 'phenomenon', field:'phenomenon'},
-				{title: 'Learning Objectives', field:'objectives', headerType:'h2', params: {
+				{title: 'Phenomenon', field:'phenomenon', headerType:'h2'},
+				{title: 'Learning Objectives', field:'objectives', headerType:'h3', params: {
+					marginTop: 1
 					//ident:100,
 					//width: 350
 				}},
@@ -1278,7 +1354,7 @@ async function main() {
 			
 			
 			blocks.push({
-				type: 'h2',
+				type: 'h1',
 				value: 'Teaching Resource'
 			});	
 			
@@ -1286,9 +1362,15 @@ async function main() {
 			if (lesson.worksheet.length){
 				
 				blocks.push({
-					type: 'h3',
+					type: 'h2',
 					value: 'Files'
 				});
+				const lessonFiles=lesson.worksheet.filter((file, index)=>{
+					const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
+					return !existing;
+				});
+				let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
+				let hasStudentIcons=!!lessonFiles.find(f=>(f.for_student || f.fileTitle.indexOf('phenomenon.pdf')>0) && f.type==='pdf');
 			
 				blocks.push({
 					type: 'table',
@@ -1329,7 +1411,7 @@ async function main() {
 							header: '',
 							width: 155,
 							renderer: function (tb, data) {								
-								return data.isOnline ? '' : data.page;
+								return data.isOnline ? '        '+data.page : data.page;
 							},
 							cellAdded: (tb, data, cell, pos)=>{
 								const doc=tb.pdf;
@@ -1346,7 +1428,7 @@ async function main() {
 										  valign: 'center'
 									});
 								}	
-								if (data.for_student && data.type==='pdf'){
+								if ((data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf'){
 									doc.image(icons.studentContent, x, pos.baseY-3, {
 										  width: 20,
 										  align: 'center',
@@ -1356,10 +1438,7 @@ async function main() {
 							}
 						},
 					],
-					data: lesson.worksheet.filter((file, index)=>{
-						const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
-						return !existing;
-					}),
+					data: lessonFiles,
 				});
 				lesson.worksheet.forEach(file=>{
 					if (!unit.files.find(f=>f.fileName===file.fileName)){
@@ -1367,42 +1446,46 @@ async function main() {
 					}
 				});
 				const legenda=[
-					{icon: icons.onlineContent, text: customPages.messages.onlineContent},
-					{icon: icons.studentContent, text: customPages.messages.studentContent},
+					{icon: icons.onlineContent, text: customPages.messages.onlineContent, visible: false},
+					{icon: icons.studentContent, text: customPages.messages.studentContent, visible: hasStudentIcons},
 				]
-				blocks.push({
-					type: 'custom',
-					drawFn: (doc)=>{
-						let y=doc.y-10;
-						legenda.forEach(item=>{
-							const x=textIdents.left-5;
+				if (legenda.filter(l=>l.visible).length){
+					blocks.push({
+						type: 'custom',
+						drawFn: (doc)=>{
+							let y=doc.y-10;
+							legenda.filter(l=>l.visible).forEach(item=>{
+								const x=textIdents.left-5;
 							
-							doc.image(item.icon, x, y, {
-								  width: 25,
-								  align: 'center',
-								  valign: 'center'
+								doc.image(item.icon, x, y, {
+									  width: 25,
+									  align: 'center',
+									  valign: 'center'
+								});
+								doc
+								  .font(fonts.regular)
+								  .fontSize(9)
+								  .fill('black')
+								  .text('— '+item.text, x+23, y+5);
+								//doc.moveDown(item.marginBottom || 0.2);
+								y+=20;
 							});
-							doc
-							  .font(fonts.regular)
-							  .fontSize(9)
-							  .fill('black')
-							  .text('— '+item.text, x+23, y+5);
-							//doc.moveDown(item.marginBottom || 0.2);
-							y+=20;
-						});
-						doc.moveDown(1);
-					}
-				});	
+							doc.moveDown(1);
+						}
+					});	
+				}
 			}
 			//return;
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Links', field:'links', headerType:'h3'},
+				{title: 'Links', field:'links', headerType:'h2', params: {
+					marginBottom: 0.1
+				}},
 			], blocks);
 		
 			if (lesson.materials.length){
 				blocks.push({
-					type: 'h3',
+					type: 'h2',
 					value: 'Materials',
 					/*
 					headerTitle: {
@@ -1416,29 +1499,74 @@ async function main() {
 			}			
 		
 			
-		
-			['For the teacher', 'For each student', 'For each group of 4 students'].forEach((title, forWhomInd)=>{
-				const materials=lesson.materials.filter(item=>(item.plural_name || item.name) && item.forWhomInd===forWhomInd);
+			const lessonMaterialLegenda=[];
+			['For the teacher', 'For each student', 'For each pair of students', 'For the class'].forEach((title, forWhomInd)=>{
+				//console.log(materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id));
+				const materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd===forWhomInd);
 				if (materials.length){
 					blocks.push({
 						type: 'h3',
 						value: title,
 					});
-			
+					materialsArr=materials.filter(item=>item.name).map(item=>{
+						//console.log(item);
+						let nameStr='';
+						let quantity=parseFloat(item.quantity);
+						const nameArr=processMaterialItemName(item, quantity);
+						if (nameArr){
+								nameArr.forEach(t=>{
+								let tag='span';
+								if (t.params && t.params.features && t.params.features.indexOf('sups')>=0){
+									tag='sup';
+									if (lessonMaterialLegenda.indexOf(t.text)<0){
+										lessonMaterialLegenda.push(t.text);
+									}
+									
+								}
+								nameStr+='<'+tag+'>'+t.text+'</'+tag+'>';
+							})
+						}
+						else {
+							nameStr=item.name;
+						}
+						
+						//(quantity ? parseFloat(quantity)+' - ' : '')
+						if (quantity){
+							if (item.plural_quantity_unit && item.quantity_unit){
+								quantity+=' '+(quantity > 1 ? item.plural_quantity_unit : item.quantity_unit);
+							}
+							quantity+=' - ';
+						}
+						else {
+							quantity='';
+						}
+						
+						return quantity
+						+ nameStr.replace('\n', ' ');
+					});
+					console.log(materialsArr);
 					blocks.push({
 						type: 'list',
-						value: materials.filter(item=>item.name).map(item=>{
-							return (item.quantity ? parseFloat(item.quantity)+' - ' : '')+item.name.replace('\n', ' ');
-						}),
+						value: materialsArr,
 						ident: 20,
 					});
 				}
 			})
-		
+			if (lessonMaterialLegenda && lessonMaterialLegenda.length){
+				const lessonMaterialLegendaItems=materialsSupLegenda.filter(item=>lessonMaterialLegenda.find(id=>id==item.val));
+				const tableDescr=parse(
+					lessonMaterialLegendaItems.map((item, i)=>{
+						return '<sup>'+item.val+'</sup> — '+item.text+(lessonMaterialLegendaItems.length !=i+1 ? '<br />' : '');
+					}).join('')
+				);
+
+				await parseHTMLIntoBlocks(tableDescr, {}, blocks);
+			}
 			
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Teacher Prep', field:'teacher_prep', 
+					headerType:'h1',
 					params: {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
@@ -1449,10 +1577,10 @@ async function main() {
 		
 		
 			blocks.push({
-				type: 'h2',
+				type: 'h1',
 				value: 'Lesson Plan',
 				//headerTitle: header,
-				paddingBottom: 0.0
+				paddingBottom: 0.2
 			});
 		
 			let planTotalTime=0;
@@ -1477,10 +1605,11 @@ async function main() {
 							x+=109;
 						}
 						await asyncForEach(imgPaths, async (item)=>{
-							const imgInfo=await imageInfo(item.imagePath);
+							const imgInfo=await getImgInfoAndRotate(item.imagePath);
+							console.log(item.imagePath, imgInfo);
 							images.push({
 								path: item.imagePath,
-								heigth: getImgPropHeigth(imgInfo, width),
+								height: getImgPropheight(imgInfo, width),  
 								width,
 								x
 							})
@@ -1489,11 +1618,12 @@ async function main() {
 								x=textIdents.left;
 							}
 						});
+						console.log(images);
 						file.images=[{
 							type: 'images',
 							value: images,
 							width: 200,
-							firstRowHeight: images[0].heigth,
+							firstRowHeight: images[0].height,
 							highlightFirstImage: file.isOnline ? {
 								color: colors.orange,
 								icon: icons.onlineContent
@@ -1505,12 +1635,13 @@ async function main() {
 						const pptData=await convertPptxPdf(path, file);
 						//console.log(pptData);
 						file.images=[];
-						await asyncForEach(pptData, async (item, index)=>{
+						await asyncForEach(file.isOnline ? [pptData[0]] : pptData, async (item, index)=>{
 							const imgInfo=await imageInfo(item.imagePath);
 							file.images.push({
 								type: 'pptSlide',
 								value: item,
 								file,
+								hideLabels: file.isOnline,
 								imgInfo,
 								dontAttachParagraphToImage: false,
 								highlight: file.isOnline && index===0 ? {
@@ -1562,6 +1693,7 @@ async function main() {
 				{
 					title: 'Teacher Tips', 
 					field:'anticipated_challenges',
+					headerType: 'h1',
 					params: {
 						replaceFn: workshetReplaceFn,
 						dontShowImagesAfter: true,
@@ -1573,15 +1705,8 @@ async function main() {
 				},
 			], blocks);
 
-
-
-			blocks.push({
-				type: 'h2',
-				value: 'Background for Teachers',
-			});
-			
-			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Content Knowledge', field:'background', headerType: 'h3',
+			const backgroundForTeachersBlocks=[
+				{title: 'Content Knowledge', field:'background', headerType: 'h2',
 					params: {
 						imgParams: {
 							width: 400,
@@ -1589,17 +1714,25 @@ async function main() {
 						}
 					}
 				},
-				{title: 'Access and Equity', field:'access_equity', headerType: 'h3'},
-				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h3'},
-				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h3'},
-				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h3'},
-				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h3'},
-			], blocks);
+				{title: 'Access and Equity', field:'access_equity', headerType: 'h2'},
+				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h2'},
+				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h2'},
+				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h2'},
+			];
+			if (backgroundForTeachersBlocks.find(bl=>lesson[bl.field])){
+				blocks.push({
+					type: 'h1',
+					value: 'Background for Teachers',
+				});
+				await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
+			}
+			
 			
 			if (lesson.pe.length){
 				blocks.push({
-					type: 'h2',
-					value: 'Standards'
+					type: 'h1',
+					value: 'Standards',
+					paddingBottom: 0.2
 				})
 	
 				blocks.push({
@@ -1681,7 +1814,7 @@ async function main() {
 		
 			if (lesson.vocab && lesson.vocab.length){
 				blocks.push({
-					type: 'h2',
+					type: 'h1',
 					value: 'Vocabulary',
 				});
 				
@@ -1697,8 +1830,9 @@ async function main() {
 			}
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Tying It All Together', field:'all_together'},
-				{title: 'Extension', field:'extensions'},
+				{title: 'Tying It All Together', field:'all_together', headerType: 'h1'},
+				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1'},
+				{title: 'Extension', field:'extensions', headerType: 'h1'},
 			], blocks);
 		
 			
@@ -1732,6 +1866,7 @@ async function main() {
 			return file.type==='pdf'
 				&& lesson
 				&& (printLessonNum ? lesson.number==printLessonNum : true)
+				&& !file.isOnlineAccess
 				//&& !file.for_student
 			;
 		}), async (file)=>{
@@ -1757,10 +1892,11 @@ async function main() {
 			const width=465;
 
 			await asyncForEach(imgPaths, async (item)=>{
-				const imgInfo=await imageInfo(item.imagePath);
+				const imgInfo=await getImgInfoAndRotate(item.imagePath);
 				images.push({
 					path: item.imagePath,
-					heigth: getImgPropHeigth(imgInfo, width),
+					height: getImgPropheight(imgInfo, width),
+					rotated: imgInfo.rotated,
 					width,
 					x
 				})
@@ -1770,12 +1906,20 @@ async function main() {
 				}
 			});
 			
-			blocks.push({
-				type: 'lessonFiles',
-				value: images,
-				file,
-				contentsObj
-			});
+			if (images && images.length && images[0]){
+				const width=images[0].rotated ? 590 : 612
+				blocks.push({
+					type: 'lessonFiles',
+					value: images,
+					file,
+					contentsObj,
+					leftIdent: (612-width)/2,
+					width,
+					bottomBoxY: images[0].rotated ? 745 : 735,
+					rightBoxX: images[0].rotated ? 548 : 600,
+					leftBoxWidth: 0,
+				});
+			}
 		});
 		
 	}	
