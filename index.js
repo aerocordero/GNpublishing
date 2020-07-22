@@ -55,6 +55,7 @@ app.use('/workbook', async(req, res, next)=>{
 	const cmd='node workbook.js --model='+params.model+' --unit='+params.unit
 		+(params.firstExport ? ' --first-export' : '')
 		+(params.flushCache ? ' --flush-cache' : '')
+		+(params.language ? ' --language="'+params.language+'"' : '')
 		+(config.alwaysFlushDBCache ? ' --flush-db-cache' : '')
 		+' --dest-path="'+destFilePath+'"'
 	inProgress=true;
@@ -110,6 +111,9 @@ app.use('/', async(req, res, next)=>{
 		<h1>Workbook Export</h1>
 		<form method="GET" action="/workbook">
 			<label>Select Unit:</label>
+			<select name="language">
+				`+[{val:'', label:'English'}, {val:'spanish', label:'Spanish'}].map(item=>'<option value="'+item.val+'">'+item.label+'</option>')+`
+			<select><br/><br/>
 			<select name="model_unit">
 				`+modelUnits.map(item=>'<option value="'+item.val+'">'+item.label+'</option>')+`
 			<select><br/><br/>

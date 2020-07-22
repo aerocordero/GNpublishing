@@ -11,6 +11,14 @@ async function main() {
 	const _ = require('lodash');
 	const Jimp = require('jimp');
 	const argv = require('yargs').argv;
+	const language = argv.language;
+	const languageId = language==='spanish' ? 2 : 1;
+	const customPageFolders={
+		1: '1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ',
+		2: '1T3vSEZoIzH6D6Nu0F2dDEpghgGyJL4RT'
+	}
+	const CPFolderName='workbook'+(languageId >1 ? '_'+language : '');
+	console.log('languageId:'+languageId);
 	
 	const config = require('./config.json');
 	
@@ -44,8 +52,10 @@ async function main() {
 	}
 	console.log('Google Drive folder syncing...')
 	if (argv.gdSync || argv.gdSync===undefined){
-		await GDFolderSync('1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ', 'workbook');
+		console.log(customPageFolders[languageId]);
+		await GDFolderSync(customPageFolders[languageId], CPFolderName);
 	}
+
 	
 	
 	const colors={
@@ -104,7 +114,16 @@ async function main() {
 	}
 	//console.log(unit);
 	//return
-	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/workbook");
+	const allMessages={};
+	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/"+CPFolderName);
+	const translate=(msg)=>{
+		const translations=customPagesGlobal.translations || {};
+		if (translations[msg]){
+			return translations[msg];
+		}
+		allMessages[msg]="";
+		return msg;
+	}
 	//console.log(customPagesGlobal);
 	//return;
 	
@@ -119,7 +138,7 @@ async function main() {
 		'SELECT *',
 		'FROM unit_worksheet_mapping m',
 		'JOIN worksheet_unit_review t ON m.worksheet_unit_review_id = t.worksheet_unit_review_id',
-		'WHERE m.unit_id = ? AND t.worksheet_language_id=1'
+		'WHERE m.unit_id = ? AND t.worksheet_language_id='+languageId
 	], [unitId]);
 	const reviewFilesRoot=parse(unit.review.files).querySelectorAll('li');
 	unit.reviewWorkshet.forEach(item=>{
@@ -206,7 +225,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id=1'
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
 		
@@ -289,7 +308,7 @@ async function main() {
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
-			item.fileTitle='Lesson '+lesson.number+''+item.fileName;
+			item.fileTitle=translate('Lesson')+' '+lesson.number+''+item.fileName;
 			item.lessonIndex=lesson.index;
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
@@ -439,6 +458,7 @@ async function main() {
 	PDFUtils.defaultFontSize=11;
 	PDFUtils.tocStyles={
 		title: {
+			text: translate('Table of Contents'), 
 			color: colors.unitTitle,
 			idents: [textIdents.left, 40],
 			font: fonts.bold,
@@ -490,7 +510,7 @@ async function main() {
 			  .font(fonts.regular)
 			  .fontSize(12)
 			  .fillColor('black')
-			  .text('Name', textIdents.left-10, 25, {
+			  .text(translate('Name'), textIdents.left-10, 25, {
 				width: 50,
 				align: 'left'
 			  });
@@ -499,7 +519,7 @@ async function main() {
 			  .font(fonts.regular)
 			  .fontSize(12)
 			  .fillColor('black')
-			  .text('Class', textIdents.left+290, 25, {
+			  .text(translate('Class'), textIdents.left+290, 25, {
 				width: 50,
 				align: 'left'
 			  });
@@ -508,7 +528,7 @@ async function main() {
 			  .font(fonts.regular)
 			  .fontSize(12)
 			  .fillColor('black')
-			  .text('Date', textIdents.left+410, 25, {
+			  .text(translate('Date'), textIdents.left+410, 25, {
 				width: 50,
 				align: 'left'
 			  });
@@ -649,7 +669,7 @@ async function main() {
 			  .font(fonts.bold)
 			  .fontSize(24)
 			  .fill(color)
-			  .text('Section '+sectionNum, textIdents.left, top, {
+			  .text(translate('Section')+' '+sectionNum, textIdents.left, top, {
 				width: PDFUtils.textWidth,
 				align: 'center'
 			  });
@@ -720,7 +740,7 @@ async function main() {
 			//console.log(match, id);
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
-				return 'Lesson '+item.number+' '+item.name;
+				return translate('Lesson')+' '+item.number+' '+translate(item.name);
 			}
 			return '';
 		});
@@ -733,7 +753,7 @@ async function main() {
 		unit.files=[];
 		
 		const coverIndex=((_.keys(gradeColors).indexOf(model.display_name)*6)+unit.number-1);
-		console.log(customPagesGlobal.StudentHighlight.pages[coverIndex]);
+		console.log('StudentHighlight',customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex]);
 		
 		blocks.push({
 			type: 'pageBreak',
@@ -741,7 +761,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'image',
-			value: customPagesGlobal.StudentHighlight.pages[coverIndex].imagePath,
+			value: customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex].imagePath,
 			width: 610,
 			x:-1,
 			y:-1
@@ -750,7 +770,7 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 0,
-			title: 'About This Workbook',
+			title: translate('About This Workbook'),
 			contentsTitle: null,
 			text: customPagesGlobal.About.content,
 			//textFontSize:12, 
@@ -776,8 +796,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 1,
-			title: 'Introduction',
-			contentsTitle: 'Section 1: Introduction',
+			title: translate('Introduction'),
+			contentsTitle: translate('Section')+' 1: '+translate('Introduction'),
 			text: customPagesGlobal.Section1.content,
 			//textFontSize:12, 
 			color: colors.unitTitle,
@@ -785,7 +805,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'h1',
-			headerTitle: {titleLeft: 'Unit Overview'},
+			headerTitle: {titleLeft: translate('Unit Overview')},
 			startOnRightSide: true,
 			color: colors.unitTitle,
 		});		
@@ -795,7 +815,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'contentsPush',
-			title: 'Unit Overview', 
+			title: translate('Unit Overview'), 
 			level: 1, 
 			color: colors.black
 		});
@@ -821,9 +841,9 @@ async function main() {
 		blocks.push({
 			type: 'introductions',
 			value:[
-				{title: 'Challenge', field:'student_introduction_challenge_description'},
-				{title: 'Science Methods', field:'student_introduction_science_methods_description'},
-				{title: 'Culminating Experience', field:'student_introduction_culminating_experience_description'},
+				{title: translate('Challenge'), field:'student_introduction_challenge_description'},
+				{title: translate('Science Methods'), field:'student_introduction_science_methods_description'},
+				{title: translate('Culminating Experience'), field:'student_introduction_culminating_experience_description'},
 			],
 			color: 'black',
 			fontSize: 11,
@@ -834,13 +854,13 @@ async function main() {
 		
 		blocks.push({
 			type: 'h1',
-			headerTitle: {titleLeft: 'Unit Roadmap'},
+			headerTitle: {titleLeft: translate('Unit Roadmap')},
 			startOnRightSide: false,
 			color: colors.unitTitle,
 		});	
 		blocks.push({
 			type: 'contentsPush',
-			title: 'Unit Roadmap', 
+			title: translate('Unit Roadmap'), 
 			level: 1, 
 			color: colors.black
 		});
@@ -912,7 +932,7 @@ async function main() {
 		
 		blocks.push({
 			type: 'h2',
-			value:'Use this space to jot down notes and ideas about solving the Unit Challenge.',
+			value: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),
 			headerTitle: {
 				leftTitle: '',	
 			},
@@ -933,8 +953,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 2,
-			title: 'Phenomena Visuals',
-			contentsTitle: 'Section 2: Phenomena Visuals',
+			title: translate('Phenomena Visuals'),
+			contentsTitle: translate('Section')+' 2: '+translate('Phenomena Visuals'),
 			text: customPagesGlobal.Section2.content,
 			textFontSize:11, 
 			image: customPagesGlobal.Section2.image,
@@ -954,7 +974,7 @@ async function main() {
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 				if (lesson){
 					contentsObj={
-						title: 'Lesson '+lesson.number+' '+lesson.name+'', 
+						title: translate('Lesson')+' '+lesson.number+' '+translate(lesson.name)+'', 
 						level: 1, 
 						color: colors.black
 					}
@@ -1003,8 +1023,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 3,
-			title: 'Activity Files',
-			contentsTitle: 'Section 3: Activity Files',
+			title: translate('Activity Files'),
+			contentsTitle: translate('Section')+' 3: '+translate('Activity Files'),
 			text: customPagesGlobal.Section3.content,
 			color: colors.unitTitle,
 		});
@@ -1012,7 +1032,7 @@ async function main() {
 		
 		await asyncForEach(allWorkShets.filter(file=>{
 			const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-			return file.worksheet_language_id==1 
+			return file.worksheet_language_id==languageId
 				&& (argv.firstExport || (!argv.firstExport && file.for_student))
 				&& file.type==='pdf' 
 				&& (!roadMapImg || (roadMapImg && file.id!==roadMapImg.id)) 
@@ -1027,7 +1047,7 @@ async function main() {
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 				if (lesson){
 					contentsObj={
-						title: 'Lesson '+lesson.number+' '+lesson.name+' Files', 
+						title: translate('Lesson')+' '+lesson.number+' '+translate(lesson.name)+' '+translate('Files'), 
 						level: 1, 
 						color: colors.black
 					}
@@ -1056,7 +1076,7 @@ async function main() {
 				x+=width;
 				if (x>390){
 					x=textIdents.left;
-				}
+				} 
 			});
 			if (images && images.length && images[0]){
 				const width=images[0].rotated ? 590 : 612
@@ -1083,13 +1103,14 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 4,
-			title: 'End-of-Unit Study Guide',
-			contentsTitle: 'Section 4: End-of-Unit Study Guide',
+			title: translate('End-of-Unit Study Guide'),
+			contentsTitle: translate('Section')+' 4: '+translate('End-of-Unit Study Guide'),
 			text: customPagesGlobal.Section4.content,
 			color: colors.unitTitle,
 		});
 		
 		const renewFiles=unit.reviewWorkshet.filter(file=>file.type==='pdf');
+		console.log('renewFiles', renewFiles);
 		let part=0;
 		await asyncForEach(renewFiles, async (file, index)=>{
 
@@ -1098,11 +1119,13 @@ async function main() {
 			}
 			part++;
 			
-			if (!file){
+			if (!file.title){
+				console.log(file);
 				//return;
 			}
+			
 			let contentsObj={
-				title: file.title, 
+				title: file.title || file.fileTitle, 
 				level: 1, 
 				color: colors.black
 			};
@@ -1179,8 +1202,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 5,
-			title: 'Additional Resources',
-			contentsTitle: 'Section 5: Additional Resources',
+			title: translate('Additional Resources'),
+			contentsTitle: translate('Section')+' 5: '+translate('Additional Resources'),
 			text: customPagesGlobal.Section5.content,
 			color: colors.unitTitle,
 		});
@@ -1189,14 +1212,14 @@ async function main() {
 			
 			blocks.push({
 				type: 'h1',
-				headerTitle: {titleLeft: 'Unit Vocabulary'},
+				headerTitle: {titleLeft: translate('Unit Vocabulary')},
 				startOnRightSide: false,
 				//fontSize: 11,
 				color: colors.unitTitle,
 			});		
 			blocks.push({
 				type: 'contentsPush',
-				title: 'Unit Vocabulary', 
+				title: translate('Unit Vocabulary'), 
 				level: 1, 
 				color: colors.black,
 			});	
@@ -1216,7 +1239,7 @@ async function main() {
 		}
 		
 		const addPages=customPagesGlobal.AdditionalResources;
-		const addPagesTitles=['Science and Engineering Practices', 'Crosscutting Concepts'];
+		const addPagesTitles=[translate('Science and Engineering Practices'), translate('Crosscutting Concepts')];
 		const addPagesY=[
 			70, 85
 		]
@@ -1264,9 +1287,10 @@ async function main() {
 	//PDFUtils.generatePdf('temp.pdf', blocks);
 	//fs.unlinkSync('./temp.pdf');
 	
-	const pdfFileName=argv.destPath || 'Workbook '+model.display_name+' Unit '+unit.number+'.pdf';
+	const pdfFileName=argv.destPath || 'Workbook '+model.display_name+' Unit '+unit.number+(languageId >1 ? '('+language+')' : '')+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
 	PDFUtils.generatePdf(pdfFileName, blocks);
+	console.log(JSON.stringify(allMessages, null, 4));
 }
 main().then(res=>{
 	console.log('done');

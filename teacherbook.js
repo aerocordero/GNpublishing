@@ -47,7 +47,7 @@ async function main() {
 		unitTitle: '#15ADCB',
 		green: '#6FAC44',
 		greenNinja: '#548235',
-		lessonGreen: '#89C440',
+		lessonGreen: '#8cc343',
 		lessonFiles: '#FF5609',
 		brown: '#634439',
 		black: 'black',
@@ -317,7 +317,7 @@ async function main() {
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
-			item.isOnline=item.fileName.indexOf('checkpoint')>0;
+			item.isOnline=item.fileName.indexOf('checkpoint')>0 || customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0;
 			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
 				item.page=customPages.messages.onlineContent;
@@ -499,7 +499,7 @@ async function main() {
 			color: 'black',
 			startOnNewPage: false,
 			dontChangeCurrentTitle: true,
-			paddingBottom: 0.0,
+			paddingBottom: 0.1,
 			startOnRightSide: false
 		}
 	};
@@ -535,7 +535,7 @@ async function main() {
 		blocks.push({
 			type: 'pageBreak',
 		});	
-		
+		console.log('coverIndex', coverIndex, unit.number);
 		blocks.push({
 			type: 'image',
 			value: customPages.TeacherHighlight['tc-highlight-pages'][coverIndex].imagePath,
@@ -550,10 +550,10 @@ async function main() {
 			value:'Dear Educator,',
 			startOnRightSide: false,
 			noHeader:true,
-			color: colors.greenNinja,
+			color: colors.lessonGreen,
 			font: fonts.semiBold,
 			leftIdent: 50,
-			topIdent: 60,
+			topIdent: 50,
 			fontSize: 20,
 			paddingBottom: 0.5,
 			startOnNewPage: true,
@@ -561,7 +561,7 @@ async function main() {
 		
 		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
 			{title: '', field:'dear-educator', params:{
-				fontSize: 12,
+				fontSize: 11,
 				leftTextIdent: 50,
 				width: 520,
 			}},
@@ -578,12 +578,12 @@ async function main() {
 				value: 'images/'+field+'.jpg',
 				width: 140,
 				x:ident+10,
-				y:250
+				y:210
 			});	
 			
 			blocks.push({
 				type: 'setY',
-				value: 420,
+				value: 370,
 			});
 			await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
 				{title: '', field, params:{
@@ -595,22 +595,31 @@ async function main() {
 			blocks.push({
 				type: 'custom',
 				drawFn: (doc)=>{
-					doc.rect(ident-15, 410, 170, 145)
+					doc.rect(ident-15, 360, 170, 125)
 					.strokeColor('#A6A6A6').lineWidth(3).stroke();	
+					doc.y+=20;
 				},
 			});
 		});
 		
+		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
+			{title: '', field:'dear-educator_bottom1', params:{
+				fontSize: 11,
+				leftTextIdent: 50,
+				width: 520,
+			}},
+		], blocks);
+		
 		const legenda=[
-			{icon: icons.onlineContent, text: customPages.messages.onlineContent},
-			{icon: icons.studentContent, text: customPages.messages.studentContent},
+			{icon: icons.onlineContent, text: customPages.messages.onlineContentDescription},
+			{icon: icons.studentContent, text: customPages.messages.studentContentDescription},
 		]
 		blocks.push({
 			type: 'custom',
 			drawFn: (doc)=>{
-				let y=doc.y+20;
+				let y=doc.y+3;
 				legenda.forEach(item=>{
-					const x=40;
+					const x=45;
 					
 					doc.image(item.icon, x, y, {
 						  width: 30,
@@ -619,15 +628,25 @@ async function main() {
 					});
 					doc
 					  .font(fonts.regular)
-					  .fontSize(10)
+					  .fontSize(11)
 					  .fill('black')
-					  .text('— '+item.text, x+29, y+7);
+					  .text(item.text, x+30, y+3, {
+					  	width: 450,
+					  });
 					//doc.moveDown(item.marginBottom || 0.2);
-					y+=25;
+					y+=35;
 				});
-				doc.moveDown(1);
+				doc.moveDown(0.5);
 			}
 		});	
+		
+		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
+			{title: '', field:'dear-educator_bottom2', params:{
+				fontSize: 11,
+				leftTextIdent: 50,
+				width: 520,
+			}},
+		], blocks);
 		
 		blocks.push({
 			type: 'h1',
@@ -635,12 +654,13 @@ async function main() {
 			startOnNewPage: true,
 			startOnRightSide: false,
 			noHeader:true,
-			color: colors.greenNinja,
+			color: colors.lessonGreen,
 			font: fonts.semiBold,
 			leftIdent: 50,
-			topIdent: 60,
+			topIdent: 50,
 			fontSize: 20,
 			paddingBottom: 0.5,
+			align: 'center'
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.FrontMatter, [
@@ -669,7 +689,7 @@ async function main() {
 				{title, field, params:{
 					fontSize: 10,
 					leftTextIdent: 130,
-					titleColor: colors.greenNinja,
+					titleColor: colors.lessonGreen,
 					width: 440,
 					image: {
 						value: customPages.FrontMatter[field+'_icon'],
@@ -718,9 +738,11 @@ async function main() {
 			startOnNewPage: true,
 			noHeader:true,
 			color: colors.lessonGreen,
-			leftIdent: 30,
+			leftIdent: 55,
 			fontSize: 20,
 			paddingBottom: 0.5,
+			align: 'center',
+			width: 500,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.HowUnitWorks, [
@@ -731,7 +753,8 @@ async function main() {
 			type: 'image',
 			value: customPages.HowUnitWorks.image,
 			width: 380,
-			align: 'center'
+			align: 'center',
+			marginTop: 1
 		});
 		
 		blocks.push({
@@ -741,37 +764,39 @@ async function main() {
 			startOnRightSide: false,
 			noHeader:true,
 			color: colors.lessonGreen,
-			leftIdent: 45,
+			leftIdent: 55,
 			fontSize: 20,
 			paddingBottom: 0.5,
+			align: 'center',
+			width: 509,
 		});
 		
 		await processObjectFieldsIntoBlocks(customPages.DifferentiationLearningSupport, [
 			{title: 'Differentiation and Special Learning Needs', field:'differentiation', 
 				params: {
-					width: 529,
-					leftTextIdent: 45,
-					lineGap: 0.6,
+					width: 509,
+					leftTextIdent: 55,
+					moveDown: 0.5,
+					//lineGap: 0.6,
 				}
 			},
 			{title: 'Creating a Climate for Differentiated Instruction', field:'creating-a-climate', 
 				params: {
 					processListsAsBlocks: true,
-					width: 529,
-					leftTextIdent: 45,
+					width: 509,
+					leftTextIdent: 55,
 					addSpaceAfterSize: 7,
-					lineGap: 0.6,
+					//lineGap: 0.6,
 					moveDown: 0.5,
 				}
 			},
 			{title: 'Additional Support for Differentiated Learning', field:'additional-support', 
 				params: {
 					processListsAsBlocks: true,
-					addSpaceAfterSize: 7,
-					width: 529,
-					leftTextIdent: 45,
-					lineGap: 0.6,
-					moveDown: -0.0001,
+					width: 509,
+					leftTextIdent: 55,
+					//lineGap: 0.6,
+					//moveDown: -0.0001,
 				}
 			},					
 		], blocks);		
@@ -783,7 +808,6 @@ async function main() {
 			startOnRightSide: false,
 			startOnNewPage: true,
 			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Unit Overview'),
-			paddingBottom: 0.3,
 		});
 		blocks.push({
 			type: 'contentsPush',
@@ -842,7 +866,7 @@ async function main() {
 				}
 			},
 		], blocks);
-		
+		//return;
 
 		blocks.push({
 			type: 'h1',
@@ -907,6 +931,7 @@ async function main() {
 		standards.forEach(c=>{
 			const items=unit.orphanStandards[c.type] || [];
 			if (items.length){
+				//console.log('c.title', c.title);
 				blocks.push({
 					type: 'h3',
 					value: c.title,
@@ -918,6 +943,7 @@ async function main() {
 				const itemCategoryGroups=_.groupBy(items, item=>item.category);
 				_.each(itemCategoryGroups, (items, category)=>{
 					if (category && category!=='default'){
+						//console.log('category', category);
 						blocks.push({
 							type: 'h4',
 							value: category,
@@ -927,6 +953,7 @@ async function main() {
 							marginBottom: 0.001,
 						});
 					}
+					//console.log('items', _.keys(_.groupBy(items, item=>item.title)));
 					blocks.push({
 						type: 'list',
 						value: _.keys(_.groupBy(items, item=>item.title)),
@@ -1210,6 +1237,7 @@ async function main() {
 			{val: 3, text: 'replacements items in Green Ninja kit'},
 			{val: 4, text: 'items included in Green Ninja kit'},
 		];
+
 	
 		const tableDescr=parse(
 			materialsSupLegenda.map(item=>{
@@ -1217,10 +1245,10 @@ async function main() {
 			}).join('')
 		);
 
-		await parseHTMLIntoBlocks(tableDescr, {}, blocks);
+		await parseHTMLIntoBlocks(tableDescr, {
+			stuckWithPrevious: true
+		}, blocks);
 		//console.log(tableDescr);			
-		
-		
 		
 		await asyncForEach(unit.review, async (review)=>{
 			blocks.push({
@@ -1247,16 +1275,16 @@ async function main() {
 			});
 			blocks.push({
 				type: 'p',
-				value: 'You can use the following resources either as a review toward the end of the unit, or during the unit to supplement particular topics.', 
+				value: 'You can use the following resources either as a review toward the end of the unit, or during the unit to supplement particular topics. Resources below requires online access.', 
 				isHtml: false,
 			});			
 			
-			await asyncForEach(review.activityPlan, async (plan)=>{
+			await asyncForEach(_.sortBy(review.activityPlan, p=>p.header), async (plan)=>{
 				await processObjectFieldsIntoBlocks(plan, [
 					{title: plan.header, field:'content', params: {
 						replaceFn: (str)=>{
 							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
-								return '('+str+') - Online access required.';
+								return '('+str+')';
 							});
 							return string;
 						}
@@ -1278,7 +1306,7 @@ async function main() {
 
 		
 		await asyncForEach(lessons.filter((l, i)=>{
-			//return i<9;
+			//return i<3;
 			return printLessonNum ? l.number==printLessonNum : true;
 		}), async (lesson)=>{
 			
@@ -1289,19 +1317,30 @@ async function main() {
 				color: colors.lessonGreen
 			};
 			
-			const workshetReplaceFn=(str)=>{
+			PDFUtils.showedFiles=[];
+			
+			const workshetReplaceFn=(str, params)=>{
 				//console.log('forRegexp: ', str);
-				const images=[];
+				let images=[];
 				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
 					//console.log(workshet);
 					if (workshet){
-						(workshet.images || []).forEach(img=>images.push(img));
+						if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
+							(workshet.images || []).forEach(img=>images.push(img));
+						}
+						if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
+							PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+						}
 						return workshet.fileTitle+' ('+workshet.inlinePageRef+')';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ');
+				if (string.indexOf('; from ')>0){
+					images=[];
+				}
+			
 				return {
 					string,
 					images
@@ -1312,7 +1351,6 @@ async function main() {
 				type: 'h1',
 				value: 'Lesson Introduction',
 				headerTitle: header,
-				paddingBottom: 0.1,
 				startOnRightSide: true,
 				startOnNewPage: true
 			});
@@ -1337,9 +1375,13 @@ async function main() {
 		
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: '', field:'description'},
-				{title: 'Phenomenon', field:'phenomenon', headerType:'h2'},
+				{title: 'Phenomenon', field:'phenomenon', headerType:'h3', params: {
+					marginTop: 0.5
+					//ident:100,
+					//width: 350
+				}},
 				{title: 'Learning Objectives', field:'objectives', headerType:'h3', params: {
-					marginTop: 1
+					marginTop: 0.5
 					//ident:100,
 					//width: 350
 				}},
@@ -1411,12 +1453,12 @@ async function main() {
 							header: '',
 							width: 155,
 							renderer: function (tb, data) {								
-								return data.isOnline ? '        '+data.page : data.page;
+								return data.page;
 							},
 							cellAdded: (tb, data, cell, pos)=>{
 								const doc=tb.pdf;
 								const textWidth=doc.widthOfString(data.page || '');
-								let x=pos.x+(data.isOnline ? 0 : textWidth);
+								let x=pos.x+textWidth;
 								if (!data.page){
 									x-=4;
 								}
@@ -1570,7 +1612,7 @@ async function main() {
 					params: {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
-						dontShowImagesAfter: true,
+						//dontShowImagesAfter: true,
 					}
 				},
 			], blocks);
@@ -1584,73 +1626,88 @@ async function main() {
 			});
 		
 			let planTotalTime=0;
-			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan, planIndex)=>{
-				//console.log(plan);
-				await asyncForEach(plan.files, async (file)=>{
-					const path=await downloadFile(file.path);
-					if (file.type==='pdf'){
-						const imgPaths=await convertPptxPdf(path, file);
-						//const imgPaths=await convertPdf(path);
-						//console.log(imgPaths);
-						let x=textIdents.left;
-						const images=[];
-						/*
-						const width=imgPaths.length > 1 ? 232 : 400;
-						if (imgPaths.length === 1){
-							x+=25;
+			const proceedFile=async (file)=>{
+				console.log(file)
+				//showedFiles.push(file.fileNameWithExt);
+				const path=await downloadFile(file.path);
+				if (file.type==='pdf'){
+					const imgPaths=await convertPptxPdf(path, file);
+					//const imgPaths=await convertPdf(path);
+					//console.log(imgPaths);
+					let x=textIdents.left;
+					const images=[];
+					/*
+					const width=imgPaths.length > 1 ? 232 : 400;
+					if (imgPaths.length === 1){
+						x+=25;
+					}
+					*/
+					const width=232;
+					if (imgPaths.length === 1){
+						x+=109;
+					}
+					await asyncForEach(imgPaths, async (item, imgIndex)=>{
+						const imgInfo=await getImgInfoAndRotate(item.imagePath);
+						console.log(item.imagePath, imgInfo);
+						if (file.isOnline && imgIndex > 0){
+							return;
 						}
-						*/
-						const width=232;
-						if (imgPaths.length === 1){
-							x+=109;
-						}
-						await asyncForEach(imgPaths, async (item)=>{
-							const imgInfo=await getImgInfoAndRotate(item.imagePath);
-							console.log(item.imagePath, imgInfo);
-							images.push({
-								path: item.imagePath,
-								height: getImgPropheight(imgInfo, width),  
-								width,
-								x
-							})
-							x+=width;
-							if (x>390){
-								x=textIdents.left;
-							}
-						});
-						console.log(images);
-						file.images=[{
-							type: 'images',
-							value: images,
-							width: 200,
-							firstRowHeight: images[0].height,
-							highlightFirstImage: file.isOnline ? {
+						images.push({
+							path: item.imagePath,
+							height: getImgPropheight(imgInfo, width),  
+							width,
+							x,
+							highlight: imgIndex===0 && file.isOnline ? {
 								color: colors.orange,
 								icon: icons.onlineContent
 							} : null,
+						})
+						x+=width;
+						if (x>390){
+							x=textIdents.left;
+						}
+					});
+					//console.log(images);
+					file.images=[{
+						type: 'images',
+						value: images,
+						width: 200,
+						firstRowHeight: images[0].height,
+						addBorder: true,
+						dontAttachParagraphToImage: false,
+					}];
+				}
+				if (file.type==='pptx'){
+					const pptData=await convertPptxPdf(path, file);
+					//console.log(pptData);
+					file.images=[];
+					await asyncForEach(file.isOnline ? [pptData[0]] : pptData, async (item, index)=>{
+						const imgInfo=await imageInfo(item.imagePath);
+						file.images.push({
+							type: 'pptSlide',
+							value: item,
+							file,
+							hideLabels: file.isOnline,
+							imgInfo,
+							firstRowHeight: getImgPropheight(imgInfo, 170),
 							dontAttachParagraphToImage: false,
-						}];
-					}
-					if (file.type==='pptx'){
-						const pptData=await convertPptxPdf(path, file);
-						//console.log(pptData);
-						file.images=[];
-						await asyncForEach(file.isOnline ? [pptData[0]] : pptData, async (item, index)=>{
-							const imgInfo=await imageInfo(item.imagePath);
-							file.images.push({
-								type: 'pptSlide',
-								value: item,
-								file,
-								hideLabels: file.isOnline,
-								imgInfo,
-								dontAttachParagraphToImage: false,
-								highlight: file.isOnline && index===0 ? {
-									color: colors.orange,
-									icon: icons.onlineContent
-								} : null,
-							});
+							highlight: file.isOnline && index===0 ? {
+								color: colors.orange,
+								icon: icons.onlineContent
+							} : null,
 						});
-					}
+					});
+				}
+			}
+			
+			await asyncForEach(lesson.files, async (file)=>{
+				await proceedFile(file);
+			});
+			
+			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan, planIndex)=>{
+				//console.log(plan);
+				await asyncForEach(plan.files, async (file)=>{
+					await proceedFile(file);
 				});
 				await processObjectFieldsIntoBlocks(plan, [
 					{
@@ -1774,15 +1831,16 @@ async function main() {
 
 					blocks.push({
 						type: 'p',
+						//value: [parse('<p><em>'+ccc.title+'</em></p>')],
 						value: ccc.title,
 						isHtml:false,
-						ident: 25,
+						ident: 0,
 					});
 		
 					blocks.push({
 						type: 'list',
 						value: [ccc.description],
-						ident: 50,
+						ident: 0,
 					});
 				});
 			}
@@ -1808,6 +1866,7 @@ async function main() {
 						type: 'list',
 						value: lesson[item.field].map(item=>item.title),
 						ident: 20,
+						notMoveDownAfter: true
 					});
 				}
 			});
@@ -1816,6 +1875,7 @@ async function main() {
 				blocks.push({
 					type: 'h1',
 					value: 'Vocabulary',
+					//marginTop: 0.001
 				});
 				
 				let vocabHtml='';
@@ -1867,6 +1927,7 @@ async function main() {
 				&& lesson
 				&& (printLessonNum ? lesson.number==printLessonNum : true)
 				&& !file.isOnlineAccess
+				&& !file.isOnline
 				//&& !file.for_student
 			;
 		}), async (file)=>{
