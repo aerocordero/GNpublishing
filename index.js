@@ -110,10 +110,11 @@ app.use('/', async(req, res, next)=>{
 	let html=`
 		<h1>Workbook Export</h1>
 		<form method="GET" action="/workbook">
-			<label>Select Unit:</label>
+			<label>Select Language:</label>
 			<select name="language">
 				`+[{val:'', label:'English'}, {val:'spanish', label:'Spanish'}].map(item=>'<option value="'+item.val+'">'+item.label+'</option>')+`
 			<select><br/><br/>
+			<label>Select Unit:</label>
 			<select name="model_unit">
 				`+modelUnits.map(item=>'<option value="'+item.val+'">'+item.label+'</option>')+`
 			<select><br/><br/>
