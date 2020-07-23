@@ -103,7 +103,7 @@ async function main() {
 	], [modelId]))[0];
 	model.number=parseInt(model.display_name.replace('Grade ', ''));
 	
-	const unit=(await dbQuery([
+	let unit=(await dbQuery([
 		'SELECT * FROM `unit` t',
 		'WHERE t.`unit_id` = ?'
 	], [unitId]))[0];
@@ -123,6 +123,15 @@ async function main() {
 		}
 		allMessages[msg]="";
 		return msg;
+	}
+	const unitReplacements=customPagesGlobal['g'+model.number+'u'+unit.number];
+	if (unitReplacements){
+		//console.log(unit.student_unit_roadmap);
+		const roadmapRoot=parse(unit.student_unit_roadmap);
+		
+		unit=_.extend(unit, unitReplacements);
+		unit.student_unit_roadmap='<p>'+unit.student_unit_roadmap+'</p><p>'+roadmapRoot.querySelector('img').toString()+'</p>'
+		//console.log(unit.student_unit_roadmap);
 	}
 	//console.log(customPagesGlobal);
 	//return;
@@ -148,7 +157,7 @@ async function main() {
 		item.fileTitle=item.fileName;
 		
 		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
-		
+		console.log(unit.review)
 		item.textIndex=unit.review.files.indexOf(item.fileName);
 		if(node){
 			item.title=node.querySelector('em').text.replace(model.display_name, '').replace('Unit '+unit.number, '').trim();
@@ -156,6 +165,7 @@ async function main() {
 		
 	})
 	unit.reviewWorkshet=_.sortBy(unit.reviewWorkshet, file=>file.textIndex);
+	//return;
 
 	
 	let lessons=await dbQuery([
@@ -239,7 +249,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_vocab_mapping m',
 			'JOIN vocab t ON m.vocab_id = t.vocab_id',
-			'WHERE m.lesson_id = ?'
+			'WHERE m.lesson_id = ? and t.language_id='+languageId
 		], [lesson.lesson_id]);		
 		standardTypes.forEach(key=>{
 			lesson[key].forEach(item=>{
@@ -802,7 +812,7 @@ async function main() {
 			//textFontSize:12, 
 			color: colors.unitTitle,
 		})
-		
+
 		blocks.push({
 			type: 'h1',
 			headerTitle: {titleLeft: translate('Unit Overview')},
@@ -829,10 +839,6 @@ async function main() {
 		], blocks);		
 		
 		
-		blocks.push({
-			type: 'p',
-			value:'',
-		});
 		blocks.push({
 			type: 'p',
 			value:'',
@@ -865,6 +871,7 @@ async function main() {
 			color: colors.black
 		});
 		
+
 		
 		const roadMapImg=allWorkShets.find(file=>file.fileTitle.indexOf('roadmap')>0 && file.type=='pdf');
 		
@@ -915,6 +922,7 @@ async function main() {
 			}},
 		], blocks);
 		
+		
 		//console.log(unit);
 		//return;
 		/*
@@ -960,6 +968,7 @@ async function main() {
 			image: customPagesGlobal.Section2.image,
 			color: colors.unitTitle,
 		})	
+		
 		
 		console.log(allWorkShets);
 		let currLessonId;

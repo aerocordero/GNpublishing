@@ -317,7 +317,9 @@ async function main() {
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
-			item.isOnline=item.fileName.indexOf('checkpoint')>0 || customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0;
+			item.isOnline=item.fileName.indexOf('checkpoint')>0
+				|| item.fileName.indexOf('culminating-experience')>0 
+				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0;
 			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
 				item.page=customPages.messages.onlineContent;
@@ -370,7 +372,8 @@ async function main() {
 	})
 	
 	const processMaterialItemName=(item, quantity)=>{
-		let name=item.name;
+		let name=item.plural_name || item.name;
+		
 		if (item.plural_name && quantity>1){
 			name=item.plural_name;
 		}
@@ -416,8 +419,9 @@ async function main() {
 		materials[key]=_.sortBy(_.values(_.groupBy(rawData, m=>m.material_id)).map(materials=>{	
 			const item=materials[0];
 			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id);
+
 			let quantity=parseFloat(item.totalQty);
-			let name=item.plural_name || item.name;
+			
 		
 		
 			items.forEach(item=>{
@@ -460,6 +464,7 @@ async function main() {
 			})
 		}), m=>m.name);
 	})
+	//console.log(materials); return;
 	
 	console.log('Loaded Unit "'+unit.name+'" and '+lessons.length+' lessons');
 	await closeDbConnection();
@@ -707,7 +712,7 @@ async function main() {
 			value: customPages.FrontMatter['abstract_art'],
 			width: 400,
 			x:100,
-			y: 570
+			y: 550
 		});	
 		
 		
@@ -1269,6 +1274,7 @@ async function main() {
 				level: 1, 
 				color: colors.black
 			});
+			/*
 			blocks.push({
 				type: 'h2',
 				value: 'Content', 
@@ -1277,7 +1283,8 @@ async function main() {
 				type: 'p',
 				value: 'You can use the following resources either as a review toward the end of the unit, or during the unit to supplement particular topics. Resources below requires online access.', 
 				isHtml: false,
-			});			
+			});	
+			*/		
 			
 			await asyncForEach(_.sortBy(review.activityPlan, p=>p.header), async (plan)=>{
 				await processObjectFieldsIntoBlocks(plan, [
@@ -1333,7 +1340,7 @@ async function main() {
 						if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
 							PDFUtils.showedFiles.push(workshet.fileNameWithExt);
 						}
-						return workshet.fileTitle+' ('+workshet.inlinePageRef+')';
+						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : workshet.inlinePageRef)+')';
 					}
 					return '';
 				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ');
@@ -1397,10 +1404,10 @@ async function main() {
 			
 			blocks.push({
 				type: 'h1',
-				value: 'Teaching Resource'
+				value: 'Teaching Resources'
 			});	
 			
-			
+			console.log('lesson.worksheet', lesson.worksheet);
 			if (lesson.worksheet.length){
 				
 				blocks.push({
@@ -1488,7 +1495,7 @@ async function main() {
 					}
 				});
 				const legenda=[
-					{icon: icons.onlineContent, text: customPages.messages.onlineContent, visible: false},
+					{icon: icons.onlineContent, text: customPages.messages.onlineContentAfterTableDescription, visible: hasOnlineIcons},
 					{icon: icons.studentContent, text: customPages.messages.studentContent, visible: hasStudentIcons},
 				]
 				if (legenda.filter(l=>l.visible).length){
@@ -1642,13 +1649,11 @@ async function main() {
 						x+=25;
 					}
 					*/
-					const width=232;
-					if (imgPaths.length === 1){
-						x+=109;
-					}
+					const width=155;
+					
 					await asyncForEach(imgPaths, async (item, imgIndex)=>{
 						const imgInfo=await getImgInfoAndRotate(item.imagePath);
-						console.log(item.imagePath, imgInfo);
+						//console.log(item.imagePath, imgInfo);
 						if (file.isOnline && imgIndex > 0){
 							return;
 						}
@@ -1671,7 +1676,7 @@ async function main() {
 					file.images=[{
 						type: 'images',
 						value: images,
-						width: 200,
+						width: width,
 						firstRowHeight: images[0].height,
 						addBorder: true,
 						dontAttachParagraphToImage: false,
@@ -1850,7 +1855,7 @@ async function main() {
 			], blocks);
 		
 			[
-				{title: 'COMMON CORE - ELA/Literacys', field:'ccl'},
+				{title: 'COMMON CORE - ELA/Literacy', field:'ccl'},
 				{title: 'COMMON CORE - Mathematics', field:'ccm'},
 			].forEach(item=>{
 				if (lesson[item.field] && lesson[item.field].length){
@@ -1991,6 +1996,7 @@ async function main() {
 	
 	console.log('Generating temp PDF file...');
 	PDFUtils.generatePdf('temp.pdf', blocks);
+	
 	
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
