@@ -1255,13 +1255,13 @@ async function main() {
 			});	
 			
 			let vocabHtml='';
-			unit.vocab.forEach(item=>{
+			unit.vocab.filter(item=>item.word && item.definition).forEach(item=>{
 				vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition.trim()+'</p>';
 			})				
 			await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
-					moveDown: 0.4,
+					moveDown: -0.01,
 					width: 525,
 					//fontSize: 11,
 				}, blocks);
