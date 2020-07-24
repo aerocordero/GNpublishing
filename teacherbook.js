@@ -319,7 +319,8 @@ async function main() {
 			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
-				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0;
+				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
+				|| item.type==='pptx';
 			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
 				item.page=customPages.messages.onlineContent;
@@ -839,7 +840,14 @@ async function main() {
 					
 				}
 			}},
-			{title: 'Unit Roadmap', field:'unit_roadmap', headerType:'h1'},
+			{title: 'Unit Roadmap', field:'unit_roadmap', headerType:'h1',
+				params: {
+					imgParams: {
+						//marginTop: 2,
+						fitToPage: true,
+					}
+				}
+			},
 			{title: 'Science Background', field:'background_description', headerType:'h1'},
 			{title: 'Science in Action', field:'science_in_action_description', breakAfter: true, headerType:'h1'},
 			{title: 'Green Ninja Connections', field: 'connections_description', breakAfter: true, headerType:'h1'},
@@ -871,7 +879,6 @@ async function main() {
 				}
 			},
 		], blocks);
-		//return;
 
 		blocks.push({
 			type: 'h1',
@@ -1029,7 +1036,7 @@ async function main() {
 		});
 		
 		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'California`s Environmental Principles and Concepts', field:'epc_description', headerType:'h1', 
+			{title: "California's Environmental Principles and Concepts", field:'epc_description', headerType:'h1', 
 				params:{
 				dontChangeCurrentTitle: true
 			}},
@@ -1187,6 +1194,7 @@ async function main() {
 			data: materials.materialLsKit,
 			headerType: 'h1'
 		}].filter(mat=>mat.data.length).forEach(mat=>{
+			//console.log(mat.data);
 			blocks.push({
 				type: mat.headerType || 'h2',
 				value: mat.title
@@ -1549,15 +1557,54 @@ async function main() {
 		
 			
 			const lessonMaterialLegenda=[];
-			['For the teacher', 'For each student', 'For each pair of students', 'For the class'].forEach((title, forWhomInd)=>{
+			const materialGroups=[];//For each pair of students
+			['For the teacher', 'For each student', '', 'For the class'].forEach((title, forWhomInd)=>{
+				const materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
+				//console.log(materials);
+				if (forWhomInd!=2){
+					materialGroups.push({
+						title,
+						materials
+					});
+				}
+				else {
+					[
+						{
+							val: 1,
+							title: 'For each student',	
+						},
+						{
+							val: 2,
+							title: 'For each pair of students',	
+						},
+						{
+							val: 3,
+							title: 'For each group of 3 students',	
+						},
+						{
+							val: 4,
+							title: 'For each group of 4 students',	
+						},
+					].forEach(item=>{
+						const stGroupMaterials=materials.filter(m=>m.group_size==item.val);
+						materialGroups.push({
+							title:item.title,
+							materials: stGroupMaterials
+						})
+					})
+				}
+				
+			})
+			
+			materialGroups.forEach(({title, materials})=>{
 				//console.log(materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id));
-				const materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd===forWhomInd);
+
 				if (materials.length){
 					blocks.push({
 						type: 'h3',
 						value: title,
 					});
-					materialsArr=materials.filter(item=>item.name).map(item=>{
+					materialsArr=materials.map(item=>{
 						//console.log(item);
 						let nameStr='';
 						let quantity=parseFloat(item.quantity);
@@ -1708,8 +1755,9 @@ async function main() {
 			await asyncForEach(lesson.files, async (file)=>{
 				await proceedFile(file);
 			});
+			console.log('activityPlan', lesson.activityPlan);
 			
-			await asyncForEach(lesson.activityPlan.filter(p=>!p.student), async (plan, planIndex)=>{
+			await asyncForEach(lesson.activityPlan.filter(p=>!parseInt(p.student)), async (plan, planIndex)=>{
 				//console.log(plan);
 				await asyncForEach(plan.files, async (file)=>{
 					await proceedFile(file);
@@ -1989,14 +2037,15 @@ async function main() {
 		});
 		
 	}	
-	
+	//2.12, 
 	console.log('Preparing content blocks...');
 	await generateBlocks();
 	console.log('Created '+blocks.length+' blocks');
 	
 	console.log('Generating temp PDF file...');
 	PDFUtils.generatePdf('temp.pdf', blocks);
-	
+	PDFUtils.generatePdf('temp.pdf', blocks);
+	fs.unlinkSync('./temp.pdf');
 	
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
