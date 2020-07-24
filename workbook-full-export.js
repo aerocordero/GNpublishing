@@ -45,7 +45,7 @@ async function main() {
 			return;
 		}
 		console.log('Exporting '+item.label);
-		const cmd='node teacherbook.js --model='+item.model+' --unit='+item.unit
+		const cmd='node workbook.js --model='+item.model+' --unit='+item.unit
 			+' --no-gd-sync '
 			//+(params.firstExport ? ' --first-export' : '')
 			//+(params.flushCache ? ' --flush-cache' : '')
