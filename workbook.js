@@ -17,6 +17,10 @@ async function main() {
 		1: '1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ',
 		2: '1T3vSEZoIzH6D6Nu0F2dDEpghgGyJL4RT'
 	}
+	const phenomenonWord={
+		1: 'phenomenon',
+		2: 'fenomeno'
+	}
 	const CPFolderName='workbook'+(languageId >1 ? '_'+language : '');
 	console.log('languageId:'+languageId);
 	
@@ -165,6 +169,21 @@ async function main() {
 		
 	})
 	unit.reviewWorkshet=_.sortBy(unit.reviewWorkshet, file=>file.textIndex);
+	if (unitReplacements && unitReplacements.studyGuideFiles){
+		const reviewWorsheet=[{
+			type: 'pdf'
+		}];
+		unitReplacements.studyGuideFiles.forEach(item=>{
+			const file=unit.reviewWorkshet.find(f=>f.fileNameWithExt===item.fileName);
+			if (file){
+				file.title=item.title;
+				reviewWorsheet.push(file);
+			}
+		});
+		unit.reviewWorkshet=reviewWorsheet;
+		
+	}
+	//console.log(unit.reviewWorkshet)
 	//return;
 
 	
@@ -246,10 +265,11 @@ async function main() {
 			'ORDER BY t.header'
 		], [lesson.lesson_id]);
 		lesson.vocab=await dbQuery([
-			'SELECT *',
+			'SELECT *, sp.word as sp_word, sp.definition as sp_definition, sp.vocab_id as sp_vocab_id',
 			'FROM lesson_vocab_mapping m',
 			'JOIN vocab t ON m.vocab_id = t.vocab_id',
-			'WHERE m.lesson_id = ? and t.language_id='+languageId
+			languageId > 1 ? 'LEFT OUTER JOIN vocab sp ON sp.version_vocab_id = t.vocab_id and sp.language_id='+languageId : '',
+			'WHERE m.lesson_id = ?' 
 		], [lesson.lesson_id]);		
 		standardTypes.forEach(key=>{
 			lesson[key].forEach(item=>{
@@ -261,6 +281,7 @@ async function main() {
 				}
 			});
 		})
+		//console.log(lesson.vocab);
 	});
 	standardTypes.forEach(key=>{
 		unit.orphanStandards[key]=_.sortBy(unit.orphanStandards[key], item=>item.title);
@@ -973,7 +994,7 @@ async function main() {
 		console.log(allWorkShets);
 		let currLessonId;
 		//console.log(customPages.phenomenon);
-		const phenomenonFiles=allWorkShets.filter(file=>file.fileTitle.indexOf('phenomenon')>0 && file.type=='pdf');
+		const phenomenonFiles=allWorkShets.filter(file=>file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf');
 		
 		await asyncForEach(phenomenonFiles, async (file)=>{
 			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(item.file)===0);
