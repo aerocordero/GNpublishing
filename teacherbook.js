@@ -1774,7 +1774,7 @@ async function main() {
 							processListsAsBlocks: true,
 							planIndex,
 							imgParams: {
-								width: 390,
+								width: 155,
 								align: 'center'
 							}
 						}
@@ -2037,7 +2037,7 @@ async function main() {
 		});
 		
 	}	
-	//2.12, 
+	//5.25, 5.21
 	console.log('Preparing content blocks...');
 	await generateBlocks();
 	console.log('Created '+blocks.length+' blocks');
@@ -2045,6 +2045,8 @@ async function main() {
 	console.log('Generating temp PDF file...');
 	PDFUtils.generatePdf('temp.pdf', blocks);
 	PDFUtils.generatePdf('temp.pdf', blocks);
+	PDFUtils.generatePdf('temp.pdf', blocks, false);
+
 	fs.unlinkSync('./temp.pdf');
 	
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
