@@ -320,7 +320,7 @@ async function main() {
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
 				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
-				|| item.type==='pptx';
+				//|| item.type==='pptx';
 			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
 				item.page=customPages.messages.onlineContent;
