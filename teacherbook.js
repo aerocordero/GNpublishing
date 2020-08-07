@@ -1321,10 +1321,10 @@ async function main() {
 
 		
 		await asyncForEach(lessons.filter((l, i)=>{
-			//return i<3;
+			//return i<23 && i>17;
 			return printLessonNum ? l.number==printLessonNum : true;
 		}), async (lesson)=>{
-			
+			console.log('lessonlesson', lesson);
 			let header={
 				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
 				titleRight: '', 
@@ -1333,6 +1333,7 @@ async function main() {
 			};
 			
 			PDFUtils.showedFiles=[];
+			let worksheetFromAnotherLessons=[];
 			
 			const workshetReplaceFn=(str, params)=>{
 				//console.log('forRegexp: ', str);
@@ -1348,6 +1349,10 @@ async function main() {
 						if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
 							PDFUtils.showedFiles.push(workshet.fileNameWithExt);
 						}
+						if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
+							console.log('workshetworkshet', workshet);
+							worksheetFromAnotherLessons.push(workshet);
+						}
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : workshet.inlinePageRef)+')';
 					}
 					return '';
@@ -1361,6 +1366,12 @@ async function main() {
 					images
 				};
 			}
+			worksheetFromAnotherLessons=[];
+			lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
+				workshetReplaceFn(plan.content, {});
+			});
+			//console.log(lesson.number);
+			//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
 			
 			blocks.push({
 				type: 'h1',
@@ -1415,8 +1426,8 @@ async function main() {
 				value: 'Teaching Resources'
 			});	
 			
-			console.log('lesson.worksheet', lesson.worksheet);
-			if (lesson.worksheet.length){
+			//console.log('lesson.worksheet', lesson.worksheet);
+			if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
 				
 				blocks.push({
 					type: 'h2',
@@ -1425,6 +1436,9 @@ async function main() {
 				const lessonFiles=lesson.worksheet.filter((file, index)=>{
 					const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
 					return !existing;
+				});
+				worksheetFromAnotherLessons.forEach(file=>{
+					lessonFiles.push(file);					
 				});
 				let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
 				let hasStudentIcons=!!lessonFiles.find(f=>(f.for_student || f.fileTitle.indexOf('phenomenon.pdf')>0) && f.type==='pdf');
@@ -1442,8 +1456,16 @@ async function main() {
 							width: 320,
 							align: 'left',
 							padding: [4,10,4,4],
-							renderer: function (tb, data) {								
-								return data.fileTitle;
+							renderer: function (tb, data) {	
+								let str=data.fileTitle;							
+								if (data.lesson_id!==lesson.lesson_id){
+									const fileLesson=lessons.find(l=>l.lesson_id===data.lesson_id);
+									//console.log('fileLesson', fileLesson);
+									if (fileLesson){
+										str+='  (from Lesson '+fileLesson.number+' '+fileLesson.name+')';
+									}
+								}
+								return str;
 							},
 							/*
 							cellAdded: (tb, data, cell, pos)=>{
