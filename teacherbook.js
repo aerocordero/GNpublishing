@@ -134,7 +134,7 @@ async function main() {
 		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
 		
 		item.textIndex=unit.review[0].files.indexOf(item.fileName);
-		if(node){
+		if(node && node.querySelector('em')){
 			item.title=node.querySelector('em').text.replace(model.display_name, '').replace('Unit '+unit.number, '').trim();
 		}
 		
