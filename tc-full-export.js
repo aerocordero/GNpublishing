@@ -48,6 +48,8 @@ async function main() {
 			//+(params.flushCache ? ' --flush-cache' : '')
 			//+(config.alwaysFlushDBCache ? ' --flush-db-cache' : '')
 			+' --dest-path="'+destFilePath+'"'
+		console.log(cmd);
+		//return;
 		inProgress=true;
 		shell.exec(cmd);
 		inProgress=false;

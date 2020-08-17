@@ -1023,7 +1023,7 @@ async function main() {
 			await asyncForEach(imgPaths, async (item)=>{
 				const imgInfo=await imageInfo(item.imagePath);
 				images.push({
-					path: item.imagePath,
+					path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
 					height: getImgPropheight(imgInfo, width),
 					width,
 					x
@@ -1097,7 +1097,7 @@ async function main() {
 			await asyncForEach(imgPaths, async (item)=>{
 				const imgInfo=await getImgInfoAndRotate(item.imagePath);
 				images.push({
-					path: item.imagePath,
+					path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
 					height: getImgPropheight(imgInfo, width),
 					rotated: imgInfo.rotated,
 					width,
@@ -1171,7 +1171,7 @@ async function main() {
 			await asyncForEach(imgPaths, async (item)=>{
 				const imgInfo=await imageInfo(item.imagePath);
 				images.push({
-					path: item.imagePath,
+					path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
 					height: getImgPropheight(imgInfo, width),
 					rotated: imgInfo.rotated,
 					width,
