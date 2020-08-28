@@ -2239,10 +2239,10 @@ async function main() {
 	PDFUtils.generatePdf('temp.pdf', blocks);
 	PDFUtils.generatePdf('temp.pdf', blocks);
 	
-	PDFUtils.generatePdf('temp.pdf', blocks);
+	//PDFUtils.generatePdf('temp.pdf', blocks);
 	
-	//G6U2, G8U1, G6U6, G7U6
-	//PDFUtils.generatePdf('temp.pdf', blocks, false);
+	//G6U2, G8U1, G6U6, G7U6, G7U1
+	PDFUtils.generatePdf('temp.pdf', blocks, false);
 
 	fs.unlinkSync('./temp.pdf');
 	
