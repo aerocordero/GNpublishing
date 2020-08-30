@@ -551,7 +551,7 @@ async function main() {
 		blocks.push({
 			type: 'pageBreak',
 		});	
-		console.log('coverIndex', coverIndex, unit.number);
+		//console.log('coverIndex', coverIndex, unit.number);
 		blocks.push({
 			type: 'image',
 			value: customPages.TeacherHighlight['tc-highlight-pages'][coverIndex].imagePath,
@@ -1225,7 +1225,7 @@ async function main() {
 		], blocks);
 	
 		//'materialLsKit', 'materialLsTeacher', 'materialLsOptional'
-		console.log('materials.materialLsKit', materials.materialLsKit);
+		//console.log('materials.materialLsKit', materials.materialLsKit);
 		[{
 			title: 'Materials Provided by School/Teacher:',
 			data: materials.materialLsTeacher,
@@ -1374,7 +1374,7 @@ async function main() {
 			//return i<13 && i>=11;
 			return printLessonNum ? l.number==printLessonNum : true;
 		}), async (lesson)=>{
-			console.log('lessonlesson', lesson);
+			//console.log('lessonlesson', lesson);
 			let header={
 				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
 				titleRight: '', 
@@ -1400,7 +1400,7 @@ async function main() {
 							PDFUtils.showedFiles.push(workshet.fileNameWithExt);
 						}
 						if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-							console.log('workshetworkshet', workshet);
+							//console.log('workshetworkshet', workshet);
 							worksheetFromAnotherLessons.push(workshet);
 						}
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+')';
@@ -1692,7 +1692,7 @@ async function main() {
 			})
 			
 			materialGroups.forEach(({title, materials})=>{
-				console.log('materialGroups', title, materials);
+				//console.log('materialGroups', title, materials);
 
 				if (materials.length){
 					blocks.push({
@@ -1723,7 +1723,7 @@ async function main() {
 						
 						//(quantity ? parseFloat(quantity)+' - ' : '')
 						if (quantity){
-							console.log('lessonMaterial', item);
+							//console.log('lessonMaterial', item);
 							if (item.plural_quantity_unit && item.quantity_unit){
 								quantity+=' '+(parseInt(quantity) > 1 ? item.plural_quantity_unit : item.quantity_unit);
 							}
@@ -1763,7 +1763,7 @@ async function main() {
 						
 					});
 					listHtml+='</ul>';
-					console.log(materialsArr);
+					//console.log(materialsArr);
 					blocks.push({
 						type: 'list',
 						html: listHtml,
@@ -1885,7 +1885,7 @@ async function main() {
 			await asyncForEach(lesson.files, async (file)=>{
 				await proceedFile(file);
 			});
-			console.log('activityPlan', lesson.activityPlan);
+			//console.log('activityPlan', lesson.activityPlan);
 			const lessonPlanItems=lesson.activityPlan.filter(p=>!parseInt(p.student));
 			await asyncForEach(lessonPlanItems, async (plan, planIndex)=>{
 				//console.log(plan);
@@ -2007,7 +2007,7 @@ async function main() {
 					],
 					data: lessonStandards
 				});
-				console.log('lesson.pe', lesson.pe);
+				//console.log('lesson.pe', lesson.pe);
 			}
 			
 			const otherStandards=[
@@ -2061,7 +2061,7 @@ async function main() {
 					
 				
 					st.items.forEach(item=>{
-						console.log('Lesson_'+st.type, item);
+						//console.log('Lesson_'+st.type, item);
 						itemListsHtml+='<li>'+item.title;
 						itemListsHtml+='<ul><li>'+item.description+'</li></ul>';
 						itemListsHtml+='</li>';

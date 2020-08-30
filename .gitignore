@@ -4,6 +4,7 @@
 /tmp
 /output.pdf
 /config.json
+/queue.json
 /.google-credentials.json
 
 /node_modules
@@ -12,3 +13,4 @@
 *.zip
 
 /gdrive
+/logs

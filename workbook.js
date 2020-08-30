@@ -11,6 +11,7 @@ async function main() {
 	const _ = require('lodash');
 	const Jimp = require('jimp');
 	const argv = require('yargs').argv;
+	const queueItemId=argv.queueItemId;
 	const language = argv.language;
 	const languageId = language==='spanish' ? 2 : 1;
 	const customPageFolders={
@@ -163,7 +164,7 @@ async function main() {
 		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
 		console.log(unit.review)
 		item.textIndex=unit.review.files.indexOf(item.fileName);
-		if(node){
+		if(node && node.querySelector('em')){
 			item.title=node.querySelector('em').text.replace(model.display_name, '').replace('Unit '+unit.number, '').trim();
 		}
 		
@@ -265,7 +266,7 @@ async function main() {
 			'ORDER BY t.header'
 		], [lesson.lesson_id]);
 		lesson.vocab=await dbQuery([
-			'SELECT *, sp.word as sp_word, sp.definition as sp_definition, sp.vocab_id as sp_vocab_id',
+			'SELECT *'+(languageId > 1 ? ', sp.word as sp_word, sp.definition as sp_definition, sp.vocab_id as sp_vocab_id' : ''),
 			'FROM lesson_vocab_mapping m',
 			'JOIN vocab t ON m.vocab_id = t.vocab_id',
 			languageId > 1 ? 'LEFT OUTER JOIN vocab sp ON sp.version_vocab_id = t.vocab_id and sp.language_id='+languageId : '',
