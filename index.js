@@ -79,6 +79,9 @@ app.use('/workbook', async(req, res, next)=>{
 */
 
 app.use('/', express.static('./public'));
+app.use('/tc', express.static('./public'));
+app.use('/workbook', express.static('./public'));
+app.use('/files', express.static('./public'));
 
 const server=app.listen(port, null, function() {
     console.log('Express server listening on port %d', port);
