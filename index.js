@@ -38,6 +38,7 @@ app.use('/result', express.static('./result'));
 
 app.use('/api', router);
 
+/*
 app.use('/workbook', async(req, res, next)=>{
 	if (inProgress){
 		res.send('Error! PDF processing is already in progress');
@@ -75,6 +76,7 @@ app.use('/workbook', async(req, res, next)=>{
 	inProgress=false;
 	res.download(destFilePath);
 });
+*/
 
 app.use('/', express.static('./public'));
 
