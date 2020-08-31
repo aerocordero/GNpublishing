@@ -97,7 +97,7 @@ const processQueue=()=>{
 			nextItem.state='inProgress';
 			saveCurrentQueue();		
 			onQueueItemUpdated(nextItem);
-			const childProcess=child.exec(cmd, {/*maxBuffer:0*/}, (err)=>{
+			const childProcess=child.exec(cmd, {maxBuffer:10240 * 1024, timeout:0}, (err)=>{
 				if (err || !fs.existsSync('./'+destFilePath)){
 					nextItem.state='error';
 					nextItem.error=err;
@@ -180,13 +180,16 @@ router.get('/res-files', async(req, res, next)=>{
 		const ext=nameArr.splice(nameArr.length-1, 1)[0];
 		if (ext==='pdf'){
 			const qItem=_.sortBy(queue, q=>-q.updatedAt).find(q=>q.fileName===file);
-			pdfs.push(_.extend(_.cloneDeep(qItem),{
-				fileName: file,
-				updatedAt: moment(stats.mtime).format('L LT'),
-				size: filesize(stats.size),
-				stats,
-				url: req.headers.host+'/result/'+file
-			}))
+			if (!qItem || (qItem && qItem.state!=='error')){
+				pdfs.push(_.extend(_.cloneDeep(qItem),{
+					fileName: file,
+					updatedAt: stats.mtime,
+					size: filesize(stats.size),
+					stats,
+					url: req.headers.host+'/result/'+file
+				}))
+			}
+			
 		}
 	});
 	pdfs=_.sortBy(pdfs, f=>f.filename);
