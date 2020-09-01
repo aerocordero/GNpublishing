@@ -31,7 +31,9 @@ async function main() {
 		cleanUpHTML,
 		initCustomPages,
 		GDFolderSync,
-		getImgInfoAndRotate
+		getImgInfoAndRotate,
+		loadQueue,
+		saveQueue
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -88,6 +90,9 @@ async function main() {
 	const modelId=argv.model || 19;
 	const unitId=argv.unit || 35;
 	const printLessonNum=argv.lesson;
+	const queueItemId=argv.queueItemId;
+	const disableImages=argv.disableImages;
+	console.log(queueItemId);
 	
 	const customPages=await initCustomPages(__dirname+'/gdrive/teacherbook');
 	
@@ -2236,10 +2241,10 @@ async function main() {
 	console.log('Created '+blocks.length+' blocks');
 	
 	console.log('Generating temp PDF file...');
-	PDFUtils.generatePdf('temp.pdf', blocks);
-	PDFUtils.generatePdf('temp.pdf', blocks);
-	
-	PDFUtils.generatePdf('temp.pdf', blocks);
+	for (let i=0; i<5; i++){
+		PDFUtils.generatePdf('temp.pdf', blocks);
+		console.log('PDFUtils.wrongPageReferencing', PDFUtils.wrongPageReferencing);
+	}	
 	
 	//G6U2, G8U1, G6U6, G7U6, G7U1
 	//PDFUtils.generatePdf('temp.pdf', blocks, false);
@@ -2249,7 +2254,14 @@ async function main() {
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
 	//PDFUtils.generatePdf('output.pdf', blocks);
-	PDFUtils.generatePdf(pdfFileName, blocks);
+	PDFUtils.generatePdf(pdfFileName, blocks, true, disableImages ? true : false);
+	const queueData=loadQueue();
+	const queueItem=(queueData || []).find(item=>item.id===queueItemId);
+	if (queueItem){
+		queueItem.totalPageNumber=PDFUtils.totalPageNumber;
+		console.log('queueItem', queueItem);
+		saveQueue(queueData);
+	}
 }
 main().then(res=>{
 	console.log('done');

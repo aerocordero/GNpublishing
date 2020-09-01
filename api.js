@@ -29,6 +29,13 @@ let queue=loadQueue();
 let socketClients=[];
 let logStreams={};
 
+const refreshQueueItems=()=>{
+	const newQueue=loadQueue();
+	queue.forEach((item, index)=>{
+		Object.assign(item, newQueue.find(nq=>nq.id===item.id) || {});
+	});
+}
+
 const saveCurrentQueue=()=>{
 	saveQueue(queue);
 }
@@ -52,7 +59,8 @@ const router = express.Router();
 const processQueue=()=>{
 	const run=async()=>{
 		//queue=loadQueue();
-		const nextItem=queue.find(item=>item.state==='pending');
+		refreshQueueItems();
+		let nextItem=queue.find(item=>item.state==='pending');
 		const currentItem=queue.find(item=>item.state==='inProgress');
 		if (currentItem || !nextItem){
 			return;
@@ -62,8 +70,10 @@ const processQueue=()=>{
 				workbook: (item, model, unit)=>'Workbook '+model.display_name+' Unit '+unit.number
 					+(item.params.language && item.params.language==='spanish' ? '(spanish)' : '')
 					+(item.params.type ? ' v'+item.params.type : '')				
+					+(item.params.disableImages ? ' (no images)' : '')	
 					+'.pdf',
 				teacherbook: (item, model, unit)=>'TC '+model.display_name+' Unit '+unit.number
+					+(item.params.disableImages ? ' (no images)' : '')
 					+'.pdf',
 			}
 			const params=nextItem.params;
@@ -93,11 +103,13 @@ const processQueue=()=>{
 				+(config.alwaysFlushDBCache ? ' --ignore-db-cache' : '')
 				+' --dest-path="'+destFilePath+'"'
 				+' --queue-item-id="'+nextItem.id+'"'
+				+(params.disableImages ? ' --disable-images' : '')
 		
 			nextItem.state='inProgress';
 			saveCurrentQueue();		
 			onQueueItemUpdated(nextItem);
 			const childProcess=child.exec(cmd, {maxBuffer:10240 * 1024, timeout:0}, (err)=>{
+				refreshQueueItems();				
 				if (err || !fs.existsSync('./'+destFilePath)){
 					nextItem.state='error';
 					nextItem.error=err;
@@ -105,6 +117,7 @@ const processQueue=()=>{
 				else {
 					nextItem.state='success';
 				}				
+				console.log(nextItem);
 				onQueueItemUpdated(nextItem);
 				saveCurrentQueue();							
 				processQueue();	

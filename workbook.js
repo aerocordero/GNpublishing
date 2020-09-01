@@ -11,7 +11,7 @@ async function main() {
 	const _ = require('lodash');
 	const Jimp = require('jimp');
 	const argv = require('yargs').argv;
-	const queueItemId=argv.queueItemId;
+
 	const language = argv.language;
 	const languageId = language==='spanish' ? 2 : 1;
 	const customPageFolders={
@@ -60,6 +60,8 @@ async function main() {
 		console.log(customPageFolders[languageId]);
 		await GDFolderSync(customPageFolders[languageId], CPFolderName);
 	}
+	const queueItemId=argv.queueItemId;
+	const disableImages=argv.disableImages;
 
 	
 	
@@ -1320,7 +1322,15 @@ async function main() {
 	
 	const pdfFileName=argv.destPath || 'Workbook '+model.display_name+' Unit '+unit.number+(languageId >1 ? '('+language+')' : '')+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
-	PDFUtils.generatePdf(pdfFileName, blocks);
+
+	PDFUtils.generatePdf(pdfFileName, blocks, true, disableImages ? true : false);
+	const queueData=loadQueue();
+	const queueItem=(queueData || []).find(item=>item.id===queueItemId);
+	if (queueItem){
+		queueItem.totalPageNumber=PDFUtils.totalPageNumber;
+		console.log('queueItem', queueItem);
+		saveQueue(queueData);
+	}
 	console.log(JSON.stringify(allMessages, null, 4));
 }
 main().then(res=>{
