@@ -44,7 +44,9 @@ async function main() {
 		getImgInfoAndRotate,
 		parseHtml,
 		flushCache,
-		GDFolderSync
+		GDFolderSync,
+		saveQueue,
+		loadQueue
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
