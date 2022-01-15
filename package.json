@@ -29,7 +29,7 @@
     "pptx-compose": "^1.0.0",
     "pptx2pdf": "^1.0.10",
     "rimraf": "^3.0.2",
-    "shelljs": "^0.8.4",
+    "shelljs": "^0.8.5",
     "superagent": "^5.3.1",
     "sync-gdrive": "^0.9.5",
     "textract": "^2.5.0",
