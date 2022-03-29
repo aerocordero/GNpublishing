@@ -982,8 +982,9 @@ async function main() {
 				   .stroke();
 			},
 		});
-		
-		
+		let currLessonId;
+
+		/* Removed "Phenomena Visuals" section. Files moved to Activity files in the Lesson's chronological order. 
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 2,
@@ -997,12 +998,12 @@ async function main() {
 		
 		
 		console.log(allWorkShets);
-		let currLessonId;
+		
 		//console.log(customPages.phenomenon);
 		const phenomenonFiles=allWorkShets.filter(file=>file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf');
 		
 		await asyncForEach(phenomenonFiles, async (file)=>{
-			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(item.file)===0);
+			
 			let contentsObj;
 			//console.log(file);
 			if (currLessonId!==file.lesson_id){
@@ -1055,11 +1056,13 @@ async function main() {
 			});
 					
 		});
+		*/
+		
 		blocks.push({
 			type: 'sectionCover',
-			sectionNum: 3,
+			sectionNum: 2,
 			title: translate('Activity Files'),
-			contentsTitle: translate('Section')+' 3: '+translate('Activity Files'),
+			contentsTitle: translate('Section')+' 2: '+translate('Activity Files'),
 			text: customPagesGlobal.Section3.content,
 			color: colors.unitTitle,
 		});
@@ -1067,13 +1070,14 @@ async function main() {
 		
 		await asyncForEach(allWorkShets.filter(file=>{
 			const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-			return file.worksheet_language_id==languageId
+			const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
+			return isPhenomenon || (file.worksheet_language_id==languageId
 				&& (argv.firstExport || (!argv.firstExport && file.for_student))
 				&& file.type==='pdf' 
 				&& (!roadMapImg || (roadMapImg && file.id!==roadMapImg.id)) 
-				&& !phenomenonFiles.find(f=>f.id===file.id)
+				//&& !phenomenonFiles.find(f=>f.id===file.id)
 				&& !excludedEnds.find(str=>file.fileNameWithExt.indexOf(str+'.')>0)
-				&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx')
+				&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
 		}), async (file)=>{
 			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(fileName.trim())===0);
 			let contentsObj;
@@ -1134,7 +1138,8 @@ async function main() {
 			}
 			
 		});
-		
+
+		/* Removed "End of Unit Study Guide" and "Additional Resources" sections 
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 4,
@@ -1187,14 +1192,14 @@ async function main() {
 					x=textIdents.left;
 				}
 			});	
-			/*
-			blocks.push({
-				type: 'h1',
-				headerTitle: {titleLeft: 'Part 5: Unit Vocabulary', hideLine:true, showThoughtStartIcon: false},
-				startOnRightSide: false,
-				color: colors.unitTitle,
-			});
-			*/
+			
+			// blocks.push({
+			// 	type: 'h1',
+			// 	headerTitle: {titleLeft: 'Part 5: Unit Vocabulary', hideLine:true, showThoughtStartIcon: false},
+			// 	startOnRightSide: false,
+			// 	color: colors.unitTitle,
+			// });
+			
 			blocks.push({
 				type: 'lessonFiles',
 				value: images,
@@ -1210,28 +1215,28 @@ async function main() {
 					topWhiteOverlayHeight: 65
 				}
 			});
-			/*
-			images.forEach(image=>{
-				blocks.push({
-					type: 'h1',
-					headerTitle: {titleLeft: file.title, hideLine:true, showThoughtStartIcon: false},
-					startOnRightSide: false,
-					color: colors.unitTitle,
-				});
-				if (contentsObj){
-					blocks.push({
-						type: 'contentsPush',
-						...contentsObj
-					})
-				}				
-				blocks.push({
-					type: 'image',
-					value: image.path,
-					width: contentWidth,
-					align: 'center'
-				});
-			});	
-			*/		
+			
+			// images.forEach(image=>{
+			// 	blocks.push({
+			// 		type: 'h1',
+			// 		headerTitle: {titleLeft: file.title, hideLine:true, showThoughtStartIcon: false},
+			// 		startOnRightSide: false,
+			// 		color: colors.unitTitle,
+			// 	});
+			// 	if (contentsObj){
+			// 		blocks.push({
+			// 			type: 'contentsPush',
+			// 			...contentsObj
+			// 		})
+			// 	}				
+			// 	blocks.push({
+			// 		type: 'image',
+			// 		value: image.path,
+			// 		width: contentWidth,
+			// 		align: 'center'
+			// 	});
+			// });	
+				
 		});
 		
 		blocks.push({
@@ -1311,7 +1316,7 @@ async function main() {
 			
 		});
 		
-		
+		*/
 	}
 	
 	console.log('Preparing content blocks...');
