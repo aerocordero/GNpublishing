@@ -127,6 +127,13 @@ async function main() {
 			'FROM unit_review_activity_plan t   ',
 			'WHERE t.unit_review_id = ?  '
 		], [item.unit_review_id]);
+
+		item.activityPlan.forEach(plan=>{
+			const headerMatch=plan.header.match(/([\d]+)\.(.*)/i);
+			//console.log(headerMatch);
+			plan.number=parseInt(headerMatch[1]);
+			plan.title=(headerMatch[2] || '').trim();
+		})
 	});
 	
 	unit.reviewWorkshet=await dbQuery([
@@ -167,7 +174,8 @@ async function main() {
 	
 	const epConcepts=(await dbQuery([
 		'SELECT * FROM `EP_concepts` t'
-	], []))[0];
+	], []));
+	console.log('epConcepts', epConcepts);
 	
 	await asyncForEach(lessons, async (lesson)=>{
 		lesson.pe=await dbQuery([
@@ -343,10 +351,14 @@ async function main() {
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
 		//console.log(lesson.worksheet);
-		lesson.activityPlan.forEach(item=>{
-			item.files=[];
-			lessonWorkshetTextReplace(lesson, item, ['content']);			
+		lesson.activityPlan.forEach(plan=>{
+			plan.files=[];
+			lessonWorkshetTextReplace(lesson, plan, ['content']);		
 			//console.log(item.content);
+			const headerMatch=plan.header.match(/([\d]+)\.(.*)/i);
+			//console.log(headerMatch);
+			plan.number=parseInt(headerMatch[1]);
+			plan.title=(headerMatch[2] || '').trim();
 		});
 		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep']);
 	});
@@ -402,25 +414,31 @@ async function main() {
 		item.providerKit=item.provider==='Kit';
 		
 		const markers=['student_can_bring', 'runsOutInd', 'kitReplacementInd', 'providerKit', 'optionalInd'];
+		item.markers=[];
 		
 		markers.forEach(key=>{
 			if (item[key]){
+				const marker=markers.indexOf(key)+1;
 				nameArr.push({
-					text: ' '+(markers.indexOf(key)+1),
+					text: ' '+marker,
 					params: {
 						features: ['sups'],
 						continued: true
 					}
-				})
+				});
+				item.markers.push(marker);
 			}
 		});
+		if (item.markers.length){
+			//console.log()
+		}
 		const dimentionsFields=['dimensions_wide', 'dimensions_len', 'dimensions_high'];
 	
 		if (dimentionsFields.find(field=>item[field]>0) || (item.other_specs || parseFloat(item.weight))){
 			const otherSpecs=item.other_specs ? item.other_specs : (parseFloat(item.weight) ? parseFloat(item.weight)+' '+item.specifications_unit : '');
 			const dimentions=dimentionsFields.filter(field=>item[field]>0).map(field=>parseFloat(item[field]));
 			nameArr.push({
-				text: '\n('+(otherSpecs ? otherSpecs : dimentions.join(' x ')+' '+item.specifications_unit)+')',
+				text: '\n('+(otherSpecs ? otherSpecs+(item.specifications_unit ? ' '+item.specifications_unit : '') : dimentions.join(' x ')+' '+item.specifications_unit)+')',
 				params: {
 					features: []
 				}
@@ -476,10 +494,16 @@ async function main() {
 				notes,
 				optionalInd: item.optionalInd,
 				forWhomInd: item.forWhomInd,
-				provider: item.provider
+				provider: item.provider,
+				materialName: item.name,
+				firstLessonNum: items[0] ? parseInt(items[0].lesson.number.split('.')[1]) : 0,
 			})
-		}), m=>m.name);
+		}), m=>m.materialName);
+		materials[key]=_.sortBy(materials[key], m=>m.firstLessonNum);
+		materials[key]=_.sortBy(materials[key], m=>m.materialName);
 	})
+	//return;
+	//[m.materialName,m.lessons[0]
 	//console.log(materials); return;
 	
 	console.log('Loaded Unit "'+unit.name+'" and '+lessons.length+' lessons');
@@ -880,7 +904,7 @@ async function main() {
 				}
 			},
 			{title: 'Prior Knowledge', field: 'prior_knowledge', breakAfter: true, headerType:'h1'},
-			{title: 'Assessment', field: 'assessment', headerType:'h1'},
+			{title: 'Assessment', field: 'assessment', headerType:'h1'/*, debug:true*/},
 			{title: 'Identifying Preconceptions', field: 'identifying_preconceptions', headerType:'h1'},
 			{title: 'Access and Equity', field: 'access_and_equity', headerType:'h1'},
 			{title: 'Engineering Connections', field: 'eng_connections', headerType:'h1'},
@@ -1014,6 +1038,7 @@ async function main() {
 				});				
 			}
 		})
+		
 		//return;
 		
 		await processObjectFieldsIntoBlocks(unit, [
@@ -1223,6 +1248,14 @@ async function main() {
 			level: 1, 
 			color: colors.black
 		});
+
+		const materialsSupLegenda=[
+			{val: 1, text: 'items that students are encouraged to bring in from home'},
+			{val: 2, text: 'items that will run out eventually'},
+			{val: 3, text: 'replacement items in Green Ninja kit'},
+			{val: 4, text: 'items included in Green Ninja kit'},
+			{val: 5, text: 'optional materials'},
+		];
 	
 		await processObjectFieldsIntoBlocks(model, [
 			{title: '', field:'materials_desc'},
@@ -1231,7 +1264,7 @@ async function main() {
 	
 		//'materialLsKit', 'materialLsTeacher', 'materialLsOptional'
 		//console.log('materials.materialLsKit', materials.materialLsKit);
-		[{
+		await asyncForEach([{
 			title: 'Materials Provided by School/Teacher:',
 			data: materials.materialLsTeacher,
 			headerType: 'h1',
@@ -1246,13 +1279,12 @@ async function main() {
 			title: 'Materials in Green Ninja Kit:',
 			data: materials.materialLsKit,
 			headerType: 'h1'
-		}].filter(mat=>mat.data.length).forEach(mat=>{
+		}].filter(mat=>mat.data.length), async(mat)=>{
 			//console.log(mat.data);
 			blocks.push({
 				type: mat.headerType || 'h2',
 				value: mat.title
-			})
-			
+			});
 			
 	
 			blocks.push({
@@ -1266,7 +1298,8 @@ async function main() {
 						/*
 						renderer: (tb, data) => {
 							return data.nameArr;
-						}*/
+						}
+						*/
 					},
 					{
 						id: 'quantity',
@@ -1295,28 +1328,27 @@ async function main() {
 				],
 				data: mat.data
 			})
+
+			//console.log(mat.data);
+			const currentMarkers={};
+			mat.data.forEach(item=>{
+				(item.markers || []).forEach(m=>currentMarkers[m]=true);
+			});
+
+			const tableDescr=parse(
+				materialsSupLegenda.filter(item=>currentMarkers[item.val]).map((item, index)=>{
+					return '<sup>'+item.val+'</sup> — '+item.text+(index < materialsSupLegenda.length-1 ? '<br />\n' : '')
+				}).join('')
+			);
+	
+			await parseHTMLIntoBlocks(tableDescr, {
+				stuckWithPrevious: true,
+				fitToPage: true
+			}, blocks);
 		});
 		
-		const materialsSupLegenda=[
-			{val: 1, text: 'items that students are encouraged to bring in from home'},
-			{val: 2, text: 'items that will run out eventually'},
-			{val: 3, text: 'replacements items in Green Ninja kit'},
-			{val: 4, text: 'items included in Green Ninja kit'},
-			{val: 5, text: 'optional materials'},
-		];
-
-	
-		const tableDescr=parse(
-			materialsSupLegenda.map((item, index)=>{
-				return '<sup>'+item.val+'</sup> — '+item.text+(index < materialsSupLegenda.length-1 ? '<br />\n' : '')
-			}).join('')
-		);
-
-		await parseHTMLIntoBlocks(tableDescr, {
-			stuckWithPrevious: true,
-			fitToPage: true
-		}, blocks);
-		//console.log(tableDescr);			
+		//console.log(tableDescr);		
+		//return;	
 		
 		await asyncForEach(unit.review, async (review)=>{
 			blocks.push({
@@ -1348,10 +1380,12 @@ async function main() {
 				isHtml: false,
 			});	
 			*/		
-			
-			await asyncForEach(_.sortBy(review.activityPlan, p=>p.header), async (plan)=>{
+			//console.log('review.activityPlan', review.activityPlan);
+			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>p.title!=='Remote Learning'), p=>p.header);
+			await asyncForEach(sortedPlan, async (plan)=>{
+				const index=sortedPlan.indexOf(plan);
 				await processObjectFieldsIntoBlocks(plan, [
-					{title: plan.header, field:'content', params: {
+					{title: plan.title ? (index+1)+'. '+plan.title : plan.header, field:'content', params: {
 						replaceFn: (str)=>{
 							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
 								return '('+str+')';
@@ -1396,7 +1430,7 @@ async function main() {
 				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-					//console.log(workshet);
+					//console.log('workshet', workshet);
 					if (workshet){
 						if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
 							(workshet.images || []).forEach(img=>images.push(img));
@@ -1423,7 +1457,8 @@ async function main() {
 			}
 			worksheetFromAnotherLessons=[];
 			lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
-				workshetReplaceFn(plan.content, {});
+				//console.log('planItem!', plan);
+				plan.content=workshetReplaceFn(plan.content, {}).string;
 			});
 			//console.log(lesson.number);
 			//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
@@ -1496,7 +1531,8 @@ async function main() {
 					lessonFiles.push(file);					
 				});
 				let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
-				let hasStudentIcons=!!lessonFiles.find(f=>(f.for_student || f.fileTitle.indexOf('phenomenon.pdf')>0) && f.type==='pdf');
+				const hasStudenIcon=data=>(data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf';
+				let hasStudentIcons=!!lessonFiles.find(f=>hasStudenIcon(f));
 			
 				blocks.push({
 					type: 'table',
@@ -1545,7 +1581,7 @@ async function main() {
 							header: '',
 							width: 155,
 							renderer: function (tb, data) {								
-								return data.page || 'Online Access Required';
+								return data.page || (!hasStudenIcon(data) ? 'Online Access Required' : '');
 							},
 							cellAdded: (tb, data, cell, pos)=>{
 								const doc=tb.pdf;
@@ -1562,7 +1598,7 @@ async function main() {
 										  valign: 'center'
 									});
 								}	
-								if ((data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf'){
+								if (hasStudenIcon(data)){
 									doc.image(icons.studentContent, x, pos.baseY-3, {
 										  width: 20,
 										  align: 'center',
@@ -1659,7 +1695,7 @@ async function main() {
 				},
 				
 			].forEach(({title, forWhomInd})=>{
-				const materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
+				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
 				//console.log(materials);
 				if (forWhomInd!=2){
 					materialGroups.push({
@@ -1695,11 +1731,12 @@ async function main() {
 				}
 				
 			})
-			
+			//console.log('materialGroups', materialGroups);
 			materialGroups.forEach(({title, materials})=>{
-				//console.log('materialGroups', title, materials);
+				//console.log('materialGroups!!!!', title, materials);
 
 				if (materials.length){
+					
 					blocks.push({
 						type: 'h3',
 						value: title,
@@ -1709,6 +1746,7 @@ async function main() {
 						let nameStr='';
 						let quantity=parseFloat(item.quantity);
 						const nameArr=processMaterialItemName(item, quantity);
+						let sups='';
 						if (nameArr){
 								nameArr.forEach(t=>{
 								let tag='span';
@@ -1717,9 +1755,12 @@ async function main() {
 									if (lessonMaterialLegenda.indexOf(t.text)<0){
 										lessonMaterialLegenda.push(t.text);
 									}
-									
+									sups+='<'+tag+'>'+t.text+'</'+tag+'>';
 								}
-								nameStr+='<'+tag+'>'+t.text+'</'+tag+'>';
+								else {
+									nameStr+='<'+tag+'>'+t.text+'</'+tag+'>';
+								}
+								
 							})
 						}
 						else {
@@ -1737,25 +1778,29 @@ async function main() {
 						else {
 							quantity='';
 						}
-						
+						if (sups){
+							console.log('supsItem', sups, item);
+						}
 						return {
 							matName: nameStr.replace('\n', ' '),
-							name: quantity + nameStr.replace('\n', ' '),
+							name: quantity + nameStr.replace('\n', ' ') + sups,
+							sups,
+							lesson_material_order: item.lesson_material_order,
 							optionalInd: item.optionalInd,
 							addons: [
 								{
-									label:'Notes',
-									field: 'notes'
-								},
-								{
 									label:'Alternative',
 									field: 'alternative'
+								},
+								{
+									label:'Notes',
+									field: 'notes'
 								},
 							].filter(a=>item[a.field]).map(a=>a.label+': '+item[a.field])
 						};
 					});
 					let listHtml='<ul>';
-					_.sortBy(materialsArr, m=>!!m.optionalInd).forEach(m=>{
+					_.sortBy(materialsArr, m=>m.lesson_material_order/*!!m.optionalInd*/).forEach(m=>{
 						listHtml+='<li>'+m.name;
 						if (m.addons.length){
 							listHtml+='<ul>';
@@ -1773,6 +1818,7 @@ async function main() {
 						type: 'list',
 						html: listHtml,
 						childUlIdent: 15,
+						ulMarginTop: 0,
 					});
 				}
 			})
@@ -1809,7 +1855,6 @@ async function main() {
 		
 			let planTotalTime=0;
 			const proceedFile=async (file)=>{
-				console.log(file)
 				//showedFiles.push(file.fileNameWithExt);
 				const path=await downloadFile(file.path);
 				if (file.type==='pdf'){
@@ -1828,7 +1873,7 @@ async function main() {
 					
 					await asyncForEach(imgPaths, async (item, imgIndex)=>{
 						const imgInfo=await getImgInfoAndRotate(item.imagePath);
-						console.log(item.imagePath, imgInfo);
+						//console.log(item.imagePath, imgInfo);
 						if (file.isOnline && imgIndex > 0){
 							return;
 						}
@@ -1854,7 +1899,7 @@ async function main() {
 						x+=width;
 						
 					});
-					//console.log(images);
+					
 					file.images=[{
 						type: 'images',
 						value: images,
@@ -1907,6 +1952,7 @@ async function main() {
 							resetCurentH2: true,
 							replaceFn: workshetReplaceFn,
 							processListsAsBlocks: true,
+							ulMarginTop: 7,
 							planIndex,
 							imgParams: {
 								width: 155,
@@ -1924,6 +1970,9 @@ async function main() {
 				planTotalTime+=parseInt(plan.time);
 			});
 			if (planTotalTime){
+				if (planTotalTime<45){
+					planTotalTime=45;
+				}
 				blocks.push({
 					type: 'lessonPlanHeader',
 					value: 'Total Time', 
@@ -1976,6 +2025,7 @@ async function main() {
 			
 			const lessonStandards=lesson.pe.filter(item=>!item.orphan && !item.hidden);
 			
+			//console.log('lessonStandards', lessonStandards);
 			if (lessonStandards.length){
 				blocks.push({
 					type: 'h1',
@@ -1999,7 +2049,7 @@ async function main() {
 							width: 155,
 							align: 'center',
 							renderer: function (tb, data) {	
-								let str=data.progressions;							
+								let str=data.progressions.split(',').map(s=>s.trim()).join(', ');							
 								return str/*.replace('Culminating-Experience', 'Culminating Experience')*/;
 							},
 						},
@@ -2007,7 +2057,7 @@ async function main() {
 							id: 'lessons',
 							header: 'Lessons building to PE(s)',
 							width: 155,
-							align: 'center',
+							align: 'left',
 						},
 					],
 					data: lessonStandards
@@ -2089,6 +2139,7 @@ async function main() {
 			})
 			const lessonCCStandards=commonCoreStandards.filter(st=>st.items.length);
 			
+			
 			if (lessonCCStandards.length){
 				blocks.push({
 					type: 'h2',
@@ -2102,6 +2153,7 @@ async function main() {
 		
 				lessonCCStandards.forEach((st, index)=>{
 					if (st.items.length){
+						console.log('st.items', st.items);
 						blocks.push({
 							type: 'h3',
 							value: st.title,
@@ -2110,16 +2162,73 @@ async function main() {
 							isHtml:false,
 							isTitle: true
 						});
+						let html='<ul>';
+						st.items.forEach(item=>{
+							html+='<li>'+item.title+'<ul><li>'+item.description+'</li></ul></li>';
+						});
+						html+='</ul>';
 		
 						blocks.push({
 							type: 'list',
-							value: st.items.map(item=>item.title),
+							html,
 							ident: 20,
 							notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
 						});
 					}
 				});
 			}
+			//epc
+		
+			if (lesson.epc && lesson.epc.length){
+				console.log('lesson.epc', lesson.epc);
+				
+				blocks.push({
+					type: 'h2',
+					value: 'California`s Environmental Principles and Concepts',
+					//marginTop: 0.001,
+					paddingBottom: 0.0001
+				});
+				const item=lesson.epc[0];
+				const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
+				const concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
+				await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.definition+'</p>').childNodes, async (el)=>{
+					await parseHTMLIntoBlocks(el, {
+						ident: 0,
+					}, blocks);
+				});
+				//concepts
+
+				concepts.forEach((st, index)=>{
+					blocks.push({
+						type: 'h3',
+						value: st.title,
+						font: fonts.regular,
+						marginTop: 0.8,
+						isHtml:false,
+						isTitle: true,
+						leftTextIdent: 30
+					});
+	
+					blocks.push({
+						type: 'list',
+						value: [st.definition],
+						ident: 20,
+						notMoveDownAfter: false
+					});
+				});
+				
+				
+				/*
+				blocks.push({
+					type: 'list',
+					value: st.items.map(item=>item.title),
+					ident: 20,
+					notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
+				});
+				*/
+			}
+
+			
 			
 		
 			if (lesson.vocab && lesson.vocab.length){

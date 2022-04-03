@@ -103,7 +103,8 @@ const processQueue=()=>{
 				+(config.alwaysFlushDBCache ? ' --ignore-db-cache' : '')
 				+' --dest-path="'+destFilePath+'"'
 				+' --queue-item-id="'+nextItem.id+'"'
-				+(params.disableImages ? ' --disable-images' : '')
+				+(params.disableImages ? ' --disable-images' : '');
+			console.log(cmd);
 		
 			nextItem.state='inProgress';
 			saveCurrentQueue();		

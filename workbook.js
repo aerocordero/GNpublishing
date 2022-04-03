@@ -1131,7 +1131,7 @@ async function main() {
 					leftBoxWidth: images[0].rotated ? 55 : 0,
 					headerParams: {
 						type: file.for_print ? 'nameClassDate' : '',
-						topWhiteOverlayHeight: 55,
+						topWhiteOverlayHeight: 52,
 						lineY: 45
 					} 
 				});
