@@ -415,6 +415,9 @@ async function main() {
 		
 		const markers=['student_can_bring', 'runsOutInd', 'kitReplacementInd', 'providerKit', 'optionalInd'];
 		item.markers=[];
+		if (item.optionalInd){
+			item.providerKit=item.kitReplacementInd=null;
+		}
 		
 		markers.forEach(key=>{
 			if (item[key]){
@@ -1696,7 +1699,7 @@ async function main() {
 				
 			].forEach(({title, forWhomInd})=>{
 				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
-				//console.log(materials);
+				console.log('materialsmaterials', materials);
 				if (forWhomInd!=2){
 					materialGroups.push({
 						title,
@@ -1704,6 +1707,7 @@ async function main() {
 					});
 				}
 				else {
+					materials=materials.filter(m=>!materials.find(mm=>mm.material_id===m.material_id && mm.group_size>m.group_size));
 					[
 						{
 							val: 4,
@@ -2050,7 +2054,7 @@ async function main() {
 							align: 'center',
 							renderer: function (tb, data) {	
 								let str=data.progressions.split(',').map(s=>s.trim()).join(', ');							
-								return str/*.replace('Culminating-Experience', 'Culminating Experience')*/;
+								return str.replace('Culminating-Experience', 'Culminating Experience');
 							},
 						},
 						{
