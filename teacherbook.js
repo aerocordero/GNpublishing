@@ -498,10 +498,11 @@ async function main() {
 				optionalInd: item.optionalInd,
 				forWhomInd: item.forWhomInd,
 				provider: item.provider,
-				materialName: item.name,
+				materialName: item.plural_name || item.name,
 				firstLessonNum: items[0] ? parseInt(items[0].lesson.number.split('.')[1]) : 0,
 			})
 		}), m=>m.materialName);
+		materials[key]=_.sortBy(materials[key], m=>m.name);
 		materials[key]=_.sortBy(materials[key], m=>m.firstLessonNum);
 		materials[key]=_.sortBy(materials[key], m=>m.materialName);
 	})
@@ -559,13 +560,13 @@ async function main() {
 		{titleLeft: 'Unit Resources', titleRight: '', icon: 'images/icons/Unit Resources.png'},		
 	];	
 	
-	PDFUtils.convertHtml=(text)=>{
+	PDFUtils.convertHtml=(text, currentLessonId)=>{
 		const unitLessonIds=unit.lessons.split(',')
 		return decodeHtml(text).replace(/\\n/g, '').replace(/\{\{([^\s]+)\}\}/g, (match, id)=>{
 			//console.log(match, id);
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
-				return 'Lesson '+item.number+' '+item.name;
+				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : '');
 			}
 			return '';
 		});
@@ -1276,12 +1277,14 @@ async function main() {
 		{
 			title: 'Optional Materials',
 			data: materials.materialLsOptional,
-			headerType: 'h2'
+			headerType: 'h2',
+			hideSupscripts: 5,
 		},
 		{
 			title: 'Materials in Green Ninja Kit:',
 			data: materials.materialLsKit,
-			headerType: 'h1'
+			headerType: 'h1',
+			hideSupscripts: 4,
 		}].filter(mat=>mat.data.length), async(mat)=>{
 			//console.log(mat.data);
 			blocks.push({
@@ -1329,7 +1332,18 @@ async function main() {
 						width: 130,
 					},
 				],
-				data: mat.data
+				data: mat.data.map(item=>{
+					const clonedItem=_.cloneDeep(item)
+					if (mat.hideSupscripts){ 
+						clonedItem.nameArr=clonedItem.nameArr.filter(nameItem=>{
+							const features=nameItem.params?.features || [];
+							//console.log('item.nameArr', features, nameItem, features.indexOf('sups')>=0, nameItem.text.trim()=='5');
+							return !(features.indexOf('sups')>=0 && nameItem.text.trim()==mat.hideSupscripts)
+						})
+						
+					}
+					return clonedItem;
+				})
 			})
 
 			//console.log(mat.data);
@@ -1339,7 +1353,7 @@ async function main() {
 			});
 
 			const tableDescr=parse(
-				materialsSupLegenda.filter(item=>currentMarkers[item.val]).map((item, index)=>{
+				materialsSupLegenda.filter(item=>currentMarkers[item.val] && (!mat.hideSupscripts || (mat.hideSupscripts && item.val!=mat.hideSupscripts))).map((item, index)=>{
 					return '<sup>'+item.val+'</sup> — '+item.text+(index < materialsSupLegenda.length-1 ? '<br />\n' : '')
 				}).join('')
 			);
@@ -1348,6 +1362,7 @@ async function main() {
 				stuckWithPrevious: true,
 				fitToPage: true
 			}, blocks);
+			
 		});
 		
 		//console.log(tableDescr);		
@@ -1428,12 +1443,12 @@ async function main() {
 			let worksheetFromAnotherLessons=[];
 			
 			const workshetReplaceFn=(str, params)=>{
-				//console.log('forRegexp: ', str);
+				console.log('forRegexp: ', str);
 				let images=[];
 				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
-					//console.log('regexp2', match, str, str1);
+					console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-					//console.log('workshet', workshet);
+					console.log('workshet', workshet);
 					if (workshet){
 						if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
 							(workshet.images || []).forEach(img=>images.push(img));
@@ -1452,6 +1467,10 @@ async function main() {
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
+				console.log({
+					string,
+					images
+				})
 			
 				return {
 					string,
@@ -1461,7 +1480,9 @@ async function main() {
 			worksheetFromAnotherLessons=[];
 			lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
 				//console.log('planItem!', plan);
-				plan.content=workshetReplaceFn(plan.content, {}).string;
+				
+				//If do this, images aren't added after the lesson plan text because file processing goes after.
+				//plan.content=workshetReplaceFn(plan.content, {}).string;
 			});
 			//console.log(lesson.number);
 			//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
@@ -1495,12 +1516,16 @@ async function main() {
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: '', field:'description'},
 				{title: 'Phenomenon', field:'phenomenon', headerType:'h3', params: {
-					marginTop: 0.5
+					marginTop: 0.5,
 					//ident:100,
 					//width: 350
+					ulMarginTop: 0,
+					marginBottom: -0.3
 				}},
 				{title: 'Learning Objectives', field:'objectives', headerType:'h3', params: {
-					marginTop: 0.5
+					marginTop: 0.5,
+					ulMarginTop: 0,
+					marginBottom: -0.3
 					//ident:100,
 					//width: 350
 				}},
@@ -1699,7 +1724,7 @@ async function main() {
 				
 			].forEach(({title, forWhomInd})=>{
 				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
-				console.log('materialsmaterials', materials);
+				//console.log('materialsmaterials', materials);
 				if (forWhomInd!=2){
 					materialGroups.push({
 						title,
@@ -1783,7 +1808,7 @@ async function main() {
 							quantity='';
 						}
 						if (sups){
-							console.log('supsItem', sups, item);
+							//console.log('supsItem', sups, item);
 						}
 						return {
 							matName: nameStr.replace('\n', ' '),
@@ -1822,7 +1847,8 @@ async function main() {
 						type: 'list',
 						html: listHtml,
 						childUlIdent: 15,
-						ulMarginTop: 0,
+						ulMarginTop: 0.001,
+						childUlAddSpaceAfterSize: 0.0000000001
 					});
 				}
 			})
@@ -1912,6 +1938,7 @@ async function main() {
 						addBorder: true,
 						dontAttachParagraphToImage: false,
 					}];
+					//console.log('FILEFILE', file);
 				}
 				if (file.type==='pptx'){
 					const pptData=await convertPptxPdf(path, file);
@@ -1979,6 +2006,7 @@ async function main() {
 				}
 				blocks.push({
 					type: 'lessonPlanHeader',
+					isTotalTile: true,
 					value: 'Total Time', 
 					rightText: '~ '+planTotalTime+' minutes',
 					planIndex:100500,
@@ -2040,18 +2068,19 @@ async function main() {
 				blocks.push({
 					type: 'table',
 					fontSize: 10,
+					padding: 7,
 					columns: [
 						{
 							id: 'title',
 							header: 'Performance Expectation(s)',
 							width: 155,
-							align: 'center',
+							align: 'left',
 						},
 						{
 							id: 'progressions',
 							header: 'Progression',
 							width: 155,
-							align: 'center',
+							align: 'left',
 							renderer: function (tb, data) {	
 								let str=data.progressions.split(',').map(s=>s.trim()).join(', ');							
 								return str.replace('Culminating-Experience', 'Culminating Experience');
@@ -2114,6 +2143,7 @@ async function main() {
 						isHtml:false,
 						font:fonts.regular,
 						ident: 0,
+						marginBottom: 0.0000000001
 					});
 					
 					let itemListsHtml='<ul>';
@@ -2128,7 +2158,9 @@ async function main() {
 					itemListsHtml+='</ul>'
 					
 					await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
-						await parseHTMLIntoBlocks(el, {}, blocks);
+						await parseHTMLIntoBlocks(el, {
+							ulMarginTop: 0,
+						}, blocks);
 					});
 				});
 			}
@@ -2157,7 +2189,7 @@ async function main() {
 		
 				lessonCCStandards.forEach((st, index)=>{
 					if (st.items.length){
-						console.log('st.items', st.items);
+						//console.log('st.items', st.items);
 						blocks.push({
 							type: 'h3',
 							value: st.title,
@@ -2184,7 +2216,7 @@ async function main() {
 			//epc
 		
 			if (lesson.epc && lesson.epc.length){
-				console.log('lesson.epc', lesson.epc);
+				//console.log('lesson.epc', lesson.epc);
 				
 				blocks.push({
 					type: 'h2',
@@ -2254,9 +2286,9 @@ async function main() {
 			}
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Tying It All Together', field:'all_together', headerType: 'h1'},
-				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1'},
-				{title: 'Extension', field:'extensions', headerType: 'h1'},
+				{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
+				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
+				{title: 'Extension', field:'extensions', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
 			], blocks);
 		
 			
