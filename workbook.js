@@ -15,7 +15,7 @@ async function main() {
 	const language = argv.language;
 	const languageId = language==='spanish' ? 2 : 1;
 	const customPageFolders={
-		1: '1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ',
+		1: '19vIi7jGSCm_Vly6tH7KQ5zVBo_TNWaep',
 		2: '1T3vSEZoIzH6D6Nu0F2dDEpghgGyJL4RT'
 	}
 	const phenomenonWord={
