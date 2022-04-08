@@ -389,6 +389,7 @@ async function main() {
 		";"
 	], [unitId]);
 	
+	//console.log('materialDataRaw', materialDataRaw);return;
 	
 	const materialData=materialsQtySet(_.cloneDeep(materialDataRaw));	
 
@@ -438,7 +439,8 @@ async function main() {
 		const dimentionsFields=['dimensions_wide', 'dimensions_len', 'dimensions_high'];
 	
 		if (dimentionsFields.find(field=>item[field]>0) || (item.other_specs || parseFloat(item.weight))){
-			const otherSpecs=item.other_specs ? item.other_specs : (parseFloat(item.weight) ? parseFloat(item.weight)+' '+item.specifications_unit : '');
+			const weight=(parseFloat(item.weight) ? parseFloat(item.weight) : '');
+			const otherSpecs=item.other_specs ? (weight ? weight+' ': '')+item.other_specs : weight;
 			const dimentions=dimentionsFields.filter(field=>item[field]>0).map(field=>parseFloat(item[field]));
 			nameArr.push({
 				text: '\n('+(otherSpecs ? otherSpecs+(item.specifications_unit ? ' '+item.specifications_unit : '') : dimentions.join(' x ')+' '+item.specifications_unit)+')',
@@ -447,6 +449,7 @@ async function main() {
 				}
 			})
 		}
+		//console.log('nameArr', nameArr, item);
 		return nameArr;
 	};
 	
@@ -559,13 +562,19 @@ async function main() {
 		{titleLeft: 'Materials', titleRight: '', icon: 'images/icons/Materials.png'},
 		{titleLeft: 'Unit Resources', titleRight: '', icon: 'images/icons/Unit Resources.png'},		
 	];	
+
+	let currentLessonIdGlobal;
 	
 	PDFUtils.convertHtml=(text, currentLessonId)=>{
+		if (!currentLessonId && currentLessonIdGlobal){
+			currentLessonId=currentLessonIdGlobal;
+		}
 		const unitLessonIds=unit.lessons.split(',')
 		return decodeHtml(text).replace(/\\n/g, '').replace(/\{\{([^\s]+)\}\}/g, (match, id)=>{
 			//console.log(match, id);
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
+				//console.log('Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : ''), currentLessonId, item);
 				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : '');
 			}
 			return '';
@@ -1432,6 +1441,7 @@ async function main() {
 			return printLessonNum ? l.number==printLessonNum : true;
 		}), async (lesson)=>{
 			//console.log('lessonlesson', lesson);
+			currentLessonIdGlobal=lesson.old_lesson_id;
 			let header={
 				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
 				titleRight: '', 
@@ -1443,12 +1453,12 @@ async function main() {
 			let worksheetFromAnotherLessons=[];
 			
 			const workshetReplaceFn=(str, params)=>{
-				console.log('forRegexp: ', str);
+				//console.log('forRegexp: ', str);
 				let images=[];
 				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
-					console.log('regexp2', match, str, str1);
+					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-					console.log('workshet', workshet);
+					//console.log('workshet', workshet);
 					if (workshet){
 						if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
 							(workshet.images || []).forEach(img=>images.push(img));
@@ -1467,10 +1477,11 @@ async function main() {
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
-				console.log({
+				/*
+				//console.log({
 					string,
 					images
-				})
+				})*/
 			
 				return {
 					string,
@@ -2404,7 +2415,7 @@ async function main() {
 	const queueItem=(queueData || []).find(item=>item.id===queueItemId);
 	if (queueItem){
 		queueItem.totalPageNumber=PDFUtils.totalPageNumber;
-		console.log('queueItem', queueItem);
+		//console.log('queueItem', queueItem);
 		saveQueue(queueData);
 	}
 }
