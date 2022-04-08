@@ -2235,34 +2235,37 @@ async function main() {
 					//marginTop: 0.001,
 					paddingBottom: 0.0001
 				});
-				const item=lesson.epc[0];
-				const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
-				const concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
-				await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.definition+'</p>').childNodes, async (el)=>{
-					await parseHTMLIntoBlocks(el, {
-						ident: 0,
-					}, blocks);
-				});
-				//concepts
+				await asyncForEach(lesson.epc, async (item)=>{
+					const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
+					const concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
+					await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.definition+'</p>').childNodes, async (el)=>{
+						await parseHTMLIntoBlocks(el, {
+							ident: 0,
+						}, blocks);
+					});
+					//concepts
 
-				concepts.forEach((st, index)=>{
-					blocks.push({
-						type: 'h3',
-						value: st.title,
-						font: fonts.regular,
-						marginTop: 0.8,
-						isHtml:false,
-						isTitle: true,
-						leftTextIdent: 30
+					concepts.forEach((st, index)=>{
+						blocks.push({
+							type: 'h3',
+							value: st.title,
+							font: fonts.regular,
+							marginTop: 0.8,
+							isHtml:false,
+							isTitle: true,
+							leftTextIdent: 30
+						});
+		
+						blocks.push({
+							type: 'list',
+							value: [st.definition],
+							ident: 20,
+							notMoveDownAfter: false
+						});
 					});
-	
-					blocks.push({
-						type: 'list',
-						value: [st.definition],
-						ident: 20,
-						notMoveDownAfter: false
-					});
-				});
+				})
+				//const item=lesson.epc[0];
+				
 				
 				
 				/*
