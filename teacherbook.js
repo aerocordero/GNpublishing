@@ -1252,7 +1252,7 @@ async function main() {
 					dci: lesson.dci.map(item=>item.short_title).join(', '),
 					ccc: lesson.ccc.map(item=>item.short_title).join(', '),
 					epc: lesson.epc.map(item=>{
-						console.log('Mapping EPC Lesson '+lesson.number, item);
+						//console.log('Mapping EPC Lesson '+lesson.number, item);
 						const concepts=item.concepts.map(c=>{
 							return c.title.replace('Concept ', '').replace('.', '');
 						});
