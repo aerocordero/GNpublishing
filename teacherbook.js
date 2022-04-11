@@ -1241,12 +1241,19 @@ async function main() {
 			data: lessons.map(lesson=>{
 				lesson.ep=[];
 				
-
+				const progressions={
+					Introductory:'Intro',
+					Developmental:'Dev',
+					Assessment:'Assess',
+					Checkpoint:'Check',
+					'Culminating Experience':'Culm Exp',
+					'Culminating-Experience':'Culm Exp',
+				};
 				return {
 					lesson: 'Lesson '+lesson.number,
 					pe: lesson.pe.map(item=>{
 						//console.log('Mapping PE Lesson '+lesson.number, item);
-						return (item.title || item.short_title || '')+(item.progressions ? ' ('+(item.progressions.split(',').join(', '))+')' : '');
+						return (item.title || item.short_title || '')+(item.progressions ? ' ('+(item.progressions.split(',').map(p=>progressions[p] || p).join(', '))+')' : '');
 					}).join(', '),
 					sep: lesson.sep.map(item=>item.short_title).join(', '),
 					dci: lesson.dci.map(item=>item.short_title).join(', '),
