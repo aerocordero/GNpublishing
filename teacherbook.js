@@ -239,13 +239,19 @@ async function main() {
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);		
 		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
-		lesson.epc=await dbQuery([
+		lesson.epc=(await dbQuery([
 			'SELECT *',
 			'FROM lesson_epc_mapping m',
 			'JOIN environmental_principle_copy t ON m.environmental_principle_id = t.environmental_principle_id',
 			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
+		], [lesson.lesson_id])).map(item=>{
+			const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
+			item.concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
+			return item;
+		});		
 		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
+
+		
 		
 		lesson.worksheet=await dbQuery([
 			'SELECT *',
@@ -806,7 +812,7 @@ async function main() {
 		await processObjectFieldsIntoBlocks(customPages.HowUnitWorks, [
 			{title: '', field:'content'},
 		], blocks);
-		
+		//console.log('customPages.HowUnitWorks', customPages.HowUnitWorks);
 		blocks.push({
 			type: 'image',
 			value: customPages.HowUnitWorks.image,
@@ -1238,11 +1244,20 @@ async function main() {
 
 				return {
 					lesson: 'Lesson '+lesson.number,
-					pe: lesson.pe.map(item=>item.title || item.short_title).join(', '),
+					pe: lesson.pe.map(item=>{
+						//console.log('Mapping PE Lesson '+lesson.number, item);
+						return (item.title || item.short_title || '')+(item.progressions ? ' ('+(item.progressions.split(',').join(', '))+')' : '');
+					}).join(', '),
 					sep: lesson.sep.map(item=>item.short_title).join(', '),
 					dci: lesson.dci.map(item=>item.short_title).join(', '),
 					ccc: lesson.ccc.map(item=>item.short_title).join(', '),
-					epc: lesson.epc.map(item=>(item.short_title || item.title).split('-')[0]).join(', '),
+					epc: lesson.epc.map(item=>{
+						console.log('Mapping EPC Lesson '+lesson.number, item);
+						const concepts=item.concepts.map(c=>{
+							return c.title.replace('Concept ', '').replace('.', '');
+						});
+						return ((item.short_title || item.title).split('-')[0])+(concepts.length ? ' ('+concepts.join(',')+')' : '');
+					}).join(', '),
 				}
 			})
 		})
@@ -2236,14 +2251,13 @@ async function main() {
 					paddingBottom: 0.0001
 				});
 				await asyncForEach(lesson.epc, async (item)=>{
-					const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
-					const concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
+					const concepts=item.concepts;
 					await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.definition+'</p>').childNodes, async (el)=>{
 						await parseHTMLIntoBlocks(el, {
 							ident: 0,
 						}, blocks);
 					});
-					//concepts
+					//concepts 18, 22
 
 					concepts.forEach((st, index)=>{
 						blocks.push({
