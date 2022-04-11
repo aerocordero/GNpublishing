@@ -581,7 +581,7 @@ async function main() {
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
 				//console.log('Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : ''), currentLessonId, item);
-				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : '');
+				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ' '+item.name+' ' : '');
 			}
 			return '';
 		});
