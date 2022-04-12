@@ -1139,12 +1139,12 @@ async function main() {
 			
 		});
 
-		/* Removed "End of Unit Study Guide" and "Additional Resources" sections 
+		/* Removed "End of Unit Study Guide" and "Additional Resources" sections */
 		blocks.push({
 			type: 'sectionCover',
-			sectionNum: 4,
+			sectionNum: 3,
 			title: translate('End-of-Unit Study Guide'),
-			contentsTitle: translate('Section')+' 4: '+translate('End-of-Unit Study Guide'),
+			contentsTitle: translate('Section')+' 3: '+translate('End-of-Unit Study Guide'),
 			text: customPagesGlobal.Section4.content,
 			color: colors.unitTitle,
 		});
@@ -1241,9 +1241,9 @@ async function main() {
 		
 		blocks.push({
 			type: 'sectionCover',
-			sectionNum: 5,
+			sectionNum: 4,
 			title: translate('Additional Resources'),
-			contentsTitle: translate('Section')+' 5: '+translate('Additional Resources'),
+			contentsTitle: translate('Section')+' 4: '+translate('Additional Resources'),
 			text: customPagesGlobal.Section5.content,
 			color: colors.unitTitle,
 		});
@@ -1316,7 +1316,7 @@ async function main() {
 			
 		});
 		
-		*/
+		/**/
 	}
 	
 	console.log('Preparing content blocks...');
