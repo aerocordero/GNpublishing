@@ -1149,16 +1149,26 @@ async function main() {
 			color: colors.unitTitle,
 		});
 		
-		const renewFiles=unit.reviewWorkshet.filter(file=>file.type==='pdf');
+		const fileNames=[
+			'Key-Science-Concepts',
+			'Thinking-Visually',
+			'Using-Your-Science-Toolkit',
+			'Guided-Practice',
+			'Key-Vocabulary'
+		];
+		const renewFiles=unit.reviewWorkshet.filter(file=>{
+			console.log(file);
+			return file.type==='pdf' && fileNames.find(fName=>file.fileName.indexOf(fName)>0);
+		});
+		//return;
 		console.log('renewFiles', renewFiles);
 		let part=0;
 		await asyncForEach(renewFiles, async (file, index)=>{
 
 			if (index<1 || index>5){
-				return;
+				//return;
 			}
 			part++;
-			
 			if (!file.title){
 				console.log(file);
 				//return;
