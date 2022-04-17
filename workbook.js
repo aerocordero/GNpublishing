@@ -731,7 +731,8 @@ async function main() {
 		
 		if (text){
 			doc.y+=30;
-			parseHtml(text.trim()).childNodes.forEach(node=>{
+			parseHtml(text.split('\n').map(t=>t.trim()).join('').trim()).childNodes.forEach(node=>{
+				//console.log('nodenodenodenode', node);
 				PDFUtils.drawActions.p(doc, {
 					value: node.childNodes,
 					isHtml:true,
@@ -742,8 +743,10 @@ async function main() {
 						fontSize: textFontSize || 11,
 						listsIdent: 15,
 						processListsAsBlocks: true,
+						moveDown: 0.7
 					}
-				})
+				});
+				//doc.y+=2;
 			})
 			
 		}
@@ -1281,7 +1284,7 @@ async function main() {
 			await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
-					moveDown: -0.01,
+					moveDown: 0.5,
 					width: 525,
 					//fontSize: 11,
 				}, blocks);
