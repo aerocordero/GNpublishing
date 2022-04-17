@@ -1768,6 +1768,14 @@ async function main() {
 					materials=materials.filter(m=>!materials.find(mm=>mm.material_id===m.material_id && mm.group_size>m.group_size));
 					[
 						{
+							val: 6,
+							title: 'For each group of 6 students',	
+						},
+						{
+							val: 5,
+							title: 'For each group of 5 students',	
+						},
+						{
 							val: 4,
 							title: 'For each group of 4 students',	
 						},
