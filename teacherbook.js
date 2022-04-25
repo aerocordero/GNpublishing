@@ -1159,14 +1159,17 @@ async function main() {
 					marginTop: 0.6,
 					titleColor: colors.green,
 					lineGap: 0.4,
+					marginBottom: 0.0001,
 				}
 			},
 			{title: 'Science and Engineering Practice (SEP)', field:'sep', 
 				headerType: 'h3',
 				params: {
 					marginTop: 0.6,
+					marginBottom: 0.0001,
 					titleColor: colors.green,
 					lineGap: 0.4,
+					//addSpaceAfter: false
 				}
 			},
 			{title: 'Crosscutting Concepts (CCC)', field:'ccc', 
@@ -1175,6 +1178,7 @@ async function main() {
 					marginTop: 0.6,
 					titleColor: colors.green,
 					lineGap: 0.4,
+					marginBottom: 0.0001,
 				}
 			},			
 		], blocks);		
