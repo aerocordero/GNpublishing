@@ -1152,16 +1152,25 @@ async function main() {
 			color: colors.unitTitle,
 		});
 		
-		const fileNames=[
+		let fileNames=[
 			'Key-Science-Concepts',
 			'Thinking-Visually',
 			'Using-Your-Science-Toolkit',
 			'Guided-Practice',
 			'Key-Vocabulary'
 		];
+		if (language==='spanish') {
+			fileNames=[
+				'Conceptos-Cientificos-Clave',
+				'Pensando-Visualmente',
+				'Usando-Tu-Kit-De-Herramientas-de-Ciencia',
+				'Practica-Guiada',
+				'Vocabulario-Clave'
+			];
+		}
 		const renewFiles=unit.reviewWorkshet.filter(file=>{
 			console.log(file);
-			return file.type==='pdf' && fileNames.find(fName=>file.fileName.indexOf(fName)>0);
+			return file.type==='pdf' && file.fileName && fileNames.find(fName=>file.fileName.indexOf(fName)>0);
 		});
 		//return;
 		console.log('renewFiles', renewFiles);
