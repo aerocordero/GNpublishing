@@ -1179,7 +1179,8 @@ async function main() {
 					titleColor: colors.green,
 					lineGap: 0.4,
 					marginBottom: 0.0001,
-				}
+				},
+				
 			},			
 		], blocks);		
 		
@@ -1916,7 +1917,11 @@ async function main() {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
 						//dontShowImagesAfter: true,
-					}
+						imgParams: {
+							align: 'center',
+							maxHeight: 300
+						}
+					},
 				},
 			], blocks);
 			//return;
@@ -1961,9 +1966,10 @@ async function main() {
 						if ((x+width)>200){
 							x=textIdents.left;
 						}
+						let height=getImgPropheight(imgInfo, width);
 						images.push({
 							path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
-							height: getImgPropheight(imgInfo, width),  
+							height,  
 							width,
 							x,
 							highlight: imgIndex===0 && file.isOnline ? {
@@ -2032,7 +2038,8 @@ async function main() {
 							planIndex,
 							imgParams: {
 								width: 155,
-								align: 'center'
+								align: 'center',
+								maxHeight: 350
 							}
 						}
 					},
@@ -2071,7 +2078,8 @@ async function main() {
 						dontShowImagesAfter: true,
 						imgParams: {
 							width: 390,
-							align: 'center'
+							align: 'center',
+							maxHeight: 300
 						}
 					}
 				},
@@ -2081,8 +2089,9 @@ async function main() {
 				{title: 'Content Knowledge', field:'background', headerType: 'h2',
 					params: {
 						imgParams: {
-							width: 400,
+							width: 350,
 							align: 'center',
+							maxHeight: 300
 							//fitToPage: true,
 						}
 					}
