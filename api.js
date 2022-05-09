@@ -262,6 +262,17 @@ router.delete('/worksheet/:filename', async(req, res, next)=>{
 	res.json({});
 });
 
+router.delete('/worksheet', async(req, res, next)=>{
+	console.log(req.params);
+	const srcPath='./tmp';
+	const resPath='./tmp/pptx-export';
+	
+	shell.exec('rm -f ./tmp/*');
+	shell.exec('rm -rf ./tmp/pptx-export/*');
+
+	res.json({});
+});
+
 router.get('/queue', async(req, res, next)=>{	
 	res.json(queue.filter(item=>!item.hidden));
 });
