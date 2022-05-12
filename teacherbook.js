@@ -2289,19 +2289,24 @@ async function main() {
 
 					concepts.forEach((st, index)=>{
 						blocks.push({
-							type: 'h3',
+							type: 'p',
 							value: st.title,
 							font: fonts.regular,
 							marginTop: 0.8,
 							isHtml:false,
-							isTitle: true,
+							isTitle: false,
 							leftTextIdent: 30
 						});
-		
+						let html='<ul>';
+						html+='<li>'+st.definition+'</li>';
+						html+='</ul>';
+
 						blocks.push({
 							type: 'list',
-							value: [st.definition],
+							html,
 							ident: 20,
+							marginTop:0.000001,
+							ulMarginTop:0.000001,
 							notMoveDownAfter: false
 						});
 					});
