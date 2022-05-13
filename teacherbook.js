@@ -1018,8 +1018,9 @@ async function main() {
 					isHtml:false,
 					font: fonts.regular,
 					ident: 0,
-					marginTop: 1,
+					marginTop: 0.5,
 					marginBottom: 0.001,
+					isTitle: true,
 					params:{
 						marginTop: 0.1,
 						//marginBottom: 0.001,
@@ -1037,6 +1038,7 @@ async function main() {
 							isHtml:false,
 							ident: 0,
 							marginTop: 0.5,
+							isTitle: true,
 							marginBottom: 0.001,
 						});
 					}
@@ -1089,10 +1091,11 @@ async function main() {
 			if (items.length){
 				blocks.push({
 					type: 'p',
-					value: c.title+'\n',
+					value: c.title+'',
 					isHtml:false,
+					marginTop: 0.001,
 					params: {
-						moveDown: 0.2
+						//moveDown: 0.2
 					}
 				});				
 				const itemCategoryGroups=_.groupBy(items, item=>item.category);
@@ -1102,19 +1105,15 @@ async function main() {
 							type: 'p',
 							value: '<em>'+category+'</em>',
 							isHtml:false,
+							marginTop: 0.001,
 							ident: 0,
 						});
 					}
 					blocks.push({
 						type: 'list',
 						value: _.keys(_.groupBy(_.sortBy(items, item=>item.priority), item=>item.title)),
-						notMoveDownAfter: true
+						notMoveDownAfter: false
 					});
-				});	
-				blocks.push({
-					type: 'p',
-					value: ' ',
-					isHtml:false,
 				});			
 			}
 		});
@@ -1134,7 +1133,7 @@ async function main() {
 		await asyncForEach(parse(epcHtml).childNodes, async (el)=>{
 			await parseHTMLIntoBlocks(el, {
 				ident: 0,
-				brFontSize: 1
+				brFontSize: 0.5
 			}, blocks);
 		});
 		
@@ -1387,10 +1386,10 @@ async function main() {
 			mat.data.forEach(item=>{
 				(item.markers || []).forEach(m=>currentMarkers[m]=true);
 			});
-
+			const filteredLegena=materialsSupLegenda.filter(item=>currentMarkers[item.val] && (!mat.hideSupscripts || (mat.hideSupscripts && item.val!=mat.hideSupscripts)));
 			const tableDescr=parse(
-				materialsSupLegenda.filter(item=>currentMarkers[item.val] && (!mat.hideSupscripts || (mat.hideSupscripts && item.val!=mat.hideSupscripts))).map((item, index)=>{
-					return '<sup>'+item.val+'</sup> — '+item.text+(index < materialsSupLegenda.length-1 ? '<br />\n' : '')
+				filteredLegena.map((item, index)=>{
+					return '<sup>'+item.val+'</sup> — '+item.text+(index < filteredLegena.length-1 ? '<br />\n' : '')
 				}).join('')
 			);
 	
@@ -1497,18 +1496,19 @@ async function main() {
 							//console.log('workshetworkshet', workshet);
 							worksheetFromAnotherLessons.push(workshet);
 						}
-						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+')';
+						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ');
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
 				/*
-				//console.log({
+				console.log({
 					string,
 					images
-				})*/
+				})
+				/**/
 			
 				return {
 					string,
@@ -2197,6 +2197,8 @@ async function main() {
 						isHtml:false,
 						font:fonts.regular,
 						ident: 0,
+						marginTop: 0.0001,
+						isTitle:true,
 						marginBottom: 0.0000000001
 					});
 					
@@ -2276,7 +2278,8 @@ async function main() {
 					type: 'h2',
 					value: 'California`s Environmental Principles and Concepts',
 					//marginTop: 0.001,
-					paddingBottom: 0.0001
+					paddingBottom: 0.0001,
+					moveToNextPageIfNotFeet: true
 				});
 				await asyncForEach(lesson.epc, async (item)=>{
 					const concepts=item.concepts;
