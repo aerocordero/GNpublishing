@@ -123,6 +123,10 @@ const processQueue=()=>{
 				saveCurrentQueue();							
 				processQueue();	
 			});	
+			nextItem.pid=childProcess.pid;
+			saveCurrentQueue();		
+			onQueueItemUpdated(nextItem);
+			//console.log('childProcess', childProcess);
 			const stdoutFile='./logs/'+nextItem.id+'_log.txt';
 			const stderrFile='./logs/'+nextItem.id+'_err.txt';
 			let stdoutStream = fs.createWriteStream(stdoutFile);
@@ -314,6 +318,13 @@ router.delete('/queue/:id', async(req, res, next)=>{
 		}		
 		saveCurrentQueue();	
 	}	
+	else if (item && item.state==='inProgress') {
+		console.log('Cancel request', item);
+		if (item.pid){
+			shell.exec('kill '+item.pid);
+			onQueueItemUpdated(item);
+		}
+	}
 	res.json(queue);
 });
 
@@ -332,7 +343,7 @@ router.get('/queue/:id', async(req, res, next)=>{
 });
 
 router.ws('/queue-ws', (ws, req) => {
-	console.log(ws);
+	//console.log(ws);
 	socketClients.push(ws);
 	ws.on('message', function(msg) {
 		ws.send(msg);
