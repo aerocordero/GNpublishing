@@ -1434,11 +1434,12 @@ async function main() {
 			});	
 			*/		
 			//console.log('review.activityPlan', review.activityPlan);
-			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>p.title!=='Remote Learning'), p=>p.header);
+			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos'].indexOf(p.title)<0), p=>p.header);
 			await asyncForEach(sortedPlan, async (plan)=>{
 				const index=sortedPlan.indexOf(plan);
 				await processObjectFieldsIntoBlocks(plan, [
 					{title: plan.title ? (index+1)+'. '+plan.title : plan.header, field:'content', params: {
+						removeFirstparagraphNum: (plan.title || plan.header)==='Additional Reading' ? 3 : 0,
 						replaceFn: (str)=>{
 							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
 								return '('+str+')';
@@ -2180,7 +2181,8 @@ async function main() {
 					value: 'Connections to Other NGSS Standards',
 					font: fonts.bold,
 					ident: 0,
-					marginTop: 0
+					marginTop: 0,
+					moveToNextPageIfNotFit: true,
 				});
 				let cccHtml='';
 				//cccHtml+='<p><strong>Connections to Other NGSS Standards</strong></p>';
@@ -2192,13 +2194,13 @@ async function main() {
 				
 				await asyncForEach(otherStandards.filter(st=>st.items.length), async (st)=>{
 					blocks.push({
-						type: 'h3',
+						type: 'p',
 						value: st.title,
 						isHtml:false,
 						font:fonts.regular,
 						ident: 0,
 						marginTop: 0.0001,
-						isTitle:true,
+						isTitle:false,
 						marginBottom: 0.0000000001
 					});
 					
@@ -2279,7 +2281,7 @@ async function main() {
 					value: 'California`s Environmental Principles and Concepts',
 					//marginTop: 0.001,
 					paddingBottom: 0.0001,
-					moveToNextPageIfNotFeet: true
+					moveToNextPageIfNotFit: true
 				});
 				await asyncForEach(lesson.epc, async (item)=>{
 					const concepts=item.concepts;
