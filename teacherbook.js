@@ -175,7 +175,7 @@ async function main() {
 	const epConcepts=(await dbQuery([
 		'SELECT * FROM `EP_concepts` t'
 	], []));
-	console.log('epConcepts', epConcepts);
+	//console.log('epConcepts', epConcepts);
 	
 	await asyncForEach(lessons, async (lesson)=>{
 		lesson.pe=await dbQuery([
