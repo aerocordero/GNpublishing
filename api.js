@@ -309,13 +309,13 @@ router.delete('/queue/:id', async(req, res, next)=>{
 	console.log(req.params);
 	const item=queue.find(item=>item.id===req.params.id);
 	if (item && item.state!=='inProgress'){
-		if (item.state!=='pending'){
-			item.hidden=true;
+		if (item.pid){
+			shell.exec('kill '+item.pid);
 			onQueueItemUpdated(item);
 		}
 		else {
-			queue=_.without(queue, item);
-		}		
+			queue=_.without(queue, item);	
+		}
 		saveCurrentQueue();	
 	}	
 	else if (item && item.state==='inProgress') {
