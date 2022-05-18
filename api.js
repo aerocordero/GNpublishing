@@ -107,6 +107,7 @@ const processQueue=()=>{
 			console.log(cmd);
 		
 			nextItem.state='inProgress';
+			nextItem.hidden=false;
 			saveCurrentQueue();		
 			onQueueItemUpdated(nextItem);
 			const childProcess=child.exec(cmd, {maxBuffer:10240 * 1024, timeout:0}, (err)=>{
