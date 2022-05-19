@@ -2459,8 +2459,12 @@ async function main() {
 	
 	//G6U2, G8U1, G6U6, G7U6, G7U1
 	//PDFUtils.generatePdf('temp.pdf', blocks, false);
-
-	fs.unlinkSync('./temp.pdf');
+	try {
+		fs.unlinkSync('./temp.pdf');
+	}
+	catch(err){
+		console.log(err);
+	}
 	
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
