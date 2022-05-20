@@ -513,7 +513,7 @@ async function main() {
 		}), m=>m.materialName);
 		materials[key]=_.sortBy(materials[key], m=>m.name);
 		materials[key]=_.sortBy(materials[key], m=>m.firstLessonNum);
-		materials[key]=_.sortBy(materials[key], m=>m.materialName);
+		materials[key]=_.sortBy(materials[key], m=>m.materialName.replace(' ', ''));
 	})
 	//return;
 	//[m.materialName,m.lessons[0]
@@ -1500,7 +1500,7 @@ async function main() {
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ');
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
@@ -1745,21 +1745,22 @@ async function main() {
 			const materialGroups=[];//For each pair of students
 			[
 				{
-					forWhomInd: 0,
-					title: 'For the teacher',	
-				},
-				{
 					forWhomInd: 3,
 					title: 'For the class',	
 				},
 				{
-					forWhomInd: 2,
-					title: '',	
+					forWhomInd: 0,
+					title: 'For the teacher',	
 				},
 				{
 					forWhomInd: 1,
 					title: 'For each student',	
 				},
+				{
+					forWhomInd: 2,
+					title: '',	
+				},
+				
 				
 			].forEach(({title, forWhomInd})=>{
 				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
