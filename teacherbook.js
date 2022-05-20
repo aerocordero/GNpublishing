@@ -1745,22 +1745,21 @@ async function main() {
 			const materialGroups=[];//For each pair of students
 			[
 				{
-					forWhomInd: 3,
-					title: 'For the class',	
-				},
-				{
 					forWhomInd: 0,
 					title: 'For the teacher',	
 				},
 				{
-					forWhomInd: 1,
-					title: 'For each student',	
+					forWhomInd: 3,
+					title: 'For the class',	
 				},
 				{
 					forWhomInd: 2,
 					title: '',	
 				},
-				
+				{
+					forWhomInd: 1,
+					title: 'For each student',	
+				},
 				
 			].forEach(({title, forWhomInd})=>{
 				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
