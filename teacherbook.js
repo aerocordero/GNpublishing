@@ -1259,16 +1259,16 @@ async function main() {
 						//console.log('Mapping PE Lesson '+lesson.number, item);
 						return (item.title || item.short_title || '')+(item.progressions ? ' ('+(item.progressions.split(',').map(p=>progressions[p] || p).join(', '))+')' : '');
 					}).join(', '),
-					sep: lesson.sep.map(item=>item.short_title).join(', '),
-					dci: lesson.dci.map(item=>item.short_title).join(', '),
-					ccc: lesson.ccc.map(item=>item.short_title).join(', '),
-					epc: lesson.epc.map(item=>{
+					sep: _.uniq(lesson.sep.map(item=>item.short_title)).join(', '),
+					dci: _.uniq(lesson.dci.map(item=>item.short_title)).join(', '),
+					ccc: _.uniq(lesson.ccc.map(item=>item.short_title)).join(', '),
+					epc: _.uniq(lesson.epc.map(item=>{
 						//console.log('Mapping EPC Lesson '+lesson.number, item);
 						const concepts=item.concepts.map(c=>{
 							return c.title.replace('Concept ', '').replace('.', '');
 						});
 						return ((item.short_title || item.title).split('-')[0])+(concepts.length ? ' ('+concepts.join(',')+')' : '');
-					}).join(', '),
+					})).join(', '),
 				}
 			})
 		})
