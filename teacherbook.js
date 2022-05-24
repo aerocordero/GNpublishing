@@ -336,7 +336,7 @@ async function main() {
 	
 	lessons.forEach(lesson=>{
 		lesson.pe.forEach(item=>{
-			item.lessons=lessons.filter(l=>l.pe.find(p=>p.pe_id===item.pe_id && !p.orphan && !p.hidden) && l.lesson_id!==lesson.lesson_id).map(l=>l.number).join(', ');
+			item.lessons=_.uniq(lessons.filter(l=>l.pe.find(p=>p.pe_id===item.pe_id && !p.orphan && !p.hidden) && l.lesson_id!==lesson.lesson_id).map(l=>l.number)).join(', ');
 		});
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
@@ -499,9 +499,9 @@ async function main() {
 				name: nameArr.filter(n=>!n.params.features || !n.params.features.length).map(n=>n.text).join(' '),
 				nameArr,
 				quantity: quantity || '',
-				lessons: _.sortBy(items.map(item=>{
+				lessons: _.uniq(_.sortBy(items.map(item=>{
 					return item.lesson.number;
-				}), number=>parseInt(number.split('.')[1])).join(', '),
+				}), number=>parseInt(number.split('.')[1]))).join(', '),
 				alternative,
 				notes,
 				optionalInd: item.optionalInd,
