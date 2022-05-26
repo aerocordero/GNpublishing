@@ -583,7 +583,7 @@ async function main() {
 			const item=lessons.find(l=>l.old_lesson_id===id);
 			if (item){
 				//console.log('Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : ''), currentLessonId, item);
-				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ' '+item.name+' ' : '');
+				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ' '+item.name+'' : '');
 			}
 			return '';
 		});
@@ -945,6 +945,11 @@ async function main() {
 					listsIdent: 13
 				}
 			},
+			{title: 'Library and Information Science', field: 'lib_info_science', 
+				params: {
+					listsIdent: 13
+				}
+			},
 		], blocks);
 
 		blocks.push({
@@ -1123,9 +1128,10 @@ async function main() {
 		await processObjectFieldsIntoBlocks(unit, [
 			{title: "California's Environmental Principles and Concepts", field:'epc_description', headerType:'h1', 
 				params:{
-				dontChangeCurrentTitle: true,
-				moveToNextPageIfNotFit: true
-			}},
+					dontChangeCurrentTitle: true,
+					moveToNextPageIfNotFit: true
+				}
+			},
 		], blocks);
 		
 		let epcHtml='<p><br/></p><ul>';
@@ -1504,7 +1510,7 @@ async function main() {
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')');
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
