@@ -24,6 +24,7 @@ async function main() {
 		imageInfo,
 		getImgPropheight,
 		dbQuery,
+		apiQuery,
 		closeDbConnection,
 		convertPdf,
 		processObjectFieldsIntoBlocks,
@@ -288,8 +289,9 @@ async function main() {
 		unit.orphanStandards[key]=_.sortBy(unit.orphanStandards[key], item=>item.title);
 		unit.commonCoreStandards[key]=_.sortBy(unit.commonCoreStandards[key], item=>item.title);
 	});
-	//console.log(unit);
-	//return;
+	unit.unitPerformanceExpectations=await apiQuery('/units/'+unit.unit_id+'/unitPerformanceExpectations');
+	unit.commonCoreStandardsResult=await apiQuery('/units/'+unit.unit_id+'/commonCoreStandards');
+	
 	
 	const allWorkShets=[];	
 	
@@ -963,16 +965,16 @@ async function main() {
 			{title: '', field:'ngss_description'},
 			//{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
 		], blocks);
-		
-		if (unit.orphanStandards.pe && unit.orphanStandards.pe.length){
+		//console.log(unit.unitPerformanceExpectations);
+		if (unit.unitPerformanceExpectations?.length){
 			blocks.push({
 				type: 'h2',
 				value: 'Unit Performance Expectations',
 			});
 			
 			let peHtml='';
-			_.sortBy(unit.orphanStandards.pe, s=>s.title).forEach(item=>{
-				peHtml+='<p><strong>'+item.title+':</strong> '+item.description+'<br/></p>';
+			unit.unitPerformanceExpectations.forEach(item=>{
+				peHtml+='<p><strong>'+item.performanceExpectations.title+':</strong> '+item.performanceExpectations.description+'<br/></p>';
 			})				
 			await asyncForEach(parse(peHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
@@ -1121,13 +1123,15 @@ async function main() {
 		await processObjectFieldsIntoBlocks(unit, [
 			{title: "California's Environmental Principles and Concepts", field:'epc_description', headerType:'h1', 
 				params:{
-				dontChangeCurrentTitle: true
+				dontChangeCurrentTitle: true,
+				moveToNextPageIfNotFit: true
 			}},
 		], blocks);
 		
 		let epcHtml='<p><br/></p><ul>';
-		unit.epc.forEach(item=>{
-			epcHtml+='<li>'+item.title+'</li>';
+		console.log(unit.commonCoreStandardsResult);
+		_.each(unit.commonCoreStandardsResult.environmentalPrinciplesData, item=>{
+			epcHtml+='<li>'+item.environmentalPrincipleTitle+'</li>';
 		})		
 		epcHtml+='</ul>'		
 		await asyncForEach(parse(epcHtml).childNodes, async (el)=>{
