@@ -1748,9 +1748,47 @@ async function main() {
 					},*/
 					//paddingBottom: 0.1
 				});
+				
 			}			
 		
-			
+			const lessonMaterials = [];
+			materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).map((material) => {
+				const totalQuantity = parseInt(material.quantity, 10);
+				const balance = material.reusableInd === 0 ? 0 : totalQuantity;
+				const materialToAdd = {
+					material,
+					totalQuantity,
+					balance
+				}
+				if (!lessonMaterials.some((obj) => obj.material.material_id === material.material_id)) {
+					lessonMaterials.push(materialToAdd);
+				} else {
+					const existingMaterial = lessonMaterials.find(
+					(obj) => obj.material.material_id === material.material_id
+					);
+					if (material.reusableInd === 1) {
+					if (material.balance === 0) {
+						material.balance = totalQuantity;
+						existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
+					} else if (material.balance > 0) {
+						if (material.balance <= totalQuantity) {
+						existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
+						material.balance = totalQuantity;
+						}
+					}
+					} else if (material.balance > 0) {
+					if (totalQuantity >= material.balance) {
+						existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
+						material.balance = 0;
+					} else {
+						material.balance = parseInt(material.balance, 10) - parseInt(totalQuantity, 10);
+					}
+					} else {
+					existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
+					material.balance = 0;
+					}
+				}
+				})
 			const lessonMaterialLegenda=[];
 			const materialGroups=[];//For each pair of students
 			[
@@ -1772,8 +1810,8 @@ async function main() {
 				},
 				
 			].forEach(({title, forWhomInd})=>{
-				let materials=materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
-				//console.log('materialsmaterials', materials);
+				let materials=lessonMaterials.map(m=>m.material).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
+				console.log('materialsmaterials', title, materials);
 				if (forWhomInd!=2){
 					materialGroups.push({
 						title,
