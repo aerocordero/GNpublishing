@@ -449,15 +449,16 @@ async function main() {
 		if (dimentionsFields.find(field=>item[field]>0) || (item.other_specs || parseFloat(item.weight))){
 			const weight=(parseFloat(item.weight) ? parseFloat(item.weight) : '');
 			const otherSpecs=item.other_specs ? (weight ? weight+' ': '')+item.other_specs : weight;
-			const dimentions=dimentionsFields.filter(field=>item[field]>0).map(field=>parseFloat(item[field]));
+			const dimentions=dimentionsFields.filter(field=>parseFloat(item[field])>0).map(field=>parseFloat(item[field]));
+			//console.log('dimentionsdimentions', dimentions);
 			nameArr.push({
-				text: '\n('+(otherSpecs ? otherSpecs+(item.specifications_unit ? ' '+item.specifications_unit : '') : dimentions.join(' x ')+' '+item.specifications_unit)+')',
+				text: '\n('+(otherSpecs && !dimentions.length ? otherSpecs+(item.specifications_unit ? ' '+item.specifications_unit : '') : dimentions.join(' x ')+' '+(item.specifications_unit || item.other_specs))+')',
 				params: {
 					features: []
 				}
 			})
 		}
-		//console.log('nameArr', nameArr, item);
+		console.log('nameArr', nameArr, item);
 		return nameArr;
 	};
 	
