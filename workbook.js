@@ -1305,7 +1305,7 @@ async function main() {
 		const addPagesY=[
 			70, 85
 		]
-		await asyncForEach(addPages['SEP-CCC-Images'], async (img, index)=>{
+		await asyncForEach(addPages['SEP-CCC-Images'+(language==='_spanish' ? language : '')], async (img, index)=>{
 			console.log(img);
 			const title=addPagesTitles[index];
 			const field='text'+(index+1);
