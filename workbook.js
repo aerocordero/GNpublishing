@@ -1162,8 +1162,10 @@ async function main() {
 		if (language==='spanish') {
 			fileNames=[
 				'Conceptos-Cientificos-Clave',
+				'Conceptos-Clave-de-la-Ciencia',
 				'Pensando-Visualmente',
 				'Usando-Tu-Kit-De-Herramientas-de-Ciencia',
+				'Usando-Tu-Kit-de-Herramientas-Cientificas',
 				'Practica-Guiada',
 				'Vocabulario-Clave'
 			];
