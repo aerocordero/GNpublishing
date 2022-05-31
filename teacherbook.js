@@ -90,7 +90,7 @@ async function main() {
 	
 	const modelId=argv.model || 19;
 	const unitId=argv.unit || 35;
-	const printLessonNum=argv.lesson;
+	const printLessonNum=(argv.lesson || '').toString();
 	const queueItemId=argv.queueItemId;
 	const disableImages=argv.disableImages;
 	console.log(queueItemId);
@@ -991,6 +991,10 @@ async function main() {
 		}
 		const standards=[
 			{
+				title: 'PERFORMANCE EXPECTATIONS',
+				type: 'pe'
+			},
+			{
 				title: 'SCIENCE AND ENGINEERING PRACTICES',
 				type: 'sep'
 			},
@@ -1038,7 +1042,7 @@ async function main() {
 				const itemCategoryGroups=_.groupBy(_.sortBy(items, item=>item.category && item.category!=='default'), item=>item.category);
 				//const categories=[];
 				_.each(itemCategoryGroups, (items, category)=>{
-					if (category && category!=='default'){
+					if (category && category!=='default' && category!=='undefined'){
 						//console.log('category', category);
 						blocks.push({
 							type: 'h4',
@@ -1476,7 +1480,7 @@ async function main() {
 		
 		await asyncForEach(lessons.filter((l, i)=>{
 			//return i<13 && i>=11;
-			return printLessonNum ? l.number==printLessonNum : true;
+			return printLessonNum ? printLessonNum.split(',').indexOf(l.number)>=0 : true;
 		}), async (lesson)=>{
 			//console.log('lessonlesson', lesson);
 			currentLessonIdGlobal=lesson.old_lesson_id;
@@ -1496,16 +1500,18 @@ async function main() {
 				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-					//console.log('workshet', workshet);
+					//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
 					if (workshet){
-						if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
-							(workshet.images || []).forEach(img=>images.push(img));
-						}
-						if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
-							PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+						if (!params.readOnly){
+							if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
+								(workshet.images || []).forEach(img=>images.push(img));
+							}
+							if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
+								PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+							}
 						}
 						if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-							//console.log('workshetworkshet', workshet);
+							console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
 							worksheetFromAnotherLessons.push(workshet);
 						}
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
@@ -1527,13 +1533,18 @@ async function main() {
 					images
 				};
 			}
-			worksheetFromAnotherLessons=[];
+			//worksheetFromAnotherLessons=[];
+			//This for files from another lessons array filing:
+			['teacher_prep'].forEach(field=>{
+				workshetReplaceFn(lesson[field], {readOnly:true}).string;
+			})
 			lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
 				//console.log('planItem!', plan);
-				
-				//If do this, images aren't added after the lesson plan text because file processing goes after.
-				//plan.content=workshetReplaceFn(plan.content, {}).string;
+				workshetReplaceFn(plan.content, {readOnly:true}).string;
 			});
+			['anticipated_challenges'].forEach(field=>{
+				workshetReplaceFn(lesson[field], {readOnly:true}).string;
+			})
 			//console.log(lesson.number);
 			//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
 			
@@ -1594,7 +1605,8 @@ async function main() {
 				value: 'Teaching Resources'
 			});	
 			
-			//console.log('lesson.worksheet', lesson.worksheet);
+			console.log('lesson.worksheet', lesson.number, lesson.worksheet);
+			console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
 			if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
 				
 				blocks.push({
@@ -1605,6 +1617,7 @@ async function main() {
 					const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
 					return !existing;
 				});
+				console.log('lessonFiles', lessonFiles);
 				worksheetFromAnotherLessons.forEach(file=>{
 					lessonFiles.push(file);					
 				});
@@ -1822,22 +1835,12 @@ async function main() {
 				else {
 					materials=materials.filter(m=>!materials.find(mm=>mm.material_id===m.material_id && mm.group_size>m.group_size));
 					[
-						{
-							val: 6,
-							title: 'For each group of 6 students',	
-						},
-						{
-							val: 5,
-							title: 'For each group of 5 students',	
-						},
-						{
-							val: 4,
-							title: 'For each group of 4 students',	
-						},
-						{
-							val: 3,
-							title: 'For each group of 3 students',	
-						},
+						...[...Array(30).keys()].filter(i=>i>2).reverse().map(i=>{
+							return {
+								val: i,
+								title: 'For each group of '+i+' students',	
+							};
+						}),
 						{
 							val: 2,
 							title: 'For each pair of students',	
@@ -1847,6 +1850,7 @@ async function main() {
 							title: 'For each student',	
 						},
 					].forEach(item=>{
+						//console.log('Arr intem', item);
 						const stGroupMaterials=materials.filter(m=>m.group_size==item.val);
 						materialGroups.push({
 							title:item.title,
@@ -2436,7 +2440,7 @@ async function main() {
 			const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 			return file.type==='pdf'
 				&& lesson
-				&& (printLessonNum ? lesson.number==printLessonNum : true)
+				&& (printLessonNum ? printLessonNum.split(',').indexOf(lesson.number)>=0 : true)
 				&& !file.isOnlineAccess
 				&& !file.isOnline
 				//&& !file.for_student
