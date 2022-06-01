@@ -458,7 +458,7 @@ async function main() {
 				}
 			})
 		}
-		console.log('nameArr', nameArr, item);
+		//console.log('nameArr', nameArr, item);
 		return nameArr;
 	};
 	
@@ -1858,7 +1858,6 @@ async function main() {
 						})
 					})
 				}
-				
 			})
 			//console.log('materialGroups', materialGroups);
 			materialGroups.forEach(({title, materials})=>{
@@ -1948,7 +1947,8 @@ async function main() {
 						html: listHtml,
 						childUlIdent: 15,
 						ulMarginTop: 0.001,
-						childUlAddSpaceAfterSize: 0.0000000001
+						childUlAddSpaceAfterSize: -0.0000000001,
+						//addSpaceAfter: false
 					});
 				}
 			})
