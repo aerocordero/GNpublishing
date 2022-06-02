@@ -556,7 +556,7 @@ async function main() {
 	PDFUtils.headerTextStyles={
 		h1: {
 			fontSize: 17,
-			font: fonts.regular,
+			font: fonts.bold,
 			color: 'black',
 			startOnNewPage: false,
 			dontChangeCurrentTitle: true,
@@ -941,7 +941,7 @@ async function main() {
 					listsIdent: 13
 				}
 			},
-			{title: 'Technology and Teaching', field: 'tech_teaching', 
+			{title: 'Technology and Teaching', field: 'tech_teaching', headerType:'h1', 
 				params: {
 					listsIdent: 13
 				}
