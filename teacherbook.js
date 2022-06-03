@@ -103,6 +103,10 @@ async function main() {
 		'SELECT * FROM `model` t',
 		'WHERE t.`model_id` = ?'
 	], [modelId]))[0];
+
+	const allModels=(await dbQuery([
+		'SELECT model_id, unit_id FROM `model` t',
+	], [modelId]));
 	
 	const unit=(await dbQuery([
 		'SELECT * FROM `unit` t',
@@ -110,6 +114,10 @@ async function main() {
 	], [unitId]))[0];
 	unit.files=[];
 	unit.number=model.unit_id.split(',').indexOf(unit.unit_id+"")+1;
+	
+	const allUnits=(await dbQuery([
+		'SELECT unit_id, lessons FROM `unit` t',
+	], []));
 	
 	unit.review=(await dbQuery([
 		'SELECT * FROM `unit_review` t',
@@ -165,6 +173,9 @@ async function main() {
 		'INNER JOIN `unit_lesson_mapping` m',
 		'ON t.`lesson_id`=m.`lesson_id` AND m.`unit_id` = ?',
 	], [unitId]);
+	let allLessons=await dbQuery([
+		'SELECT lesson_id, old_lesson_id, name FROM `lesson` t',
+	], []);
 	const standardTypes=['pe', 'ccc', 'ccm', 'ccl', 'sep', 'dci', 'eld'];
 	unit.orphanStandards={};
 	unit.commonCoreStandards={};	
@@ -585,6 +596,17 @@ async function main() {
 			if (item){
 				//console.log('Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ''+item.name+' ' : ''), currentLessonId, item);
 				return 'Lesson '+item.number+(currentLessonId && currentLessonId!==item.old_lesson_id ? ' '+item.name+'' : '');
+			}//allLessons
+			if (!item && id && id.indexOf('/')>=0){
+				const idArr=id.split('/');
+				const outerItem=allLessons.find(l=>l.old_lesson_id===idArr[2]);
+				const model=allModels.find(m=>m.model_id==idArr[0]);
+				const unit=allUnits.find(u=>u.unit_id==idArr[1]);
+				//console.log('idArr', idArr, outerItem, model, unit);
+				if (outerItem && model && unit) {
+					outerItem.number=(model.unit_id.split(',').indexOf(unit.unit_id+"")+1)+'.'+(unit.lessons.split(',').indexOf(outerItem.old_lesson_id+"")+1);
+					return 'Lesson '+outerItem.number+' '+outerItem.name+' ';
+				}
 			}
 			return '';
 		});
@@ -955,12 +977,13 @@ async function main() {
 					listsIdent: 13
 				}
 			},
-			{title: 'Library and Information Science', field: 'lib_info_science', 
+			{title: 'Library and Information Science', field: 'lib_info_science', headerType:'h1',
 				params: {
 					listsIdent: 13
 				}
 			},
 		], blocks);
+		
 
 		blocks.push({
 			type: 'h1',
