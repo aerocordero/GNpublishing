@@ -805,6 +805,7 @@ async function main() {
 			startOnNewPage: true,
 			noHeader:true,
 			color: colors.lessonGreen,
+			font: fonts.regular,
 			leftIdent: 55,
 			fontSize: 20,
 			paddingBottom: 0.5,
@@ -829,6 +830,7 @@ async function main() {
 			value:'Differentiation Learning Support',
 			startOnNewPage: true,
 			startOnRightSide: false,
+			font: fonts.regular,
 			noHeader:true,
 			color: colors.lessonGreen,
 			leftIdent: 55,
@@ -898,6 +900,7 @@ async function main() {
 			{title: 'Unit Storyline', field:'unit_storyboard', headerType:'h1', params:{
 				dontChangeCurrentTitle: true,
 				showTitleWhenParagraphBreaks: true,
+				showTitleWhenParagraphBreaksType: 'h1',
 				imgParams: {
 					
 				}
@@ -911,7 +914,13 @@ async function main() {
 				}
 			},
 			{title: 'Science Background', field:'background_description', headerType:'h1'},
-			{title: 'Science in Action', field:'science_in_action_description', breakAfter: true, headerType:'h1'},
+			{title: 'Science in Action', field:'science_in_action_description', breakAfter: true, headerType:'h2',
+				params: {
+					imgParams: {
+						
+					}
+				}
+			},
 			{title: 'Green Ninja Connections', field: 'connections_description', breakAfter: true, headerType:'h1',
 				params: {
 					imgParams: {
@@ -1978,14 +1987,24 @@ async function main() {
 					},
 				},
 			], blocks);
+
+			await processObjectFieldsIntoBlocks({
+				sequence: `<p className='para-text'>This is the suggested sequence of learning activities for this lesson. Note that session times are estimates. Depending on students' progress, the sessions may be shorter or longer.</p>`
+			}, [
+				{title: 'Lesson Plan', field:'sequence', 
+					headerType:'h1',
+					params: {
+						paddingBottom: 0.2
+					},
+				},
+			], blocks);
+			blocks.push({
+				type: 'line',
+				showOnTopOfThePage: false,
+			});
 			//return;
 		
-			blocks.push({
-				type: 'h1',
-				value: 'Lesson Plan',
-				//headerTitle: header,
-				paddingBottom: 0.2
-			});
+			
 		
 			let planTotalTime=0;
 			const proceedFile=async (file)=>{
