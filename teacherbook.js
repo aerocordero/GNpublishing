@@ -1489,9 +1489,9 @@ async function main() {
 						removeFirstparagraphNum: (plan.title || plan.header)==='Additional Reading' ? 3 : 0,
 						replaceFn: (str)=>{
 							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
-								return '('+str+')';
+								return ''+str+'';
 							});
-							return string;
+							return string.replace(/\(\(/g, '(').replace(/\)\)/g, ')');
 						}
 					}},
 				], blocks);				
