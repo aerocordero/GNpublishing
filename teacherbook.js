@@ -2222,11 +2222,23 @@ async function main() {
 					value: 'Standards',
 					paddingBottom: 0.2
 				})
+				if (lesson.ngss_description?.trim()){
+					await asyncForEach(parse(lesson.ngss_description).childNodes, async (el)=>{
+						await parseHTMLIntoBlocks(el, {
+							params: {
+								replaceFn: workshetReplaceFn,
+							},
+						}, blocks);
+					});
+				}
+				
+			
 	
 				blocks.push({
 					type: 'table',
 					fontSize: 10,
 					padding: 7,
+					marginTop: lesson.ngss_description?.trim() ? 6 : 0,
 					columns: [
 						{
 							id: 'title',
