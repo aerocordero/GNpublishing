@@ -1481,10 +1481,13 @@ async function main() {
 			});	
 			*/		
 			//console.log('review.activityPlan', review.activityPlan);
-			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos'].indexOf(p.title)<0), p=>p.header);
+			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos'].indexOf(p.title)<0), p=>p.header).filter(
+				plan=>plan.content?.trim()
+			);
+			let planIndex=0;
 			await asyncForEach(sortedPlan, async (plan)=>{
-				const index=sortedPlan.indexOf(plan);
-				await processObjectFieldsIntoBlocks(plan, [
+				const index=planIndex;
+				const res=await processObjectFieldsIntoBlocks(plan, [
 					{title: plan.title ? (index+1)+'. '+plan.title : plan.header, field:'content', params: {
 						removeFirstparagraphNum: (plan.title || plan.header)==='Additional Reading' ? 3 : 0,
 						replaceFn: (str)=>{
@@ -1494,8 +1497,13 @@ async function main() {
 							return string.replace(/\(\(/g, '(').replace(/\)\)/g, ')');
 						}
 					}},
-				], blocks);				
+				], blocks);	
+				if (res){
+					planIndex++;
+				}
+				//console.log('sortedPlan', res)		
 			});		
+			//console.log(sortedPlan);
 		});		
 	
 		
