@@ -311,6 +311,9 @@ async function main() {
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
 		fields.forEach(field=>{
+			if (!obj[field]){
+				return;
+			}
 			//console.log(obj[field]);
 			obj[field]=obj[field].replace(new RegExp('\(\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
@@ -379,7 +382,7 @@ async function main() {
 			plan.number=parseInt(headerMatch[1]);
 			plan.title=(headerMatch[2] || '').trim();
 		});
-		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep']);
+		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions']);
 	});
 	//return;
 	
@@ -1551,7 +1554,7 @@ async function main() {
 							}
 						}
 						if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-							console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
+							//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
 							worksheetFromAnotherLessons.push(workshet);
 						}
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
@@ -2192,6 +2195,7 @@ async function main() {
 			const backgroundForTeachersBlocks=[
 				{title: 'Content Knowledge', field:'background', headerType: 'h2',
 					params: {
+						replaceFn: workshetReplaceFn,
 						imgParams: {
 							width: 350,
 							align: 'center',
@@ -2200,10 +2204,25 @@ async function main() {
 						}
 					}
 				},
-				{title: 'Access and Equity', field:'access_equity', headerType: 'h2'},
-				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h2'},
-				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h2'},
-				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h2'},
+				{title: 'Access and Equity', field:'access_equity', headerType: 'h2', 
+					params: {
+						replaceFn: workshetReplaceFn
+					}
+				},
+				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h2', 
+					params: {
+						replaceFn: workshetReplaceFn
+					}
+				},
+				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h2', 
+					params: {
+						replaceFn: workshetReplaceFn
+					}},
+				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h2', 
+					params: {
+						replaceFn: workshetReplaceFn
+					}
+				},
 			];
 			if (backgroundForTeachersBlocks.find(bl=>lesson[bl.field])){
 				blocks.push({
@@ -2212,11 +2231,31 @@ async function main() {
 				});
 				await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
 			}
-			
+			console.log('lesson.pe', lesson.pe);
 			const lessonStandards=lesson.pe.filter(item=>!item.orphan && !item.hidden);
-			
-			//console.log('lessonStandards', lessonStandards);
-			if (lessonStandards.length){
+			const otherStandards=[
+				{
+					type:'pe',
+					title: 'Performance Expectation(s)'
+				},
+				{
+					type:'sep',
+					title: 'Science and Engineering Practice(s)'
+				},
+				{
+					type:'dci',
+					title: 'Disciplinary Core Idea(s)'
+				},
+				{
+					type:'ccc',
+					title: 'Crosscutting Concept(s)'
+				},
+			];
+			otherStandards.forEach(st=>{
+				st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
+			})
+
+			if (lessonStandards.length || otherStandards.find(st=>st.items.length)){
 				blocks.push({
 					type: 'h1',
 					value: 'Standards',
@@ -2231,6 +2270,10 @@ async function main() {
 						}, blocks);
 					});
 				}
+			}
+			
+			//console.log('lessonStandards', lessonStandards);
+			if (lessonStandards.length){
 				
 			
 	
@@ -2268,27 +2311,7 @@ async function main() {
 				//console.log('lesson.pe', lesson.pe);
 			}
 			
-			const otherStandards=[
-				{
-					type:'pe',
-					title: 'Performance Expectation(s)'
-				},
-				{
-					type:'sep',
-					title: 'Science and Engineering Practice(s)'
-				},
-				{
-					type:'dci',
-					title: 'Disciplinary Core Idea(s)'
-				},
-				{
-					type:'ccc',
-					title: 'Crosscutting Concept(s)'
-				},
-			];
-			otherStandards.forEach(st=>{
-				st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
-			})
+			
 		
 			if (otherStandards.find(st=>st.items.length)){
 				blocks.push({
