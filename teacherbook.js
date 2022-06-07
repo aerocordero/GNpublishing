@@ -1497,7 +1497,8 @@ async function main() {
 				const index=planIndex;
 				const res=await processObjectFieldsIntoBlocks(plan, [
 					{title: plan.title ? (index+1)+'. '+plan.title : plan.header, field:'content', params: {
-						removeFirstparagraphNum: (plan.title || plan.header)==='Additional Reading' ? 3 : 0,
+						//removeFirstparagraphNum: (plan.title || plan.header)==='Additional Reading' ? 3 : 0,
+						removeFirstparagraphNum: 0,
 						replaceFn: (str)=>{
 							const string=str.replace(new RegExp('\\(\\{\\{'+unit.unit_id+'\\}\\}([a-zA-Z0-9\-\.]+)\\)', 'igm'), (match, str, str1, str2)=>{					
 								return ''+str+'';
