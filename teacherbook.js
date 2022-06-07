@@ -326,7 +326,7 @@ async function main() {
 				//console.log(workshet);
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
-					//console.log('regexp_'+field, match, str, str1);
+					console.log('regexp_'+field, match, str, str1);
 				}
 				if (workshet){
 					if (lesson.lesson_id===fileLesson.lesson_id){
@@ -382,7 +382,7 @@ async function main() {
 			plan.number=parseInt(headerMatch[1]);
 			plan.title=(headerMatch[2] || '').trim();
 		});
-		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions']);
+		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions', 'all_together', 'safety_guidelines', 'extensions']);
 	});
 	//return;
 	
@@ -2275,7 +2275,11 @@ async function main() {
 			//console.log('lessonStandards', lessonStandards);
 			if (lessonStandards.length){
 				
-			
+				blocks.push({
+					type: 'h2',
+					value: 'NGSS Standards',
+					paddingBottom: 0.2
+				})
 	
 				blocks.push({
 					type: 'table',
@@ -2490,9 +2494,18 @@ async function main() {
 			}
 			
 			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
-				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
-				{title: 'Extension', field:'extensions', headerType: 'h1', params: { replaceFn: (str)=>PDFUtils.convertHtml(str, lesson.old_lesson_id)}},
+				{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { 
+					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+					dontShowImagesAfter: true,
+				}},
+				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { 
+					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+					dontShowImagesAfter: true,
+				}},
+				{title: 'Extension', field:'extensions', headerType: 'h1', params: { 
+					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+					dontShowImagesAfter: true,
+				}},
 			], blocks);
 		
 			
