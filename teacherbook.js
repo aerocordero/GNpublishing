@@ -481,11 +481,16 @@ async function main() {
 		const rawData=materialData[key];
 		materials[key]=_.sortBy(_.values(_.groupBy(rawData, m=>m.material_id)).map(materials=>{	
 			const item=materials[0];
-			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id);
+			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id && item.quantity===m.quantity);
 
 			let quantity=parseFloat(item.totalQty);
 			
-		
+			if (item.name==='Ice'){
+				//console.log('Ice_itemsitemsitemsitems', items);
+			}
+			if (item.plural_name==='Science notebooks'){
+				//console.log('Science notebooks_itemsitemsitemsitems', items);
+			}
 		
 			items.forEach(item=>{
 				//quantity+=(parseFloat(item.quantity) || 0);
