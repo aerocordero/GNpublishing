@@ -2016,9 +2016,11 @@ async function main() {
 			await processObjectFieldsIntoBlocks(lesson, [
 				{title: 'Teacher Prep', field:'teacher_prep', 
 					headerType:'h1',
+					
 					params: {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
+						notShowTitleWhenParagraphBreaks: true,
 						//dontShowImagesAfter: true,
 						imgParams: {
 							align: 'center',
