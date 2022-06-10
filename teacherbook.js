@@ -481,15 +481,15 @@ async function main() {
 		const rawData=materialData[key];
 		materials[key]=_.sortBy(_.values(_.groupBy(rawData, m=>m.material_id)).map(materials=>{	
 			const item=materials[0];
-			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id && item.quantity===m.quantity);
+			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id && item.optionalInd===m.optionalInd);
 
 			let quantity=parseFloat(item.totalQty);
 			
-			if (item.name==='Ice'){
+			if (item.name==='Clear plastic cups'){
 				//console.log('Ice_itemsitemsitemsitems', items);
 			}
-			if (item.plural_name==='Science notebooks'){
-				//console.log('Science notebooks_itemsitemsitemsitems', items);
+			if (item.plural_name==='Clear plastic cups'){
+				//console.log('Clear plastic cups_itemsitemsitemsitems', items);
 			}
 		
 			items.forEach(item=>{
@@ -1566,7 +1566,7 @@ async function main() {
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.').replace('))', ')').replace('((', '(');
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
@@ -2021,7 +2021,7 @@ async function main() {
 						listsIdent: 13,
 						replaceFn: workshetReplaceFn,
 						notShowTitleWhenParagraphBreaks: true,
-						//dontShowImagesAfter: true,
+						dontShowImagesAfter: true,
 						imgParams: {
 							align: 'center',
 							maxHeight: 300
