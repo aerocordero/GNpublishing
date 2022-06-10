@@ -1566,7 +1566,7 @@ async function main() {
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',');
+				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.');
 				if (string.indexOf('; from ')>0){
 					images=[];
 				}
@@ -1654,7 +1654,7 @@ async function main() {
 				value: 'Teaching Resources'
 			});	
 			
-			console.log('lesson.worksheet', lesson.number, lesson.worksheet);
+			//console.log('lesson.worksheet', lesson.number, lesson.worksheet);
 			console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
 			if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
 				
@@ -1874,7 +1874,7 @@ async function main() {
 				
 			].forEach(({title, forWhomInd})=>{
 				let materials=lessonMaterials.map(m=>m.material).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
-				console.log('materialsmaterials', title, materials);
+				//console.log('materialsmaterials', title, materials);
 				if (forWhomInd!=2){
 					materialGroups.push({
 						title,
