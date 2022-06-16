@@ -1492,7 +1492,7 @@ async function main() {
 			});	
 			*/		
 			//console.log('review.activityPlan', review.activityPlan);
-			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos'].indexOf(p.title)<0), p=>p.header).filter(
+			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos', 'Unit Video'].indexOf(p.title)<0), p=>p.header).filter(
 				plan=>plan.content?.trim()
 			);
 			let planIndex=0;
