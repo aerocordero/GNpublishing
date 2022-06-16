@@ -94,6 +94,9 @@ async function main() {
 	const queueItemId=argv.queueItemId;
 	const disableImages=argv.disableImages;
 	console.log(queueItemId);
+	console.log(printLessonNum);
+	//return;
+
 	
 	const customPages=await initCustomPages(__dirname+'/gdrive/teacherbook');
 	
@@ -1529,6 +1532,7 @@ async function main() {
 		
 		await asyncForEach(lessons.filter((l, i)=>{
 			//return i<13 && i>=11;
+			//console.log(l.number, printLessonNum.split(',').indexOf(l.number), printLessonNum.split(','))
 			return printLessonNum ? printLessonNum.split(',').indexOf(l.number)>=0 : true;
 		}), async (lesson)=>{
 			//console.log('lessonlesson', lesson);
@@ -1551,18 +1555,21 @@ async function main() {
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
 					//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
 					if (workshet){
-						if (!params.readOnly){
-							if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
-								(workshet.images || []).forEach(img=>images.push(img));
+						if (!workshet.isOnlineAccess){
+							if (!params.readOnly){
+								if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
+									(workshet.images || []).forEach(img=>images.push(img));
+								}
+								if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
+									PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+								}
 							}
-							if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
-								PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+							if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
+								//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
+								worksheetFromAnotherLessons.push(workshet);
 							}
 						}
-						if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-							//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
-							worksheetFromAnotherLessons.push(workshet);
-						}
+						
 						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
 					}
 					return '';
