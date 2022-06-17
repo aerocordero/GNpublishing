@@ -30,7 +30,7 @@ const apiProxy = proxy('https://app.greenninja.org/', {
 	proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
 		// you can update headers
 		const userCookies=srcReq.headers['x-gn-auth'];
-		if (userCookies){
+		if (userCookies && JSON.parse(userCookies)){
 			//proxyReq._header.Cookie=JSON.parse(userCookies).join('; ');
 			proxyReqOpts.headers.Cookie=JSON.parse(userCookies).join('; ');
 			//proxyReq.setHeader('Cookie', JSON.parse(userCookies).join('; '));
@@ -121,6 +121,8 @@ app.use('/', express.static('./public'));
 app.use('/tc', express.static('./public'));
 app.use('/workbook', express.static('./public'));
 app.use('/files', express.static('./public'));
+app.use('/user', express.static('./public'));
+app.use('/user/*', express.static('./public'));
 
 const server=app.listen(port, null, function() {
     console.log('Express server listening on port %d', port);
