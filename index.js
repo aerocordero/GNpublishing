@@ -18,6 +18,45 @@ const app = express();
 const expressWs = require('express-ws')(app);
 const router = require('./api');
 
+const proxy = require('express-http-proxy');
+const cors = require('cors');
+const url = require('url');
+
+// New hostname+path as specified by question:
+const apiProxy = proxy('https://app.greenninja.org/', {
+    proxyReqPathResolver: req => {
+		return url.parse(req.baseUrl).path.replace('/gnapi/', '/');
+	},
+	proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
+		// you can update headers
+		const userCookies=srcReq.headers['x-gn-auth'];
+		if (userCookies){
+			//proxyReq._header.Cookie=JSON.parse(userCookies).join('; ');
+			proxyReqOpts.headers.Cookie=JSON.parse(userCookies).join('; ');
+			//proxyReq.setHeader('Cookie', JSON.parse(userCookies).join('; '));
+		}
+		return proxyReqOpts;
+	},
+	userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
+		// recieves an Object of headers, returns an Object of headers.
+		const resCookies=proxyRes.headers['set-cookie'];
+		
+		if (resCookies){
+			headers['X-GN-Auth']=JSON.stringify(resCookies);
+		}
+		
+		console.log(proxyRes.headers, userRes.headers, headers, proxyRes.data);
+		//console.log(proxyReq);
+		return headers;
+	}
+});
+//app.use(cors());
+app.use('/gnapi/*', cors({
+	//origin: false,
+	exposedHeaders:['content-length', 'content-type', 'X-GN-Auth'],
+	//methods: ['GET', 'PUT', 'POST'],
+}), apiProxy);
+
 const statePath=__dirname+'/state.json';
 //const db=pool.promise();
 const state=fs.existsSync(statePath) ? require(statePath) : {};
