@@ -43,6 +43,7 @@ const apiProxy = proxy('https://app.greenninja.org/', {
 		
 		if (resCookies){
 			headers['X-GN-Auth']=JSON.stringify(resCookies);
+			headers['set-cookie']=undefined;
 		}
 		
 		console.log(proxyRes.headers, userRes.headers, headers, proxyRes.data);
