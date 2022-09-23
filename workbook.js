@@ -1070,8 +1070,18 @@ async function main() {
 			color: colors.unitTitle,
 		});
 	
-		
+		const filenameRaplace={
+			'Lección 2.5a-reservas-petroliferas-de-eeuu':'a-reservas-petroliferas-de-eeuu-fenomeno',
+			'Lección 2.18b-cubiertos-plasticos':'b-cubiertos-plasticos-fenomeno',
+			'Lección 2.23a-diferente-calidad-de-aire':'a-diferente-calidad-de-aire-fenomeno',
+		}
+
 		await asyncForEach(allWorkShets.filter(file=>{
+			const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
+			if (filenameRaplace[file.fileTitle]){
+				file.fileTitle=filenameRaplace[file.fileTitle];
+			}
+			console.log(lesson.number, '-', file.fileTitle);
 			const excludedEnds=['presentation','transcripts','exit-ticket','key'];
 			const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
 			return isPhenomenon || (file.worksheet_language_id==languageId
