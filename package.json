@@ -23,7 +23,7 @@
     "jsdom": "^19.0.0",
     "json2csv": "^5.0.7",
     "lodash": "^4.17.21",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "mysql2": "^2.1.0",
     "nanoid": "^3.1.31",
     "node-html-parser": "^1.2.16",
