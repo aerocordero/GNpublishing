@@ -1071,9 +1071,9 @@ async function main() {
 		});
 	
 		const filenameRaplace={
-			'Lección 2.5a-reservas-petroliferas-de-eeuu':'a-reservas-petroliferas-de-eeuu-fenomeno',
-			'Lección 2.18b-cubiertos-plasticos':'b-cubiertos-plasticos-fenomeno',
-			'Lección 2.23a-diferente-calidad-de-aire':'a-diferente-calidad-de-aire-fenomeno',
+			'Lección 2.5a-reservas-petroliferas-de-eeuu':'Lección 2.5a-reservas-petroliferas-de-eeuu-fenomeno',
+			'Lección 2.18b-cubiertos-plasticos':'Lección 2.18b-cubiertos-plasticos-fenomeno',
+			'Lección 2.23a-diferente-calidad-de-aire':'Lección 2.23a-diferente-calidad-de-aire-fenomeno',
 		}
 
 		await asyncForEach(allWorkShets.filter(file=>{
