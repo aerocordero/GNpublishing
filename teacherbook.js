@@ -34,7 +34,8 @@ async function main() {
 		GDFolderSync,
 		getImgInfoAndRotate,
 		loadQueue,
-		saveQueue
+		saveQueue,
+		arrayUnique
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -152,14 +153,19 @@ async function main() {
 		'SELECT *',
 		'FROM unit_worksheet_mapping m',
 		'JOIN worksheet_unit_review t ON m.worksheet_unit_review_id = t.worksheet_unit_review_id',
+		'INNER JOIN file f ON f.id = t.file_id',
 		'WHERE m.unit_id = ? AND t.worksheet_language_id=1 '
 	], [unitId]);
 	const reviewFilesRoot=parse(unit.review[0].files).querySelectorAll('li');
 	unit.reviewWorkshet.forEach(item=>{
+		
 		const pathArr=item.path.split('/');
 		item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 		item.fileNameWithExt=item.fileName+'.'+item.type;
 		item.fileTitle=item.fileName;
+		if (item.s3_filename){
+			item.path='/getWordDoc?path=/uploads/lessons/'+item.s3_filename
+		}
 		
 		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
 		
@@ -191,90 +197,51 @@ async function main() {
 		'SELECT * FROM `EP_concepts` t'
 	], []));
 	//console.log('epConcepts', epConcepts);
+
+
 	
 	await asyncForEach(lessons, async (lesson)=>{
-		lesson.pe=await dbQuery([
-			'SELECT *, pe.title, lpm.progressions, pe.pe_id, pe.description, pe.statements',
-			'FROM lesson_pe_mapping_new lpm',
-			'JOIN PE_NEW pe ON lpm.pe_id = pe.pe_id',
-			'WHERE lpm.lesson_id = ? and lpm.hidden = false   '
-		], [lesson.lesson_id]);
-		lesson.ccc=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccc_mapping_new m',
-			'JOIN CCC_NEW_copy t ON m.ccc_id = t.id',
-			'JOIN pe_ccc pe ON pe.ccc_id = t.id',
-			'WHERE m.lesson_id = ?',
-			'GROUP BY m.ccc_id',
-			'ORDER BY t.short_title'
-		], [lesson.lesson_id]);
-		lesson.ccm=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccm_mapping_new m',
-			'JOIN CCM_NEW t ON m.ccm_id = t.id',
-			'WHERE m.lesson_id = ?',
-			'GROUP BY m.ccm_id',
-			//'ORDER BY t.short_title'
-		], [lesson.lesson_id]);
-		lesson.ccm=_.sortBy(lesson.ccm, item=>item.priority);
-		lesson.ccl=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccl_mapping_new m',
-			'JOIN CCL_NEW t ON m.ccl_id = t.id',
-			'WHERE m.lesson_id = ?',
-			'GROUP BY m.ccl_id',
-			//'ORDER BY t.short_title'
-		], [lesson.lesson_id]);		
-		lesson.ccl=_.sortBy(lesson.ccl, item=>item.priority);
+		lesson.standards=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonStandards?orphan=0`);
+		lesson.orphanStandards=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonStandards?orphan=1`);
+		lesson.allStandards=[];
+		['standards', 'orphanStandards'].forEach(key=>{
+			lesson[key].forEach(st=>{
+				let stObj=lesson.allStandards.find(s=>s.name===st.name);
+				if (!stObj){
+					stObj=_.cloneDeep(st);
+					lesson.allStandards.push(stObj);
+				}
+				st.items.forEach(stItem=>{
+					if (!stObj.items.find(si=>si.id===stItem.id)){
+						stObj.items.push(stItem);
+					}
+				})
+				stObj.items.forEach(item=>{
+					if (!item.name){
+						item.name=item.title;
+					}
+				})
+				stObj.items=_.sortBy(arrayUnique(stObj.items, 'name'), item=>item.priority);
+			})	
+		})
 		
-		lesson.dci=await dbQuery([
-			'SELECT *',
-			'FROM lesson_dci_mapping_new m',
-			'JOIN DCI_NEW_copy t ON m.dci_id = t.id',
-			'JOIN pe_dci pe ON pe.dci_id = t.id',
-			'WHERE m.lesson_id = ?',
-			'GROUP BY m.dci_id',
-			'ORDER BY t.short_title'
-		], [lesson.lesson_id]);
-		lesson.dci=_.sortBy(lesson.dci, item=>item.priority);
-		lesson.sep=await dbQuery([
-			'SELECT *',
-			'FROM lesson_sep_mapping_new m',
-			'JOIN SEP_NEW_copy t ON m.sep_id = t.id',
-			'JOIN pe_sep pe ON pe.sep_id = t.id',
-			'WHERE m.lesson_id = ?',
-			'GROUP BY m.sep_id',
-			'ORDER BY short_title'
-		], [lesson.lesson_id]);		
-		lesson.sep=_.sortBy(lesson.sep, item=>item.priority);
-		lesson.eld=await dbQuery([
-			'SELECT *',
-			'FROM lesson_eld_mapping_new m',
-			'JOIN ELD_NEW t ON m.eld_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
-		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
-		lesson.epc=(await dbQuery([
-			'SELECT *',
-			'FROM lesson_epc_mapping m',
-			'JOIN environmental_principle_copy t ON m.environmental_principle_id = t.environmental_principle_id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id])).map(item=>{
-			const conceptIds=item.concepts_string.split(',').map(i=>parseInt(i));
-			item.concepts=epConcepts.filter(c=>conceptIds.indexOf(c.concepts_id)>=0);
-			return item;
-		});		
-		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
-
+		console.log(lesson.orphanStandards);
+		
 		
 		
 		lesson.worksheet=await dbQuery([
 			'SELECT *',
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
+			'INNER JOIN file f ON f.id = t.file_id',
 			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id=1'
 		], [lesson.lesson_id]);
-		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
+		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx').map(item=>{
+			if (item.s3_filename){
+				item.path='/getWordDoc?path=/uploads/lessons/'+item.s3_filename;
+			}
+			return item;
+		});
 		
 		lesson.activityPlan=await dbQuery([
 			'SELECT *',
@@ -287,7 +254,12 @@ async function main() {
 			'FROM lesson_vocab_mapping m',
 			'JOIN vocab t ON m.vocab_id = t.vocab_id',
 			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
+		], [lesson.lesson_id]);	
+		
+
+		//console.log(lesson.worksheet);
+		
+		/*
 		standardTypes.forEach(key=>{
 			lesson[key].forEach(item=>{
 				if (!unit.orphanStandards[key].find(a=>a[key+'_id']===item[key+'_id']) && (item.orphan===undefined || (item.orphan!==undefined && item.orphan))){
@@ -298,15 +270,21 @@ async function main() {
 				}
 			});
 		})
+		*/
 	});
+	unit.orphanStandards=await apiQuery(`/units/${modelId}/${unitId}/unitStandards?orphan=1`);
+	unit.standards=await apiQuery(`/units/${modelId}/${unitId}/unitStandards?orphan=0`);
+	/*
+	return; 
 	standardTypes.forEach(key=>{
 		unit.orphanStandards[key]=_.sortBy(unit.orphanStandards[key], item=>item.title);
 		unit.commonCoreStandards[key]=_.sortBy(unit.commonCoreStandards[key], item=>item.title);
 	});
-	unit.unitPerformanceExpectations=await apiQuery('/units/'+unit.unit_id+'/unitPerformanceExpectations');
-	unit.commonCoreStandardsResult=await apiQuery('/units/'+unit.unit_id+'/commonCoreStandards');
+	*/
+	//unit.unitPerformanceExpectations=await apiQuery('/units/'+unit.unit_id+'/unitPerformanceExpectations');
+	//unit.commonCoreStandardsResult=await apiQuery('/units/'+unit.unit_id+'/commonCoreStandards');
 	
-	
+	//return;
 	const allWorkShets=[];	
 	
 	const unitLessonIds=unit.lessons.split(',');
@@ -354,9 +332,11 @@ async function main() {
 	lessons=_.sortBy(lessons, l=>l.index);
 	
 	lessons.forEach(lesson=>{
+		/*
 		lesson.pe.forEach(item=>{
 			item.lessons=_.uniq(lessons.filter(l=>l.pe.find(p=>p.pe_id===item.pe_id && !p.orphan && !p.hidden) && l.lesson_id!==lesson.lesson_id).map(l=>l.number)).join(', ');
 		});
+		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
@@ -1009,22 +989,51 @@ async function main() {
 			color: colors.black
 		});
 
+		const standardItemsHtml=(items)=>{
+			let html='<ul>';
+			items.forEach(item=>{
+				if (!item.title){
+					return;
+				}
+				html+='<li>';
+				html+=item.title;
+				if (item.items.length){
+					html+=standardItemsHtml(item.items);
+				}
+				html+='</li>';
+			})			
+			html+='</ul>';
+			return html;			
+		}
+
+		const renderStandardItems=async(items)=>{
+			const html=standardItemsHtml(items);
+			//console.log({html});
+			await asyncForEach(parse(html).childNodes, async (el)=>{
+				await parseHTMLIntoBlocks(el, {
+					ident: 0,
+					brFontSize: 0.5
+				}, blocks);
+			});	
+		}
 		
 		await processObjectFieldsIntoBlocks(unit, [
 			{title: '', field:'ngss_description'},
 			//{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
 		], blocks);
 		//console.log(unit.unitPerformanceExpectations);
-		if (unit.unitPerformanceExpectations?.length){
+		const unitPe=unit.standards.find(st=>st.name==='pe');
+		if (unitPe && unitPe.items.length){
 			blocks.push({
 				type: 'h2',
 				value: 'Unit Performance Expectations',
 			});
 			
 			let peHtml='';
-			unit.unitPerformanceExpectations.forEach(item=>{
-				peHtml+='<p><strong>'+item.performanceExpectations.title+':</strong> '+item.performanceExpectations.description+'<br/></p>';
-			})				
+			unitPe.items.forEach(item=>{
+				peHtml+='<p><strong>'+item.title+':</strong> '+item.description+'<br/></p>';
+			})	;
+			console.log({peHtml})			;
 			await asyncForEach(parse(peHtml).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
@@ -1032,26 +1041,9 @@ async function main() {
 				}, blocks);
 			});
 		}
-		const standards=[
-			{
-				title: 'PERFORMANCE EXPECTATIONS',
-				type: 'pe'
-			},
-			{
-				title: 'SCIENCE AND ENGINEERING PRACTICES',
-				type: 'sep'
-			},
-			{
-				title: 'DISCIPLINARY CORE IDEAS',
-				type: 'dci'
-			},
-			{
-				title: 'CROSSCUTTING CONCEPTS',
-				type: 'ccc'
-			},		
-		];
-		//console.log(unit.commonCoreStandards);
-		if (standards.filter(c=>unit.orphanStandards[c.type] && unit.orphanStandards[c.type].length).length){
+		const otherStandards=unit.orphanStandards.filter(st=>st.items.length);
+
+		if (otherStandards.length){
 			blocks.push({
 				type: 'h2',
 				value: 'Connections to Other NGSS Standards',
@@ -1063,13 +1055,14 @@ async function main() {
 				await parseHTMLIntoBlocks(el, {}, blocks);
 			});
 		}
-		standards.forEach(c=>{
-			const items=unit.orphanStandards[c.type] || [];
+
+		await asyncForEach(otherStandards, async standard=>{
+			const items=standard.items;
 			if (items.length){
 				//console.log('c.title', c.title);
 				blocks.push({
 					type: 'h3',
-					value: c.title,
+					value: standard.title.toUpperCase(),
 					isHtml:false,
 					font: fonts.regular,
 					ident: 0,
@@ -1082,118 +1075,90 @@ async function main() {
 					}
 					
 				});
-				const itemCategoryGroups=_.groupBy(_.sortBy(items, item=>item.category && item.category!=='default'), item=>item.category);
-				//const categories=[];
-				_.each(itemCategoryGroups, (items, category)=>{
-					if (category && category!=='default' && category!=='undefined'){
-						//console.log('category', category);
-						blocks.push({
-							type: 'h4',
-							value: category,
-							isHtml:false,
-							ident: 0,
-							marginTop: 0.5,
-							isTitle: true,
-							marginBottom: 0.001,
-						});
-					}
-					else {
-						/*
-						blocks.push({
-							type: 'lineBreak',
-						});
-						*/
 
-					}
-					//console.log('items', _.keys(_.groupBy(items, item=>item.title)));
+				//await renderStandardItems(items);
+				blocks.push({
+					type: 'list',
+					value: items.filter(item=>item.title && !item.items.filter(st=>st.title).length).map(item=>item.title),
+					notMoveDownAfter: false
+				});
+				items.filter(item=>item.items.filter(st=>st.title).length).forEach(category=>{
+					blocks.push({
+						type: 'h4',
+						value: category.title,
+						isHtml:false,
+						ident: 0,
+						marginTop: 0.5,
+						isTitle: true,
+						marginBottom: 0.001,
+					});
 					blocks.push({
 						type: 'list',
-						value: _.keys(_.groupBy(items, item=>item.title)),
+						value:category.items.map(item=>item.title),
 						notMoveDownAfter: false
 					});
-				});				
-			}
-		})
-		
-		//return;
-		
-		await processObjectFieldsIntoBlocks(unit, [
-			{title: 'Common Core and CA ELD Standards', field:'common_core', headerType:'h1', breakAfter: true, params:{
-				dontChangeCurrentTitle: true,
-				//startOnNewPage: true,
-			}},
-			//{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
-		], blocks);
-		
-		
-		const coreStandards=[
-			{
-				title: 'COMMON CORE - ELA/Literacy',
-				type: 'ccl'
-			},
-			{
-				title: 'COMMON CORE - Mathematics',
-				type: 'ccm'
-			},
-			{
-				title: 'CA ELD',
-				type: 'eld'
-			},		
-		];		
+				})				
 				
-		coreStandards.forEach(c=>{
-			const items=unit.commonCoreStandards[c.type] || [];
-			if (items.length){
+			}
+		})		
+		
+		
+		const ccStandard=unit.standards.find(st=>st.name==='cc');
+
+		if (ccStandard){
+			await processObjectFieldsIntoBlocks(unit, [
+				{title: 'Common Core and CA ELD Standards', field:'common_core', headerType:'h1', breakAfter: true, params:{
+					dontChangeCurrentTitle: true,
+					//startOnNewPage: true,
+				}},
+				//{title: 'Safety Guidelines', field:'materials_safety_guidelines'},
+			], blocks);
+
+			ccStandard.items.forEach(category=>{
 				blocks.push({
 					type: 'p',
-					value: c.title+'',
+					value: category.title,
 					isHtml:false,
 					marginTop: 0.001,
 					params: {
 						//moveDown: 0.2
 					}
-				});				
-				const itemCategoryGroups=_.groupBy(items, item=>item.category);
-				_.each(itemCategoryGroups, (items, category)=>{
-					if (category && category!=='default'){
-						blocks.push({
-							type: 'p',
-							value: '<em>'+category+'</em>',
-							isHtml:false,
-							marginTop: 0.001,
-							ident: 0,
-						});
+				});
+				blocks.push({
+					type: 'list',
+					value:category.items.map(item=>item.title),
+					notMoveDownAfter: false
+				});
+			})	
+		}
+		
+		const epcStandard=unit.standards.find(st=>st.name==='epc');
+		
+			
+		
+		if (epcStandard){
+			await processObjectFieldsIntoBlocks(unit, [
+				{title: "California's Environmental Principles and Concepts", field:'epc_description', headerType:'h1', 
+					params:{
+						dontChangeCurrentTitle: true,
+						moveToNextPageIfNotFit: true
 					}
-					blocks.push({
-						type: 'list',
-						value: _.keys(_.groupBy(_.sortBy(items, item=>item.priority), item=>item.title)),
-						notMoveDownAfter: false
-					});
-				});			
-			}
-		});
+				},
+			], blocks);
+			let epcHtml='<p><br/></p><ul>';
+
+			_.each(epcStandard.items, item=>{
+				epcHtml+='<li>'+item.title+'</li>';
+			})		
+			epcHtml+='</ul>'		
+			await asyncForEach(parse(epcHtml).childNodes, async (el)=>{
+				await parseHTMLIntoBlocks(el, {
+					ident: 0,
+					brFontSize: 0.5
+				}, blocks);
+			});
+		}	
 		
-		await processObjectFieldsIntoBlocks(unit, [
-			{title: "California's Environmental Principles and Concepts", field:'epc_description', headerType:'h1', 
-				params:{
-					dontChangeCurrentTitle: true,
-					moveToNextPageIfNotFit: true
-				}
-			},
-		], blocks);
-		
-		let epcHtml='<p><br/></p><ul>';
-		console.log(unit.commonCoreStandardsResult);
-		_.each(unit.commonCoreStandardsResult.environmentalPrinciplesData, item=>{
-			epcHtml+='<li>'+item.environmentalPrincipleTitle+'</li>';
-		})		
-		epcHtml+='</ul>'		
-		await asyncForEach(parse(epcHtml).childNodes, async (el)=>{
-			await parseHTMLIntoBlocks(el, {
-				ident: 0,
-				brFontSize: 0.5
-			}, blocks);
-		});
 		
 		
 				
@@ -1238,8 +1203,9 @@ async function main() {
 					marginBottom: 0.0001,
 				},
 				
-			},			
+			},					
 		], blocks);		
+
 		
 		blocks.push({
 			type: 'pageBreak',
@@ -1256,8 +1222,7 @@ async function main() {
 			isHtml: false
 		});
 		
-		//
-		
+		//		
 		
 		blocks.push({
 			type: 'table',
@@ -1269,6 +1234,7 @@ async function main() {
 					header: model.display_name+' Unit '+unit.number,
 					width: 55,
 				},
+				...[
 				{
 					id: 'pe',
 					header: 'PE',
@@ -1298,7 +1264,7 @@ async function main() {
 					header: 'EP&C',
 					align: 'left',
 					width: 81,
-				},
+				}].filter(header=>unit.standards.find(st=>st.name===header.id && st.items.length))
 			],
 			data: lessons.map(lesson=>{
 				lesson.ep=[];
@@ -1308,29 +1274,36 @@ async function main() {
 					Developmental:'Dev',
 					Assessment:'Assess',
 					Checkpoint:'Check',
+					'Summative Assessment': 'Assess',
 					'Culminating Experience':'Culm Exp',
 					'Culminating-Experience':'Culm Exp',
 				};
-				return {
+				const obj={
 					lesson: 'Lesson '+lesson.number,
-					pe: lesson.pe.map(item=>{
-						//console.log('Mapping PE Lesson '+lesson.number, item);
-						return (item.title || item.short_title || '')+(item.progressions ? ' ('+(item.progressions.split(',').map(p=>progressions[p] || p).join(', '))+')' : '');
-					}).join(', '),
-					sep: _.uniq(lesson.sep.map(item=>item.short_title)).join(', '),
-					dci: _.uniq(lesson.dci.map(item=>item.short_title)).join(', '),
-					ccc: _.uniq(lesson.ccc.map(item=>item.short_title)).join(', '),
-					epc: _.uniq(lesson.epc.map(item=>{
-						//console.log('Mapping EPC Lesson '+lesson.number, item);
-						const concepts=item.concepts.map(c=>{
-							return c.title.replace('Concept ', '').replace('.', '');
-						});
-						return ((item.short_title || item.title).split('-')[0])+(concepts.length ? ' ('+concepts.join(',')+')' : '');
-					})).join(', '),
-				}
+				};
+				lesson.allStandards.forEach(standard=>{
+					obj[standard.name]=standard.items.map(item=>{
+						let title=item.name || item.title;
+						if (item.progressions?.length){
+							title+=' ('+item.progressions.map(pr=>progressions[pr.name] || pr.name).join(', ')+')';
+						}
+						if (item.items?.filter(sub=>sub.title).length){
+							title+=' (';
+							title+=item.items.filter(sub=>sub.title).map(subItem=>{
+								return subItem.title.replace('Concept ', '').replace('.', '');
+							}).join(', ');							
+							title+=')';
+						}	
+						if (standard.name==='ccc' && item.items?.filter(sub=>sub.name).length){
+							title=item.items[0].name;
+						}
+						return title;
+					}).join(', ');
+				});
+				return obj;				
 			})
 		})
-		//return;
+		
 		
 	
 		blocks.push({
@@ -2247,7 +2220,10 @@ async function main() {
 				await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
 			}
 			console.log('lesson.pe', lesson.pe);
-			const lessonStandards=lesson.pe.filter(item=>!item.orphan && !item.hidden);
+			//return;
+			const lessonStandards=lesson.standards.find(st=>st.name==='pe');
+
+			/*
 			const otherStandards=[
 				{
 					type:'pe',
@@ -2268,9 +2244,9 @@ async function main() {
 			];
 			otherStandards.forEach(st=>{
 				st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
-			})
+			})*/
 
-			if (lessonStandards.length || otherStandards.find(st=>st.items.length)){
+			if (lessonStandards.items?.length || lesson.orphanStandards.find(st=>st.items.length)){
 				blocks.push({
 					type: 'h1',
 					value: 'Standards',
@@ -2288,7 +2264,7 @@ async function main() {
 			}
 			
 			//console.log('lessonStandards', lessonStandards);
-			if (lessonStandards.length){
+			if (lessonStandards.items?.length){
 				
 				blocks.push({
 					type: 'h2',
@@ -2314,8 +2290,8 @@ async function main() {
 							width: 155,
 							align: 'left',
 							renderer: function (tb, data) {	
-								let str=data.progressions.split(',').map(s=>s.trim()).join(', ');							
-								return str.replace('Culminating-Experience', 'Culminating Experience');
+								let str=data.progressions.map(p=>p.name).join(', ');							
+								return str;
 							},
 						},
 						{
@@ -2323,16 +2299,20 @@ async function main() {
 							header: 'Lessons building to PE(s)',
 							width: 155,
 							align: 'left',
+							renderer: function (tb, data) {	
+								let str=_.sortBy(data.lessonIds.map(id=>lessons.find(l=>l.lesson_id==id)).filter(l=>l && l.lesson_id!==lesson.lesson_id), l=>l.index).map(l=>l.number).join(', ');							
+								return str;
+							},
 						},
 					],
-					data: lessonStandards
+					data: lessonStandards.items
 				});
 				//console.log('lesson.pe', lesson.pe);
 			}
 			
-			
+			//return;
 		
-			if (otherStandards.find(st=>st.items.length)){
+			if (lesson.orphanStandards.find(st=>st.items.length)){
 				blocks.push({
 					type: 'h3',
 					value: 'Connections to Other NGSS Standards',
@@ -2349,7 +2329,7 @@ async function main() {
 					await parseHTMLIntoBlocks(el, {}, blocks);
 				});
 				
-				await asyncForEach(otherStandards.filter(st=>st.items.length), async (st)=>{
+				await asyncForEach(lesson.orphanStandards.filter(st=>st.items.length), async (st)=>{
 					blocks.push({
 						type: 'p',
 						value: st.title,
@@ -2380,6 +2360,7 @@ async function main() {
 				});
 			}
 			
+			/*
 			const commonCoreStandards=[
 				{title: 'COMMON CORE - ELA/Literacy', field:'ccl'},
 				{title: 'COMMON CORE - Mathematics', field:'ccm'},
@@ -2388,10 +2369,11 @@ async function main() {
 			commonCoreStandards.forEach(st=>{
 				st.items=lesson[st.field] || [];
 			})
-			const lessonCCStandards=commonCoreStandards.filter(st=>st.items.length);
+			*/
+			const lessonCCStandards=lesson.standards.find(st=>st.name==='cc');
 			
 			
-			if (lessonCCStandards.length){
+			if (lessonCCStandards.items.length){
 				blocks.push({
 					type: 'h2',
 					value: 'Common Core and CA ELD Standards',
@@ -2402,7 +2384,7 @@ async function main() {
 					{title: '', field:'common_core'},
 				], blocks);
 		
-				lessonCCStandards.forEach((st, index)=>{
+				lessonCCStandards.items.forEach((st, index)=>{
 					if (st.items.length){
 						//console.log('st.items', st.items);
 						blocks.push({
@@ -2429,8 +2411,9 @@ async function main() {
 				});
 			}
 			//epc
-		
-			if (lesson.epc && lesson.epc.length){
+			//return;
+			const lessonEpc=lesson.standards.find(st=>st.name==='epc');
+			if (lessonEpc && lessonEpc.items.length){
 				//console.log('lesson.epc', lesson.epc);
 				
 				blocks.push({
@@ -2440,9 +2423,9 @@ async function main() {
 					paddingBottom: 0.0001,
 					moveToNextPageIfNotFit: true
 				});
-				await asyncForEach(lesson.epc, async (item)=>{
-					const concepts=item.concepts;
-					await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.definition+'</p>').childNodes, async (el)=>{
+				await asyncForEach(lessonEpc.items, async (item)=>{
+					const concepts=item.items;
+					await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.description+'</p>').childNodes, async (el)=>{
 						await parseHTMLIntoBlocks(el, {
 							ident: 0,
 						}, blocks);
@@ -2460,7 +2443,7 @@ async function main() {
 							leftTextIdent: 30
 						});
 						let html='<ul>';
-						html+='<li>'+st.definition+'</li>';
+						html+='<li>'+st.description+'</li>';
 						html+='</ul>';
 
 						blocks.push({
