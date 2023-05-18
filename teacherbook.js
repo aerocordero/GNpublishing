@@ -2246,7 +2246,7 @@ async function main() {
 				st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
 			})*/
 
-			if (lessonStandards.items?.length || lesson.orphanStandards.find(st=>st.items.length)){
+			if (lessonStandards?.items?.length || lesson.orphanStandards.find(st=>st.items.length)){
 				blocks.push({
 					type: 'h1',
 					value: 'Standards',
@@ -2264,7 +2264,7 @@ async function main() {
 			}
 			
 			//console.log('lessonStandards', lessonStandards);
-			if (lessonStandards.items?.length){
+			if (lessonStandards?.items?.length){
 				
 				blocks.push({
 					type: 'h2',
@@ -2373,7 +2373,7 @@ async function main() {
 			const lessonCCStandards=lesson.standards.find(st=>st.name==='cc');
 			
 			
-			if (lessonCCStandards.items.length){
+			if (lessonCCStandards?.items?.length){
 				blocks.push({
 					type: 'h2',
 					value: 'Common Core and CA ELD Standards',
