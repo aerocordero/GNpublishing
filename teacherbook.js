@@ -144,8 +144,15 @@ async function main() {
 		item.activityPlan.forEach(plan=>{
 			const headerMatch=plan.header.match(/([\d]+)\.(.*)/i);
 			//console.log(headerMatch);
-			plan.number=parseInt(headerMatch[1]);
-			plan.title=(headerMatch[2] || '').trim();
+			if (headerMatch){
+				plan.number=parseInt(headerMatch[1]);
+				plan.title=(headerMatch[2] || '').trim();
+			}
+			else {
+				plan.number=plan.position+1;
+				plan.title=plan.header;
+			}
+			
 		})
 	});
 	
@@ -362,8 +369,15 @@ async function main() {
 			//console.log(item.content);
 			const headerMatch=plan.header.match(/([\d]+)\.(.*)/i);
 			//console.log(headerMatch);
-			plan.number=parseInt(headerMatch[1]);
-			plan.title=(headerMatch[2] || '').trim();
+			if (headerMatch){
+				plan.number=parseInt(headerMatch[1]);
+				plan.title=(headerMatch[2] || '').trim();
+			}
+			else {
+				plan.title=plan.header;
+				plan.number=plan.position+1;
+			}
+			
 		});
 		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions', 'all_together', 'safety_guidelines', 'extensions']);
 	});
