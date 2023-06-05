@@ -87,12 +87,19 @@ async function main() {
 	}
 	
 	const fonts={
-		regular: 'fonts/Muli-Regular.ttf',
-		bold: 'fonts/Muli-Bold.ttf',
-		semiBold: 'fonts/Muli-SemiBold.ttf',
-		italic: 'fonts/Muli-Italic.ttf',
-		boldItalic: 'fonts/Muli-BoldItalic.ttf',
+		regular: 'fonts/mulish/Mulish-Regular.ttf',
+		bold: 'fonts/mulish/Mulish-Bold.ttf',
+		semiBold: 'fonts/mulish/Mulish-SemiBold.ttf',
+		italic: 'fonts/mulish/Mulish-Italic.ttf',
+		boldItalic: 'fonts/mulish/Mulish-BoldItalic.ttf',
 		arial: 'fonts/arial-unicode-ms.ttf', 
+	}
+	const fontsHeading={
+		regular: 'fonts/Kodchasan/Kodchasan-Regular.ttf',
+		bold: 'fonts/Kodchasan/Kodchasan-Bold.ttf',
+		semiBold: 'fonts/Kodchasan/Kodchasan-SemiBold.ttf',
+		italic: 'fonts/Kodchasan/Kodchasan-Italic.ttf',
+		boldItalic: 'fonts/Kodchasan/Kodchasan-BoldItalic.ttf',
 	}
 	
 	console.log('Connected to the DB');
@@ -121,6 +128,8 @@ async function main() {
 	if (gradeColors[model.display_name]){
 		colors.unitTitle=gradeColors[model.display_name];
 	}
+
+	
 	//console.log(unit);
 	//return
 	const allMessages={};
@@ -197,6 +206,8 @@ async function main() {
 		'INNER JOIN `unit_lesson_mapping` m',
 		'ON t.`lesson_id`=m.`lesson_id` AND m.`unit_id` = ?',
 	], [unitId]);
+
+	/*
 	const standardTypes=['pe', 'ccc', 'ccm', 'ccl', 'sep', 'dci', 'eld'];
 	unit.orphanStandards={};
 	unit.commonCoreStandards={};	
@@ -204,8 +215,14 @@ async function main() {
 		unit.orphanStandards[key]=[];
 		unit.commonCoreStandards[key]=[];		
 	})
+	*/
+
+	
+	
+	
 	
 	await asyncForEach(lessons, async (lesson)=>{
+		/*
 		lesson.pe=await dbQuery([
 			'SELECT pe.title, lpm.progressions, pe.pe_id, pe.description, pe.statements',
 			'FROM lesson_pe_mapping_new lpm',
@@ -254,6 +271,7 @@ async function main() {
 			'WHERE m.lesson_id = ?'
 		], [lesson.lesson_id]);		
 		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
+		*/
 		
 		lesson.worksheet=await dbQuery([
 			'SELECT *',
@@ -276,6 +294,7 @@ async function main() {
 			languageId > 1 ? 'LEFT OUTER JOIN vocab sp ON sp.version_vocab_id = t.vocab_id and sp.language_id='+languageId : '',
 			'WHERE m.lesson_id = ?' 
 		], [lesson.lesson_id]);		
+		/*
 		standardTypes.forEach(key=>{
 			lesson[key].forEach(item=>{
 				if (!unit.orphanStandards[key].find(a=>a[key+'_id']===item[key+'_id']) && (item.orphan===undefined || (item.orphan!==undefined && item.orphan))){
@@ -285,13 +304,15 @@ async function main() {
 					unit.commonCoreStandards[key].push(item);
 				}
 			});
-		})
+		})*/
 		//console.log(lesson.vocab);
 	});
+	/*
 	standardTypes.forEach(key=>{
 		unit.orphanStandards[key]=_.sortBy(unit.orphanStandards[key], item=>item.title);
 		unit.commonCoreStandards[key]=_.sortBy(unit.commonCoreStandards[key], item=>item.title);
 	});
+	*/
 	//console.log(unit);
 	//return;
 	
@@ -335,11 +356,52 @@ async function main() {
 	});
 
 	lessons=_.sortBy(lessons, l=>l.index);
+
+	let chapters=(await dbQuery([
+		'SELECT * FROM `chapter` t',
+	], []));
+	let chapterLessonMappings=(await dbQuery([
+		'SELECT * FROM `chapter_lesson_mapping` t',
+	], []));
+
+	unit.chapterMappings=chapterLessonMappings.filter(lm=>{
+		if (!lm.is_review){
+			lm.lesson=lessons.find(l=>l.lesson_id==lm.lesson_id);
+			return lm.lesson;
+		}
+	});
+
+	unit.chapterMappings=_.sortBy(unit.chapterMappings, lm=>lm.lesson.index);
+	const chapterGroups=[];
+	unit.chapterMappings.forEach(uch=>{
+		let obj=chapterGroups.find(chg=>chg.id===uch.chapter_id);
+		const chapterObj=chapters.find(ch=>ch.id==uch.chapter_id);
+		if (!chapterObj){
+			return;
+		}
+		if (!obj){
+			obj=chapterObj;
+			chapterGroups.push(obj);
+			//console.log(uch);
+			obj.unitChapters=[];
+		}
+		obj.unitChapters.push(uch);
+	});
+	chapterGroups.forEach((chapter, index)=>{
+		chapter.lessons=unit.chapterMappings.filter(uch=>uch.chapter_id===chapter.id);
+		chapter.number=index+1;
+	})
+	unit.chapters=chapterGroups;
+	//console.log(unit.chapters);
+	//return;
+
 	unit.vocab=[];
 	lessons.forEach(lesson=>{
+		/*
 		lesson.pe.forEach(item=>{
 			item.lessons=lessons.filter(l=>l.pe.find(p=>p.pe_id===item.pe_id)).map(l=>l.number).join(', ');
 		});
+		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
@@ -503,25 +565,34 @@ async function main() {
 		level0: {
 			font: fonts.bold,
 			fontSize: 12,
+			underline: true
 		},
 		level1: {
+			font: fonts.bold,
+			fontSize: 10,
+		},
+		level2: {
 			font: fonts.regular,
 			fontSize: 10,
 		},
+		headerParams: {
+			icon: 'arrow',
+		},
 		leftIdent: textIdents.left+10,
-		levelIdent: 5,
+		levelIdent: 10,
 		width: contentWidth-textIdents.left,
 		lineParams: {
 			leftIdent: textIdents.left,
 			width: contentWidth+20
-		}
+		},
+		moveDown: 0.5,
 	}
 	
 	PDFUtils.headerTitles=[
 
 	];	
 	
-	PDFUtils.writeHeader=(doc, header)=>{
+	PDFUtils.writeHeader=(doc, header, pageNum)=>{
 		if (!header){
 			return;
 		}
@@ -570,18 +641,51 @@ async function main() {
 			  });
 			
 		}
+		else if (header.type==='reading'){	
+			const boxIdent=pageNum%2===0 ? 20 : 550;	
+			const boxHeight=80;
+			const boxWidth=40;
+			doc
+			.save()
+			.moveTo(boxIdent, 0)
+			//.lineTo(50, 40)
+			.lineTo(boxIdent, boxHeight-10)
+			.bezierCurveTo(boxIdent, boxHeight-10, boxIdent, boxHeight, boxIdent+10, boxHeight)
+			.lineTo(boxIdent+boxWidth-10, boxHeight)
+			.bezierCurveTo(boxIdent+boxWidth-10, boxHeight, boxIdent+boxWidth, boxHeight, boxIdent+boxWidth, boxHeight-10)
+			.lineTo(boxIdent+boxWidth, 0)
+			.fill(colors.unitTitle);			
+			doc
+				.addSVG(fs.readFileSync('images/icons/reading-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+10, {
+				  width: boxWidth-10,
+				  height: boxWidth-10,				  
+				});
+			console.log(header);
+			if (header.chapter){
+				doc
+					.font(fonts.regular)
+					.fontSize(12)
+					.fillColor(header.color || colors.unitTitle)
+					.text('Lessons '+header.chapter.lessonSequence, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+5, {
+						width: contentWidth-75,
+						align: pageNum%2===0 ? 'left' : 'right',
+					});
+
+					doc
+					.font(fonts.bold)
+					.fontSize(16)
+					.fillColor(header.color || colors.unitTitle)
+					.text(header.chapter.name, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+25, {
+						width: contentWidth-75,
+						align: pageNum%2===0 ? 'left' : 'right',
+					});
+			}
+		}
 		
 		
 		//doc.x=60;
 	  
-		doc
-		  .font(fonts.semiBold)
-		  .fontSize(24)
-		  .fillColor(header.color || colors.unitTitle)
-		  .text(header.titleLeft, textIdents.left-10, 30, {
-		  	width: contentWidth,
-		  	align: 'left'
-		  });
+		
 		
 		if (header.showThoughtStartIcon){
 			doc
@@ -592,15 +696,42 @@ async function main() {
 				});
 		}
 	  
-	  	if (!header.hideLine){
-	  		doc
-			  .save()
-			  .moveTo(textIdents.left-10, lineY)
-			  //.lineTo(50, 40)
-			  .lineTo(contentWidth+textIdents.left-10, lineY)
-			  .lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
-			  .lineTo(textIdents.left-10, lineY+lineWidth)
-			  .fill(header.color || colors.unitTitle);	
+	  	if (!header.hideLine && header.type!=='reading'){
+			if (header.type!=='nameClassDate'){
+				doc
+					.font(fonts.bold)
+					.fontSize(24)
+					.fillColor(header.color || colors.unitTitle)
+					.text(header.titleLeft, textIdents.left+70, 30, {
+						width: contentWidth,
+						align: 'left'
+					});
+
+				lineY=60;
+				const boxHeight=30;
+				doc
+				.save()
+				.moveTo(0, lineY-boxHeight)
+				//.lineTo(50, 40)
+				.lineTo(textIdents.left+40, lineY-boxHeight)
+				.bezierCurveTo(textIdents.left+40, lineY-boxHeight, textIdents.left+50, lineY-boxHeight, textIdents.left+50, lineY-boxHeight+10)
+				.lineTo(textIdents.left+50, lineY+lineWidth-10)
+				.bezierCurveTo(textIdents.left+50, lineY+lineWidth-10, textIdents.left+50, lineY+lineWidth, textIdents.left+40, lineY+lineWidth)
+				.lineTo(0, lineY+lineWidth)
+				.fill(colors.unitTitle);	
+					
+			}
+			else {
+				doc
+				.save()
+				.moveTo(textIdents.left-10, lineY)
+				//.lineTo(50, 40)
+				.lineTo(contentWidth+textIdents.left-10, lineY)
+				.lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
+				.lineTo(textIdents.left-10, lineY+lineWidth)
+				.fill(header.color || colors.unitTitle);	
+			}
+	  		
 	  	}
 		
 		
@@ -612,17 +743,19 @@ async function main() {
 		const hideLine=footerData && footerData.hideLine;
 		
 		if (pageNum%2===0){
-			doc
-			.font(fonts.regular)
-			.fontSize(12)
-			.fill('black')
-			.text(pageNum, textIdents.left-10, lineY-7, {
-				width: 465,
-				continued: false,
-				align: 'left'
-			});
 			
 			if(!hideLine){
+
+				doc
+				  .save()
+				  .moveTo(0, lineY-20)
+				  //.lineTo(50, 40)
+				  .lineTo(textIdents.left+16-10, lineY-20)
+				  .bezierCurveTo(textIdents.left+16-10, lineY-20, textIdents.left+16, lineY-20, textIdents.left+16, lineY-10)
+				  .lineTo(textIdents.left+16, lineY+lineWidth)
+				  .lineTo(0, lineY+lineWidth)
+				  .fill(colors.unitTitle);	
+
 				doc
 				  .save()
 				  .moveTo(textIdents.left+16, lineY)
@@ -642,20 +775,30 @@ async function main() {
 					align: 'right'
 				});
 			}
-			
-		}
-		else {
 			doc
 			.font(fonts.regular)
 			.fontSize(12)
-			.fill('black')
-			.text(pageNum, textIdents.left-10, lineY-7, {
-				width: contentWidth,
+			.fill(hideLine ? 'black' : 'white')
+			.text(pageNum, textIdents.left-10, lineY-17, {
+				width: 465,
 				continued: false,
-				align: 'right'
+				align: 'left'
 			});
+		}
+		else {
 			
 			if(!hideLine){
+
+				doc
+				  .save()
+				  .moveTo(contentWidth+12, lineY-10)
+				  //.lineTo(50, 40)
+				  .bezierCurveTo(contentWidth+12, lineY-10, contentWidth+12, lineY-20, contentWidth+22, lineY-20) 
+				  .lineTo(contentWidth+textIdents.left+35, lineY-20)
+				  .lineTo(contentWidth+textIdents.left+35, lineY+lineWidth)
+				  .lineTo(contentWidth+12, lineY+lineWidth)
+				  .fill(colors.unitTitle);	
+
 				doc
 				  .save()
 				  .moveTo(textIdents.left-10, lineY)
@@ -675,6 +818,15 @@ async function main() {
 					align: 'left'
 				});
 			}
+			doc
+			.font(fonts.regular)
+			.fontSize(12)
+			.fill(hideLine ? 'black' : 'white')
+			.text(pageNum, textIdents.left-10, lineY-17, {
+				width: contentWidth,
+				continued: false,
+				align: 'right'
+			});
 		}
 		
 		if (footerData){
@@ -690,47 +842,131 @@ async function main() {
 		}
 	}
 	
-	PDFUtils.writeSectionCover=(doc, {title, image, color, contentsTitle, sectionNum, text, textFontSize})=>{
+	PDFUtils.writeSectionCover=(doc, {title, image, color, contentsTitle, contentsLevel, sectionNum, chapterNum, text, subTitle, textFontSize})=>{
 		PDFUtils.currentTitle=null;				
 		doc.addPage();
-		if (PDFUtils.isRightPage()){
+		if (PDFUtils.isRightPage() && !chapterNum){
 			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
 			doc.addPage();			
 		}
-		const top=200;
+		if (PDFUtils.isLeftPage() && chapterNum){
+			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
+			doc.addPage();			
+		}
+		const top=180;
 		doc.x=60;
 		
-		if (sectionNum){
+		if (sectionNum){			
+
 			doc
-			  .font(fonts.bold)
-			  .fontSize(24)
-			  .fill(color)
-			  .text(translate('Section')+' '+sectionNum, textIdents.left, top, {
+				.save()
+				.font(fontsHeading.bold)
+				.fontSize(18)
+				.fill(color)
+				.text(translate('Section'), textIdents.left+20, 30, {
+					width: 100,
+					align: 'center'
+				  });
+
+			doc
+				.save()
+				.font(fontsHeading.bold)
+				.fontSize(55)
+				.fill(color)
+				.text('0'+sectionNum, textIdents.left+20, 45, {
+					width: 100,
+					align: 'center'
+				  });
+
+			doc
+				.font(fontsHeading.bold)
+				.fontSize(42)
+				.fill(color)
+				.text(title, textIdents.left+140, 40, {
+				//width: 400,
+				//align: 'center'
+				});
+
+			let curveTop=doc.y+30;
+
+			doc
+				.save()
+				.moveTo(0, curveTop)
+				//.lineTo(50, 40)
+				.bezierCurveTo(200, curveTop+60, 200, curveTop-40, 420, curveTop+0)
+				.quadraticCurveTo(500, curveTop+15, 640, curveTop)
+				.lineWidth(2)
+				.stroke(color);
+
+			
+			doc.y+=130;
+		}
+		else if (chapterNum) {
+
+			const curveLeft=50;
+			doc
+				.save()
+				.moveTo(curveLeft, 0)
+				//.lineTo(50, 40)
+				.bezierCurveTo(curveLeft-40, 300, curveLeft+80, 600, curveLeft-30, 850)
+				//.quadraticCurveTo(500, curveTop+15, 640, curveTop)
+				.lineWidth(2)
+				.stroke(color);
+
+			doc
+				.font(fonts.bold)
+				.fontSize(20)
+				.fill(color)
+				.text(translate('Chapter')+' '+chapterNum, textIdents.left, top, {
+					width: PDFUtils.textWidth,
+					align: 'center',
+					//underline: true
+				});
+			
+			doc
+				.save()
+				.moveTo(260, top+30)
+				//.lineTo(50, 40)
+				.lineTo(370, top+30)
+				.lineWidth(2)
+				.stroke(color);
+				
+			doc
+				.font(fonts.bold)
+				.fontSize(28)
+				.fill(color)
+				.text(title, 150, top+50, {
+					width: 330,
+					align: 'center'
+				});
+
+				doc.y+=40;
+			
+			doc
+			.font(fonts.bold)
+			.fontSize(14)
+			.fill('black')
+			.text(subTitle, textIdents.left, doc.y, {
 				width: PDFUtils.textWidth,
 				align: 'center'
-			  });
-		  
-			  doc
-			  .save()
-			  .moveTo(290, top+50)
-			  //.lineTo(50, 40)
-			  .lineTo(330, top+50)
-			  .lineTo(330, top+52)
-			  .lineTo(290, top+52)
-			  .fill(color);		
+			});
+			doc.y+=20;
+		}
+		else {
+			doc
+				.font(fonts.regular)
+				.fontSize(38)
+				.fill(color)
+				.text(title, textIdents.left, top+80, {
+					width: PDFUtils.textWidth,
+					align: 'center'
+				});
+				doc.y+=30;
 		}
 
-		doc
-		  .font(fonts.regular)
-		  .fontSize(36)
-		  .fill(color)
-		  .text(title, textIdents.left, top+60, {
-			width: PDFUtils.textWidth,
-			align: 'center'
-		  });
 		
 		if (text){
-			doc.y+=30;
+			
 			parseHtml(text.split('\n').map(t=>t.trim()).join('').trim()).childNodes.forEach(node=>{
 				//console.log('nodenodenodenode', node);
 				PDFUtils.drawActions.p(doc, {
@@ -738,12 +974,12 @@ async function main() {
 					isHtml:true,
 					parentEl: node,
 					params: {
-						ident: 100,
-						width: 340,
-						fontSize: textFontSize || 11,
+						ident: 90,
+						width: 360,
+						fontSize: 12,
 						listsIdent: 15,
 						processListsAsBlocks: true,
-						moveDown: 0.7
+						moveDown: 1.7
 					}
 				});
 				//doc.y+=2;
@@ -761,12 +997,22 @@ async function main() {
 			
 		}
 		  
-		
+		if (sectionNum){
+			let curveTop=700;
+			doc
+				.save()
+				.moveTo(0, curveTop)
+				//.lineTo(50, 40)
+				.bezierCurveTo(200, curveTop+60, 200, curveTop-40, 420, curveTop+0)
+				.quadraticCurveTo(500, curveTop+15, 640, curveTop)
+				.lineWidth(2)
+				.stroke(color);
+		}
 
 		
 
 		if (contentsTitle){
-			PDFUtils.drawActions.contentsPush(doc, {title:contentsTitle, level:0, color});
+			PDFUtils.drawActions.contentsPush(doc, {title:contentsTitle, level:contentsLevel || 0, color});
 		}
 		PDFUtils.drawActions.setFooter(doc, {hideLine:true});
 		
@@ -856,7 +1102,7 @@ async function main() {
 			type: 'contentsPush',
 			title: translate('Unit Overview'), 
 			level: 1, 
-			color: colors.black
+			color: colors.unitTitle
 		});
 		//
 		await processObjectFieldsIntoBlocks(unit, [
@@ -897,7 +1143,7 @@ async function main() {
 			type: 'contentsPush',
 			title: translate('Unit Roadmap'), 
 			level: 1, 
-			color: colors.black
+			color: colors.unitTitle
 		});
 		
 
@@ -1064,8 +1310,8 @@ async function main() {
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 2,
-			title: translate('Activity Files'),
-			contentsTitle: translate('Section')+' 2: '+translate('Activity Files'),
+			title: translate('Lesson Files'),
+			contentsTitle: translate('Section')+' 2: '+translate('Lesson Files'),
 			text: customPagesGlobal.Section3.content,
 			color: colors.unitTitle,
 		});
@@ -1075,84 +1321,106 @@ async function main() {
 			'Lección 2.18b-cubiertos-plasticos':'Lección 2.18b-cubiertos-plasticos-fenomeno',
 			'Lección 2.23a-diferente-calidad-de-aire':'Lección 2.23a-diferente-calidad-de-aire-fenomeno',
 		}
-
-		await asyncForEach(allWorkShets.filter(file=>{
-			const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
-			if (filenameRaplace[file.fileTitle]){
-				file.fileTitle=filenameRaplace[file.fileTitle];
-			}
-			console.log(lesson.number, '-', file.fileTitle);
-			const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-			const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
-			return isPhenomenon || (file.worksheet_language_id==languageId
-				&& (argv.firstExport || (!argv.firstExport && file.for_student))
-				&& file.type==='pdf' 
-				&& (!roadMapImg || (roadMapImg && file.id!==roadMapImg.id)) 
-				//&& !phenomenonFiles.find(f=>f.id===file.id)
-				&& !excludedEnds.find(str=>file.fileNameWithExt.indexOf(str+'.')>0)
-				&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
-		}), async (file)=>{
-			//const file=allWorkShets.find(file=>file.fileTitle.indexOf(fileName.trim())===0);
-			let contentsObj;
-			//console.log(file);
-			if (currLessonId!==file.lesson_id){
-				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
-				if (lesson){
-					contentsObj={
-						title: translate('Lesson')+' '+lesson.number+' '+translate(lesson.name)+' '+translate('Files'), 
-						level: 1, 
-						color: colors.black
-					}
-					currLessonId=file.lesson_id;
+		console.log(unit.chapters);
+		await asyncForEach(unit.chapters, async chapter=>{
+			const files=allWorkShets.filter(file=>{
+				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id && chapter.lessons.find(chl=>chl.lesson_id===l.lesson_id));
+				if (!lesson){
+					return;
 				}
-				
-			}
-			//
-			const path=await downloadFile(file.path);
-			const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
-			//const imgPaths=await convertPdf(path);
-			//console.log(imgPaths);
-			let x=textIdents.left;
-			const images=[]; 
-			const width=465;
-
-			await asyncForEach(imgPaths, async (item)=>{
-				const imgInfo=await getImgInfoAndRotate(item.imagePath);
-				images.push({
-					path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
-					height: getImgPropheight(imgInfo, width),
-					rotated: imgInfo.rotated,
-					width,
-					x
-				})
-				x+=width;
-				if (x>390){
-					x=textIdents.left;
-				} 
+				if (filenameRaplace[file.fileTitle]){
+					file.fileTitle=filenameRaplace[file.fileTitle];
+				}
+				console.log(lesson.number, '-', file.fileTitle);
+				const excludedEnds=['presentation','transcripts','exit-ticket','key'];
+				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
+				return isPhenomenon || (file.worksheet_language_id==languageId
+					&& (argv.firstExport || (!argv.firstExport && file.for_student))
+					&& file.type==='pdf' 
+					&& (!roadMapImg || (roadMapImg && file.id!==roadMapImg.id)) 
+					//&& !phenomenonFiles.find(f=>f.id===file.id)
+					&& !excludedEnds.find(str=>file.fileNameWithExt.indexOf(str+'.')>0)
+					&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
 			});
-			if (images && images.length && images[0]){
-				const width=images[0].rotated ? 590 : 612
-				blocks.push({
-					type: 'lessonFiles',
-					value: images,
-					file,
-					contentsObj,
-					leftIdent: (612-width)/2,
-					width,
-					bottomBoxY: images[0].rotated ? 745 : 735,
-					rightBoxX: images[0].rotated ? 548 : 600,
-					leftBoxWidth: images[0].rotated ? 55 : 0,
-					headerParams: {
-						type: file.for_print ? 'nameClassDate' : '',
-						topWhiteOverlayHeight: 52,
-						lineY: 45
+
+			if (!files.length){
+				return;
+			}
+			chapter.lessonSequence=`${unit.number}.${chapter.lessons[0].lesson.index+1} - ${unit.number}.${chapter.lessons[chapter.lessons.length-1].lesson.index+1}`;
+			blocks.push({
+				type: 'sectionCover',
+				chapterNum: chapter.number,
+				title: translate(chapter.name),
+				subTitle: translate('This chapter covers lesson sequence')+` ${chapter.lessonSequence}.`,
+				contentsTitle: translate('Chapter '+chapter.number)+': '+translate(chapter.name),
+				text: chapter.student_description || chapter.description,
+				color: colors.unitTitle,
+				contentsLevel: 1,
+			});
+			
+			await asyncForEach(files, async file=>{
+				let contentsObj;
+				//console.log(file);
+				if (currLessonId!==file.lesson_id){
+					const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
+					if (lesson){
+						contentsObj={
+							title: translate('Lesson')+' '+lesson.number+' '+translate(lesson.name)+' '+translate('Files'), 
+							level: 2, 
+							color: colors.black
+						}
+						currLessonId=file.lesson_id;
+					}
+					
+				}
+				//
+				const path=await downloadFile(file.path);
+				const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
+				//const imgPaths=await convertPdf(path);
+				//console.log(imgPaths);
+				let x=textIdents.left;
+				const images=[]; 
+				const width=465;
+
+				await asyncForEach(imgPaths, async (item)=>{
+					const imgInfo=await getImgInfoAndRotate(item.imagePath);
+					images.push({
+						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
+						height: getImgPropheight(imgInfo, width),
+						rotated: imgInfo.rotated,
+						width,
+						x
+					})
+					x+=width;
+					if (x>390){
+						x=textIdents.left;
 					} 
 				});
-			}
-			
-		});
+				if (images && images.length && images[0]){
+					const width=images[0].rotated ? 590 : 612
+					blocks.push({
+						type: 'lessonFiles',
+						value: images,
+						file,
+						contentsObj,
+						leftIdent: (612-width)/2,
+						width,
+						bottomBoxY: images[0].rotated ? 745 : 735,
+						rightBoxX: images[0].rotated ? 548 : 600,
+						leftBoxWidth: images[0].rotated ? 55 : 0,
+						marginTop: file.for_print ? 0 : 10,
+						headerParams: {
+							type: file.for_print ? 'nameClassDate' : 'reading',
+							topWhiteOverlayHeight: 52,
+							lineY: 45,
+							chapter
+						} 
+					});
+				}
+			})
+		})
 
-		/* Removed "End of Unit Study Guide" and "Additional Resources" sections */
+		/* Removed "End of Unit Study Guide"
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 3,
@@ -1272,12 +1540,12 @@ async function main() {
 			// });	
 				
 		});
-		
+		*/
 		blocks.push({
 			type: 'sectionCover',
 			sectionNum: 4,
 			title: translate('Additional Resources'),
-			contentsTitle: translate('Section')+' 4: '+translate('Additional Resources'),
+			contentsTitle: translate('Section')+' 3: '+translate('Additional Resources'),
 			text: customPagesGlobal.Section5.content,
 			color: colors.unitTitle,
 		});
@@ -1295,24 +1563,52 @@ async function main() {
 				type: 'contentsPush',
 				title: translate('Unit Vocabulary'), 
 				level: 1, 
-				color: colors.black,
+				color: colors.unitTitle,
 			});	
 			
-			let vocabHtml='';
-			unit.vocab.filter(item=>item.word && item.definition).forEach(item=>{
-				vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition.trim()+'</p>';
-			})				
-			await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
-				await parseHTMLIntoBlocks(el, {
-					ident: 0,
-					moveDown: 0.5,
-					width: 525,
-					//fontSize: 11,
-				}, blocks);
-			});
+			const vocab=unit.vocab.filter(item=>item.word && item.definition);
+			const vocabWordGroups=_.groupBy(vocab, v=>v.word[0]);
+			//let vocabHtml='';
+			const vocabLetters=[];
+			_.each(vocabWordGroups, (words, letter)=>{
+				let vocabHtml='';
+				words.forEach(item=>{
+					vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition.trim()+'</p>';
+				})	
+				vocabLetters.push({
+					letter,
+					vocabHtml
+				})
+			})
+			
+						
+			await asyncForEach(vocabLetters, async item=>{
+
+				blocks.push({
+					type: 'h2',
+					//headerTitle: {titleLeft: title},
+					startOnRightSide: false,
+					titleColor: colors.unitTitle,
+					fontSize: 24,
+					value: item.letter,
+					marginBottom: 0.000001,
+				});		
+
+				await asyncForEach(parse(item.vocabHtml).childNodes, async (el)=>{
+					await parseHTMLIntoBlocks(el, {
+						ident: 0,
+						moveDown: 0.5,
+						width: 525,
+						fontSize: 12,
+						lineGap: 5
+					}, blocks);
+				});
+			})
+			
 		}
-		
+		/*
 		const addPages=customPagesGlobal.AdditionalResources;
+		
 		const addPagesTitles=[translate('Science and Engineering Practices'), translate('Crosscutting Concepts')];
 		const addPagesY=[
 			70, 85

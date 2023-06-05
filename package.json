@@ -35,6 +35,7 @@
     "rimraf": "^3.0.2",
     "shelljs": "^0.8.5",
     "superagent": "^5.3.1",
+    "svg-to-pdfkit": "^0.1.8",
     "sync-gdrive": "^0.9.5",
     "textract": "^2.5.0",
     "url": "^0.11.0",
