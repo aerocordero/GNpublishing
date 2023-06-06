@@ -11,6 +11,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "child_process": "^1.0.2",
+    "color": "^4.2.3",
     "cors": "^2.8.5",
     "esm": "^3.2.25",
     "express": "^4.17.1",
@@ -36,6 +37,7 @@
     "shelljs": "^0.8.5",
     "superagent": "^5.3.1",
     "svg-to-pdfkit": "^0.1.8",
+    "svgpath": "^2.6.0",
     "sync-gdrive": "^0.9.5",
     "textract": "^2.5.0",
     "url": "^0.11.0",

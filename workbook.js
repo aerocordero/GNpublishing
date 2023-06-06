@@ -11,6 +11,8 @@ async function main() {
 	const _ = require('lodash');
 	const Jimp = require('jimp');
 	const argv = require('yargs').argv;
+	const Color = require('color');
+	const svgpath = require('svgpath');
 
 	const language = argv.language;
 	const languageId = language==='spanish' ? 2 : 1;
@@ -609,6 +611,8 @@ async function main() {
 			  .lineTo(0, header.topWhiteOverlayHeight)
 			  .fill('white');	
 		}
+
+		const bookmarkStyle=['reading', 'lamp'].indexOf(header.type)>=0;
 		
 		if (header.type==='nameClassDate'){			
 			lineY=45;		
@@ -641,7 +645,7 @@ async function main() {
 			  });
 			
 		}
-		else if (header.type==='reading'){	
+		else if (bookmarkStyle){	
 			const boxIdent=pageNum%2===0 ? 20 : 550;	
 			const boxHeight=80;
 			const boxWidth=40;
@@ -656,7 +660,7 @@ async function main() {
 			.lineTo(boxIdent+boxWidth, 0)
 			.fill(colors.unitTitle);			
 			doc
-				.addSVG(fs.readFileSync('images/icons/reading-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+10, {
+				.addSVG(fs.readFileSync('images/icons/'+header.type+'-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+10, {
 				  width: boxWidth-10,
 				  height: boxWidth-10,				  
 				});
@@ -696,7 +700,7 @@ async function main() {
 				});
 		}
 	  
-	  	if (!header.hideLine && header.type!=='reading'){
+	  	if (!header.hideLine && !bookmarkStyle){
 			if (header.type!=='nameClassDate'){
 				doc
 					.font(fonts.bold)
@@ -1130,8 +1134,33 @@ async function main() {
 			fontSize: 11,
 			paddingBottom: 0.5,
 			titleFont: fonts.bold,
-			data: unit
+			data: unit,
+			moveDown: 0.000001,
 		});
+
+		blocks.push({
+			type: 'image',
+			value: 'images/notes-box.svg',
+			width: 610,
+			csvContentProcessing: (str, x, y)=>{
+				const strokePath=`M623.8,545.6c-186.6,0-269.8,0.5-471.5,14.7C32.9,568.6-2.8,519.2,6.4,453.5C21.2,346.6,9,216.3,11.3,79.9
+				C12,36.8,34.7,2.4,103.7,5.6C315.7,15,466,18.6,610,6.6c47.9-4,94.1,24.2,88.6,120.1c-8.9,143.1,4,182.8-5.3,361.6
+				C691.7,515.1,662,545.6,623.8,545.6z`;
+				const originalH=400;
+				const space=700-y;				
+				const scale=space/originalH;
+
+				return str
+					.replace('#F05925', colors.unitTitle)
+					.replace('#E7C2BB', Color(colors.unitTitle).lighten(0.6).hex())
+					.replace('{strokePath}', svgpath(strokePath)
+						.scale(1, scale)
+						.toString());
+			}
+			//height: 250,
+			//x:-1,
+			//y:100
+		});	
 		
 		blocks.push({
 			type: 'h1',
@@ -1214,14 +1243,41 @@ async function main() {
 		*/
 		
 		blocks.push({
-			type: 'h2',
+			type: 'h1',
 			value: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),
 			headerTitle: {
 				leftTitle: '',	
+				type: 'lamp',
+				topWhiteOverlayHeight: 0,
+				lineY: 45,
+				//chapter: {},
 			},
-			fontSize:11
+			font: fontsHeading.bold,
+			color: colors.unitTitle,
+			leftIdent: 120,
+			topIdent: 50,
+			width: 380,
+			fontSize:18,
+			headerParams: {
+				
+			} 
 		});
+
+		blocks.push({
+			type: 'image',
+			value: 'images/notes-box2.svg',
+			width: 500,
+			csvContentProcessing: (str, x, y)=>{				
+				return str
+					.replace(/\#F05925/ig, colors.unitTitle)
+					.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
+			},
+			//height: 250,
+			x:60,
+			y:20
+		});	
 		
+		/*
 		blocks.push({
 			type: 'custom',
 			drawFn: (doc)=>{
@@ -1231,6 +1287,7 @@ async function main() {
 				   .stroke();
 			},
 		});
+		*/
 		let currLessonId;
 
 		/* Removed "Phenomena Visuals" section. Files moved to Activity files in the Lesson's chronological order. 
