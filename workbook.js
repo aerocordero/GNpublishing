@@ -359,8 +359,17 @@ async function main() {
 
 	lessons=_.sortBy(lessons, l=>l.index);
 
+	/*
+	rc_pdf_worksheet_id
+rc_ques_pdf_worksheet_id
+rc_ques_key_pdf_worksheet_id
+	*/
+
 	let chapters=(await dbQuery([
-		'SELECT * FROM `chapter` t',
+		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet FROM `chapter` t',
+		'LEFT OUTER JOIN worksheet rc_pdf_ws ON rc_pdf_ws.worksheet_id=t.rc_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_pdf_ws.worksheet_id=t.rc_ques_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_pdf_ws.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
 	], []));
 	let chapterLessonMappings=(await dbQuery([
 		'SELECT * FROM `chapter_lesson_mapping` t',
@@ -701,7 +710,7 @@ async function main() {
 		}
 	  
 	  	if (!header.hideLine && !bookmarkStyle){
-			if (header.type!=='nameClassDate'){
+			if (header.type!=='nameClassDate' && header.type!=='line'){
 				doc
 					.font(fonts.bold)
 					.fontSize(24)
@@ -745,6 +754,7 @@ async function main() {
 		const lineY=753;
 		const lineWidth=2;
 		const hideLine=footerData && footerData.hideLine;
+		const leftText=footerData?.leftText;
 		
 		if (pageNum%2===0){
 			
@@ -833,15 +843,16 @@ async function main() {
 			});
 		}
 		
-		if (footerData){
+		if (leftText){
 			doc
 			  .font(fonts.regular)
-			  .fontSize(8)
+			  .fontSize(10)
 			  .lineGap(-0.5)
-			  .text(footerData.leftText || footerData.centerText, textIdents.left+50, lineY+8, {
-			  	width: contentWidth-100,
+			  .fill('black')
+			  .text(leftText, textIdents.left+25, lineY-18, {
+			  	width: contentWidth-75,
 				continued: false,
-				align: 'center'
+				align: pageNum%2===0 ? 'left' : 'right'
 			  });
 		}
 	}
@@ -1413,12 +1424,35 @@ async function main() {
 				text: chapter.student_description || chapter.description,
 				color: colors.unitTitle,
 				contentsLevel: 1,
+			});		
+			[
+				{
+				  pdf:'rc_pdf_worksheet',
+				  title: chapter.name && 0 ? chapter.name+' reading' : 'Reading for Lessons '+chapter.lessonSequence,
+				},
+				{
+				  pdf: 'rc_ques_pdf_worksheet',
+				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions for Lessons '+chapter.lessonSequence
+				},
+				{
+				  pdf: 'rc_ques_key_pdf_worksheet',
+				  title: chapter.name && 0 ? chapter.name+' reading questions key' : 'Reading Questions key for Lessons '+chapter.lessonSequence
+				},
+			].forEach(({pdf, title})=>{
+				if (chapter[pdf]){
+					const pathArr=chapter[pdf].split('/');
+					files.push({
+						chapter,
+						path: chapter[pdf],
+						title,
+						fileName: pathArr[pathArr.length-1]
+					})
+				}
 			});
-			
 			await asyncForEach(files, async file=>{
 				let contentsObj;
 				//console.log(file);
-				if (currLessonId!==file.lesson_id){
+				if (currLessonId!==file.lesson_id && !file.chapter){
 					const lesson=lessons.find(l=>l.lesson_id===file.lesson_id);
 					if (lesson){
 						contentsObj={
@@ -1429,6 +1463,14 @@ async function main() {
 						currLessonId=file.lesson_id;
 					}
 					
+				}
+				else if (file.chapter){
+					contentsObj={
+						title: file.title, 
+						level: 2, 
+						color: colors.black
+					}
+					console.log('file.chapter', file);
 				}
 				//
 				const path=await downloadFile(file.path);
@@ -1467,11 +1509,15 @@ async function main() {
 						leftBoxWidth: images[0].rotated ? 55 : 0,
 						marginTop: file.for_print ? 0 : 10,
 						headerParams: {
-							type: file.for_print ? 'nameClassDate' : 'reading',
-							topWhiteOverlayHeight: 52,
+							type: !file.chapter ? (file.for_print ? 'nameClassDate' : 'line') : 'reading',
+							topWhiteOverlayHeight: file.chapter ? 65 : 52,
 							lineY: 45,
 							chapter
-						} 
+						},
+						footerParams: {
+							leftText: file.chapter ? file.title+': '+chapter.name : file.fileTitle,
+							//hideLine: true
+						}
 					});
 				}
 			})
