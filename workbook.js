@@ -373,6 +373,7 @@ rc_ques_key_pdf_worksheet_id
 	], []));
 	let chapterLessonMappings=(await dbQuery([
 		'SELECT * FROM `chapter_lesson_mapping` t',
+		'ORDER BY t.position',
 	], []));
 
 	unit.chapterMappings=chapterLessonMappings.filter(lm=>{
@@ -403,7 +404,7 @@ rc_ques_key_pdf_worksheet_id
 		chapter.number=index+1;
 	})
 	unit.chapters=chapterGroups;
-	//console.log(unit.chapters);
+	//console.log(unit.chapters.find(ch=>ch.id===109));
 	//return;
 
 	unit.vocab=[];
@@ -1404,14 +1405,16 @@ rc_ques_key_pdf_worksheet_id
 			const files=allWorkShets.filter(file=>{
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id && chapter.lessons.find(chl=>chl.lesson_id===l.lesson_id));
 				if (!lesson){
+					//console.log('Not Found lesson', file.lesson_id, chapter.name, chapter.lessons.map(chl=>chl.lesson_id));
+					//console.log(chapter.lessons);
 					return;
 				}
 				if (filenameRaplace[file.fileTitle]){
 					file.fileTitle=filenameRaplace[file.fileTitle];
 				}
-				console.log(lesson.number, '-', file.fileTitle);
+				console.log('lessonFileWorksheet', lesson.lesson_id, lesson.number, '-', file.fileTitle, file.fileName);
 				const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
+				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';				
 				return isPhenomenon || (file.worksheet_language_id==languageId
 					&& (argv.firstExport || (!argv.firstExport && file.for_student))
 					&& file.type==='pdf' 
@@ -1421,9 +1424,7 @@ rc_ques_key_pdf_worksheet_id
 					&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
 			});
 
-			if (!files.length){
-				return;
-			}
+			
 			chapter.lessonSequence=`${unit.number}.${chapter.lessons[0].lesson.index+1} - ${unit.number}.${chapter.lessons[chapter.lessons.length-1].lesson.index+1}`;
 			blocks.push({
 				type: 'sectionCover',
@@ -1460,6 +1461,9 @@ rc_ques_key_pdf_worksheet_id
 					})
 				}
 			});
+			if (!files.length){
+				return;
+			}
 			await asyncForEach(files, async file=>{
 				let contentsObj;
 				//console.log(file);
@@ -1484,6 +1488,7 @@ rc_ques_key_pdf_worksheet_id
 					console.log('file.chapter', file);
 				}
 				//
+				console.log('downloadFile', file.path);
 				const path=await downloadFile(file.path);
 				const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 				//const imgPaths=await convertPdf(path);
