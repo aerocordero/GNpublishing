@@ -758,7 +758,7 @@ rc_ques_key_pdf_worksheet_id
 		
 		if (pageNum%2===0){
 			
-			if(!hideLine){
+			
 
 				doc
 				  .save()
@@ -770,29 +770,33 @@ rc_ques_key_pdf_worksheet_id
 				  .lineTo(0, lineY+lineWidth)
 				  .fill(colors.unitTitle);	
 
-				doc
-				  .save()
-				  .moveTo(textIdents.left+16, lineY)
-				  //.lineTo(50, 40)
-				  .lineTo(contentWidth+textIdents.left-10, lineY)
-				  .lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
-				  .lineTo(textIdents.left+16, lineY+lineWidth)
-				  .fill(colors.unitTitle);	
+				if(!hideLine){
+					doc
+					.save()
+					.moveTo(textIdents.left+16, lineY)
+					//.lineTo(50, 40)
+					.lineTo(contentWidth+textIdents.left-10, lineY)
+					.lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
+					.lineTo(textIdents.left+16, lineY+lineWidth)
+					.fill(colors.unitTitle);	
+					
+					doc
+						.font(fonts.arial)
+						.fontSize(6)
+						.fill('black')
+						.text('© '+((new Date()).getYear()+1900)+' Green Ninja', textIdents.left-10, lineY+5, {
+							width: contentWidth,
+							continued: false,
+							align: 'right'
+						});
+				}
 			 
-				doc
-				.font(fonts.arial)
-				.fontSize(6)
-				.fill('black')
-				.text('© '+((new Date()).getYear()+1900)+' Green Ninja', textIdents.left-10, lineY+5, {
-					width: contentWidth,
-					continued: false,
-					align: 'right'
-				});
-			}
+				
+			
 			doc
 			.font(fonts.regular)
 			.fontSize(12)
-			.fill(hideLine ? 'black' : 'white')
+			.fill('white')
 			.text(pageNum, textIdents.left-10, lineY-17, {
 				width: 465,
 				continued: false,
@@ -801,27 +805,29 @@ rc_ques_key_pdf_worksheet_id
 		}
 		else {
 			
+			
+
+			doc
+				.save()
+				.moveTo(contentWidth+12, lineY-10)
+				//.lineTo(50, 40)
+				.bezierCurveTo(contentWidth+12, lineY-10, contentWidth+12, lineY-20, contentWidth+22, lineY-20) 
+				.lineTo(contentWidth+textIdents.left+35, lineY-20)
+				.lineTo(contentWidth+textIdents.left+35, lineY+lineWidth)
+				.lineTo(contentWidth+12, lineY+lineWidth)
+				.fill(colors.unitTitle);	
+
+			
+
 			if(!hideLine){
-
 				doc
-				  .save()
-				  .moveTo(contentWidth+12, lineY-10)
-				  //.lineTo(50, 40)
-				  .bezierCurveTo(contentWidth+12, lineY-10, contentWidth+12, lineY-20, contentWidth+22, lineY-20) 
-				  .lineTo(contentWidth+textIdents.left+35, lineY-20)
-				  .lineTo(contentWidth+textIdents.left+35, lineY+lineWidth)
-				  .lineTo(contentWidth+12, lineY+lineWidth)
-				  .fill(colors.unitTitle);	
-
-				doc
-				  .save()
-				  .moveTo(textIdents.left-10, lineY)
-				  //.lineTo(50, 40)
-				  .lineTo(contentWidth+textIdents.left-35, lineY)
-				  .lineTo(contentWidth+textIdents.left-35, lineY+lineWidth)
-				  .lineTo(textIdents.left-10, lineY+lineWidth)
-				  .fill(colors.unitTitle);	
-			 
+				.save()
+				.moveTo(textIdents.left-10, lineY)
+				//.lineTo(50, 40)
+				.lineTo(contentWidth+textIdents.left-35, lineY)
+				.lineTo(contentWidth+textIdents.left-35, lineY+lineWidth)
+				.lineTo(textIdents.left-10, lineY+lineWidth)
+				.fill(colors.unitTitle);	
 				doc
 				.font(fonts.arial)
 				.fontSize(6)
@@ -832,10 +838,13 @@ rc_ques_key_pdf_worksheet_id
 					align: 'left'
 				});
 			}
+			
+			
+			
 			doc
 			.font(fonts.regular)
 			.fontSize(12)
-			.fill(hideLine ? 'black' : 'white')
+			.fill('white')
 			.text(pageNum, textIdents.left-10, lineY-17, {
 				width: contentWidth,
 				continued: false,
@@ -1647,9 +1656,9 @@ rc_ques_key_pdf_worksheet_id
 		*/
 		blocks.push({
 			type: 'sectionCover',
-			sectionNum: 4,
-			title: translate('Additional Resources'),
-			contentsTitle: translate('Section')+' 3: '+translate('Additional Resources'),
+			sectionNum: 3,
+			title: translate('Unit Vocabulary'),
+			contentsTitle: translate('Section')+' 3: '+translate('Unit Vocabulary'),
 			text: customPagesGlobal.Section5.content,
 			color: colors.unitTitle,
 		});
