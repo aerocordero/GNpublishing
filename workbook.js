@@ -368,8 +368,8 @@ rc_ques_key_pdf_worksheet_id
 	let chapters=(await dbQuery([
 		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet FROM `chapter` t',
 		'LEFT OUTER JOIN worksheet rc_pdf_ws ON rc_pdf_ws.worksheet_id=t.rc_pdf_worksheet_id',
-		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_pdf_ws.worksheet_id=t.rc_ques_pdf_worksheet_id',
-		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_pdf_ws.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
+		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_ques_pdf.worksheet_id=t.rc_ques_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_ques_key_pdf.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
 	], []));
 	let chapterLessonMappings=(await dbQuery([
 		'SELECT * FROM `chapter_lesson_mapping` t',
@@ -1079,6 +1079,7 @@ rc_ques_key_pdf_worksheet_id
 		
 		blocks.push({
 			type: 'contents',
+			contentsPagesNumber: 2,
 		});
 		blocks.push({
 			type: 'setStartPagingPage',
