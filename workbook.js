@@ -13,6 +13,7 @@ async function main() {
 	const argv = require('yargs').argv;
 	const Color = require('color');
 	const svgpath = require('svgpath');
+	const csv=require("csvtojson");
 
 	const language = argv.language;
 	const languageId = language==='spanish' ? 2 : 1;
@@ -90,6 +91,7 @@ async function main() {
 	
 	const fonts={
 		regular: 'fonts/mulish/Mulish-Regular.ttf',
+		medium: 'fonts/mulish/Mulish-Medium.ttf',
 		bold: 'fonts/mulish/Mulish-Bold.ttf',
 		semiBold: 'fonts/mulish/Mulish-SemiBold.ttf',
 		italic: 'fonts/mulish/Mulish-Italic.ttf',
@@ -224,56 +226,7 @@ async function main() {
 	
 	
 	await asyncForEach(lessons, async (lesson)=>{
-		/*
-		lesson.pe=await dbQuery([
-			'SELECT pe.title, lpm.progressions, pe.pe_id, pe.description, pe.statements',
-			'FROM lesson_pe_mapping_new lpm',
-			'JOIN PE_NEW pe ON lpm.pe_id = pe.pe_id',
-			'WHERE lpm.lesson_id = ? and lpm.hidden = false'
-		], [lesson.lesson_id]);
-		lesson.ccc=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccc_mapping_new m',
-			'JOIN CCC_NEW t ON m.ccc_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);
-		lesson.ccm=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccm_mapping_new m',
-			'JOIN CCM_NEW t ON m.ccm_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);
-		lesson.ccm=_.sortBy(lesson.ccm, item=>item.priority);
-		lesson.ccl=await dbQuery([
-			'SELECT *',
-			'FROM lesson_ccl_mapping_new m',
-			'JOIN CCL_NEW t ON m.ccl_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
-		lesson.ccl=_.sortBy(lesson.ccl, item=>item.priority);
 		
-		lesson.dci=await dbQuery([
-			'SELECT *',
-			'FROM lesson_dci_mapping_new m',
-			'JOIN DCI_NEW t ON m.dci_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);
-		lesson.dci=_.sortBy(lesson.dci, item=>item.priority);
-		lesson.sep=await dbQuery([
-			'SELECT *',
-			'FROM lesson_sep_mapping_new m',
-			'JOIN SEP_NEW t ON m.sep_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
-		lesson.sep=_.sortBy(lesson.sep, item=>item.priority);
-		lesson.eld=await dbQuery([
-			'SELECT *',
-			'FROM lesson_eld_mapping_new m',
-			'JOIN ELD_NEW t ON m.eld_id = t.id',
-			'WHERE m.lesson_id = ?'
-		], [lesson.lesson_id]);		
-		lesson.eld=_.sortBy(lesson.eld, item=>item.priority);
-		*/
 		
 		lesson.worksheet=await dbQuery([
 			'SELECT *',
@@ -296,18 +249,7 @@ async function main() {
 			languageId > 1 ? 'LEFT OUTER JOIN vocab sp ON sp.version_vocab_id = t.vocab_id and sp.language_id='+languageId : '',
 			'WHERE m.lesson_id = ?' 
 		], [lesson.lesson_id]);		
-		/*
-		standardTypes.forEach(key=>{
-			lesson[key].forEach(item=>{
-				if (!unit.orphanStandards[key].find(a=>a[key+'_id']===item[key+'_id']) && (item.orphan===undefined || (item.orphan!==undefined && item.orphan))){
-					unit.orphanStandards[key].push(item);
-				}
-				if (!unit.commonCoreStandards[key].find(a=>a[key+'_id']===item[key+'_id']) && !item.orphan){
-					unit.commonCoreStandards[key].push(item);
-				}
-			});
-		})*/
-		//console.log(lesson.vocab);
+		
 	});
 	/*
 	standardTypes.forEach(key=>{
@@ -1068,7 +1010,119 @@ rc_ques_key_pdf_worksheet_id
 		blocks.push({
 			type: 'pageBreak',
 		});	
+
 		
+		blocks.push({
+			type: 'image',
+			value: 'images/cover_wave.svg',
+			width: 100,
+			svgContentProcessing: (str, x, y)=>{				
+				return str
+					.replace(/\#F05925/ig, colors.unitTitle)
+					.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
+
+			},
+			//height: 250,
+			x:10,
+			y:-1
+		});	
+		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - English.csv');
+		
+		const coverObject=coverCSV.find(obj=>obj['Grade/Unit']==='G'+model.number+'U'+unit.number);
+		console.log('coverObject', coverObject);
+		blocks.push({
+			type: 'custom',
+			drawFn: (doc)=>{
+				doc
+				.font(fonts.medium)
+				.fontSize(22)
+				.fill(colors.unitTitle)
+				.text(`Grade ${model.number} Unit ${unit.number}`, textIdents.left, 70, {
+					width: PDFUtils.textWidth,
+					align: 'center'
+				});
+
+				doc
+				.font(fonts.bold)
+				.fontSize(36)
+				.fill(colors.unitTitle)
+				.text(unit.name, textIdents.left+40, 105, {
+					width: PDFUtils.textWidth-80,
+					align: 'center'
+				});
+
+				doc
+				.font(fonts.regular)
+				.fontSize(18)
+				.fill('black')
+				.text('Student Workbook', textIdents.left, doc.y+15, {
+					width: PDFUtils.textWidth,
+					align: 'center',
+					characterSpacing: 3.5
+				});
+
+				doc				
+				.roundedRect(textIdents.left+50, 245, 420, 2, 5)
+				.fill(colors.unitTitle);
+
+				doc
+				.font(fontsHeading.italic)
+				.fontSize(22)
+				.fill('black')
+				.text(coverObject.Quotes, textIdents.left+120, 270, {
+					width: 320,
+					align: 'left',
+					characterSpacing: 1,
+					lineGap: 3,
+				});
+
+				doc
+				.font(fonts.bold)
+				.fontSize(12)
+				.fill('black')
+				.text('by '+coverObject.People, textIdents.left+270, doc.y+35, {
+					width: 220,
+					align: 'left',
+					//characterSpacing: 1
+				});
+
+				doc
+				.font(fonts.regular)
+				.fontSize(12)
+				.fill('black')
+				.text(coverObject['Occupation/Title'], textIdents.left+270, doc.y+3, {
+					width: 220,
+					align: 'left',
+					//characterSpacing: 1
+				});
+
+				doc				
+				.roundedRect(textIdents.left+50, doc.y+30, 420, 2, 5)
+				.fill(colors.unitTitle)
+				.save();
+
+				doc
+				.font(fonts.regular)
+				.fontSize(11)
+				.fill('black')
+				.text(coverObject['Bio Info'], textIdents.left+60, doc.y+60, {
+					width: PDFUtils.textWidth-130,
+					align: 'left',
+					lineGap: 2,
+					//characterSpacing: 0.5
+				});
+
+				doc
+				.image('images/gn_logo.png', 250, 690, {
+				  width: 100,
+				  align: 'center',
+				  valign: 'center'
+				});
+			},
+			
+		});
+		
+		/*
 		blocks.push({
 			type: 'image',
 			value: customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex].imagePath,
@@ -1076,6 +1130,7 @@ rc_ques_key_pdf_worksheet_id
 			x:-1,
 			y:-1
 		});	
+		*/
 		
 		blocks.push({
 			type: 'sectionCover',
@@ -1087,6 +1142,7 @@ rc_ques_key_pdf_worksheet_id
 			color: colors.unitTitle,
 		});
 		
+		
 		blocks.push({
 			type: 'contents',
 			contentsPagesNumber: 2,
@@ -1094,7 +1150,7 @@ rc_ques_key_pdf_worksheet_id
 		blocks.push({
 			type: 'setStartPagingPage',
 		});		
-		
+		//return;
 		
 		/*
 		blocks.push({
@@ -1164,7 +1220,7 @@ rc_ques_key_pdf_worksheet_id
 			type: 'image',
 			value: 'images/notes-box.svg',
 			width: 610,
-			csvContentProcessing: (str, x, y)=>{
+			svgContentProcessing: (str, x, y)=>{
 				const strokePath=`M623.8,545.6c-186.6,0-269.8,0.5-471.5,14.7C32.9,568.6-2.8,519.2,6.4,453.5C21.2,346.6,9,216.3,11.3,79.9
 				C12,36.8,34.7,2.4,103.7,5.6C315.7,15,466,18.6,610,6.6c47.9-4,94.1,24.2,88.6,120.1c-8.9,143.1,4,182.8-5.3,361.6
 				C691.7,515.1,662,545.6,623.8,545.6z`;
@@ -1289,7 +1345,7 @@ rc_ques_key_pdf_worksheet_id
 			type: 'image',
 			value: 'images/notes-box2.svg',
 			width: 500,
-			csvContentProcessing: (str, x, y)=>{				
+			svgContentProcessing: (str, x, y)=>{				
 				return str
 					.replace(/\#F05925/ig, colors.unitTitle)
 					.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
