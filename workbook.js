@@ -815,11 +815,11 @@ rc_ques_key_pdf_worksheet_id
 		doc.addPage();
 		if (PDFUtils.isRightPage() && !chapterNum){
 			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
-			doc.addPage();			
+			//doc.addPage();			
 		}
 		if (PDFUtils.isLeftPage() && chapterNum){
 			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
-			doc.addPage();			
+			//doc.addPage();			
 		}
 		const top=180;
 		doc.x=60;
@@ -1174,7 +1174,7 @@ rc_ques_key_pdf_worksheet_id
 		blocks.push({
 			type: 'h1',
 			headerTitle: {titleLeft: translate('Unit Overview')},
-			startOnRightSide: true,
+			//startOnRightSide: true,
 			color: colors.unitTitle,
 		});		
 		blocks.push({
