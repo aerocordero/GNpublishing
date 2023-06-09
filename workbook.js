@@ -871,7 +871,7 @@ rc_ques_key_pdf_worksheet_id
 		}
 		else if (chapterNum) {
 
-			const curveLeft=50;
+			const curveLeft=PDFUtils.isRightPage() ? 50 : 550;
 			doc
 				.save()
 				.moveTo(curveLeft, 0)
