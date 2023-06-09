@@ -232,6 +232,7 @@ async function main() {
 			'SELECT *',
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
+			'LEFT OUTER JOIN file f ON f.id = t.file_id',
 			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
@@ -358,7 +359,7 @@ rc_ques_key_pdf_worksheet_id
 		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
-			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
+			item.fileName=(item.originalname || pathArr[pathArr.length-1]).replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle=translate('Lesson')+' '+lesson.number+''+item.fileName;
 			item.lessonIndex=lesson.index;
