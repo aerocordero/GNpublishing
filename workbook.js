@@ -1063,14 +1063,21 @@ rc_ques_key_pdf_worksheet_id
 				});
 
 				doc				
-				.roundedRect(textIdents.left+50, 245, 420, 2, 5)
+				.roundedRect(textIdents.left+50, 225, 420, 2, 5)
 				.fill(colors.unitTitle);
+
+				const maxQuteLength=160;
+				let quoteFontSize=22;
+				maxQuteLength-22
+				if (coverObject.Quotes.length>maxQuteLength){
+					quoteFontSize-=(coverObject.Quotes.length-maxQuteLength)/12
+				}
 
 				doc
 				.font(fontsHeading.italic)
-				.fontSize(22)
+				.fontSize(quoteFontSize)
 				.fill('black')
-				.text(coverObject.Quotes, textIdents.left+120, 270, {
+				.text(coverObject.Quotes, textIdents.left+120, 250, {
 					width: 320,
 					align: 'left',
 					characterSpacing: 1,
@@ -1106,7 +1113,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.regular)
 				.fontSize(11)
 				.fill('black')
-				.text(coverObject['Bio Info'], textIdents.left+60, doc.y+60, {
+				.text(coverObject['Bio Info'], textIdents.left+60, doc.y+50, {
 					width: PDFUtils.textWidth-130,
 					align: 'left',
 					lineGap: 2,
@@ -1151,6 +1158,7 @@ rc_ques_key_pdf_worksheet_id
 		blocks.push({
 			type: 'setStartPagingPage',
 		});		
+
 		//return;
 		
 		/*
