@@ -1027,7 +1027,7 @@ rc_ques_key_pdf_worksheet_id
 			x:10,
 			y:-1
 		});	
-		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - English.csv');
+		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
 		
 		const coverObject=coverCSV.find(obj=>obj['Grade/Unit']==='G'+model.number+'U'+unit.number);
 		console.log('coverObject', coverObject);
@@ -1038,7 +1038,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.medium)
 				.fontSize(22)
 				.fill(colors.unitTitle)
-				.text(`Grade ${model.number} Unit ${unit.number}`, textIdents.left, 70, {
+				.text(`${translate('Grade')} ${model.number} ${translate('Unit')} ${unit.number}`, textIdents.left, 70, {
 					width: PDFUtils.textWidth,
 					align: 'center'
 				});
@@ -1047,7 +1047,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.bold)
 				.fontSize(36)
 				.fill(colors.unitTitle)
-				.text(unit.name, textIdents.left+40, 105, {
+				.text(translate(unit.name), textIdents.left+40, 105, {
 					width: PDFUtils.textWidth-80,
 					align: 'center'
 				});
@@ -1056,7 +1056,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.regular)
 				.fontSize(18)
 				.fill('black')
-				.text('Student Workbook', textIdents.left, doc.y+15, {
+				.text(translate('Student Workbook'), textIdents.left, doc.y+15, {
 					width: PDFUtils.textWidth,
 					align: 'center',
 					characterSpacing: 3.5
@@ -1159,7 +1159,7 @@ rc_ques_key_pdf_worksheet_id
 			type: 'setStartPagingPage',
 		});		
 
-		//return;
+		return;
 		
 		/*
 		blocks.push({
