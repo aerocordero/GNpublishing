@@ -1602,6 +1602,43 @@ rc_ques_key_pdf_worksheet_id
 					});
 				}
 			})
+			blocks.push({
+				type: 'h1',
+				value: translate('Use this area to jot down chapter-related notes.'),
+				headerTitle: {
+					leftTitle: '',	
+					type: 'lamp',
+					topWhiteOverlayHeight: 0,
+					lineY: 45,
+					//chapter: {},
+				},
+				font: fontsHeading.bold,
+				color: colors.unitTitle,
+				leftIdents: {
+					rightPage: 100,
+					leftPage: 90,
+				},
+				topIdent: 50,
+				width: 490,
+				fontSize:18,
+				headerParams: {
+					
+				} 
+			});
+	
+			blocks.push({
+				type: 'image',
+				value: 'images/notes-box2.svg',
+				width: 500,
+				svgContentProcessing: (str, x, y)=>{				
+					return str
+						.replace(/\#F05925/ig, colors.unitTitle)
+						.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
+				},
+				//height: 250,
+				x:60,
+				y:20
+			});	
 		})
 
 		/* Removed "End of Unit Study Guide"
