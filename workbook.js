@@ -1159,7 +1159,7 @@ rc_ques_key_pdf_worksheet_id
 			type: 'setStartPagingPage',
 		});		
 
-		return;
+		//return;
 		
 		/*
 		blocks.push({
