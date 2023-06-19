@@ -268,7 +268,7 @@ async function main() {
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		//obj.files=[];
 		fields.forEach(field=>{
-			obj[field]=obj[field].replace(new RegExp('\(\{\{([^\s]+)\}\}([a-z\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
+			obj[field]=(obj[field] || '').replace(new RegExp('\(\{\{([^\s]+)\}\}([a-z\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
 				if (!fileLesson){
