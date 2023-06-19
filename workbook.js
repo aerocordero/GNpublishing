@@ -546,6 +546,37 @@ rc_ques_key_pdf_worksheet_id
 	PDFUtils.headerTitles=[
 
 	];	
+
+	PDFUtils.writeNotesPage=(doc, pageNum, {title, topIdent, svgFileName, svgTopIdent})=>{			
+
+		//writeHeader=(doc, header, pageNum)
+		PDFUtils.writeHeader(doc, {
+			leftTitle: '',	
+			type: 'lamp',
+			topWhiteOverlayHeight: 0,
+			lineY: 45,
+			//chapter: {},
+		}, pageNum);
+
+		doc
+			.font(fontsHeading.bold)
+			.fontSize(18)
+			.fill(colors.unitTitle)
+			.text(title, 100, topIdent || 50, {
+			width: 490,
+			align: 'left'
+		});
+		console.log(svgFileName);
+		const svg=fs.readFileSync('images/'+(svgFileName || 'notes-box2.svg'), 'UTF-8')
+			.replace(/\#F05925/ig, colors.unitTitle)
+			.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());
+
+		doc
+			.addSVG(svg, 50, svgTopIdent || 1, {
+				width: 520,
+				//height: 525,				  
+			});
+	}
 	
 	PDFUtils.writeHeader=(doc, header, pageNum)=>{
 		if (!header){
@@ -565,7 +596,7 @@ rc_ques_key_pdf_worksheet_id
 			  .fill('white');	
 		}
 
-		const bookmarkStyle=['reading', 'lamp'].indexOf(header.type)>=0;
+		const bookmarkStyle=['reading', 'lamp', 'phenomenon'].indexOf(header.type)>=0;
 		
 		if (header.type==='nameClassDate'){			
 			lineY=45;		
@@ -618,7 +649,8 @@ rc_ques_key_pdf_worksheet_id
 				  height: boxWidth-10,				  
 				});
 			console.log(header);
-			if (header.chapter){
+			if (header.chapter && header.type!=='phenomenon'){
+				/*
 				doc
 					.font(fonts.regular)
 					.fontSize(12)
@@ -627,15 +659,35 @@ rc_ques_key_pdf_worksheet_id
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
+				*/
 
 					doc
 					.font(fonts.bold)
 					.fontSize(16)
 					.fillColor(header.color || colors.unitTitle)
-					.text(header.chapter.name, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+25, {
+					.text(`${header.title}: ${header.chapter.name}`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15, {
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
+			}
+			else if (header.type==='phenomenon'){
+				doc
+					.font(fonts.bold)
+					.fontSize(16)
+					.fillColor(header.color || colors.unitTitle)
+					.text(`Phenomenon`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15, {
+						width: contentWidth-75,
+						align: pageNum%2===0 ? 'left' : 'right',
+					});
+					lineY+=10;
+					doc
+					.save()
+					.moveTo(textIdents.left-10, lineY)
+					//.lineTo(50, 40)
+					.lineTo(contentWidth+textIdents.left-10, lineY)
+					.lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
+					.lineTo(textIdents.left-10, lineY+lineWidth)
+					.fill(header.color || colors.unitTitle);	
 			}
 		}
 		
@@ -810,15 +862,21 @@ rc_ques_key_pdf_worksheet_id
 		}
 	}
 	
-	PDFUtils.writeSectionCover=(doc, {title, image, color, contentsTitle, contentsLevel, sectionNum, chapterNum, text, subTitle, textFontSize})=>{
+	PDFUtils.writeSectionCover=(doc, {title, image, color, contentsTitle, contentsLevel, sectionNum, chapterNum, text, subTitle, textFontSize, addNotes, notesTitle, notesParams})=>{
 		PDFUtils.currentTitle=null;				
 		doc.addPage();
-		if (PDFUtils.isRightPage() && !chapterNum){
-			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
-			//doc.addPage();			
+		if (PDFUtils.isLeftPage() && addNotes){
+			PDFUtils.drawActions.setFooter(doc, {hideLine:true});	
+			if (notesTitle){
+				PDFUtils.writeNotesPage(doc, PDFUtils.pageNum, {
+					title: notesTitle,
+					...(notesParams || {}),
+				});	
+			}						
+			doc.addPage();	
 		}
 		if (PDFUtils.isLeftPage() && chapterNum){
-			PDFUtils.drawActions.setFooter(doc, {hideLine:true});
+			//PDFUtils.drawActions.setFooter(doc, {hideLine:true});
 			//doc.addPage();			
 		}
 		const top=180;
@@ -903,13 +961,14 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.bold)
 				.fontSize(28)
 				.fill(color)
-				.text(title, 150, top+50, {
-					width: 330,
+				.text(title, 140, top+50, {
+					width: 350,
 					align: 'center'
 				});
 
 				doc.y+=40;
 			
+				/*
 			doc
 			.font(fonts.bold)
 			.fontSize(14)
@@ -919,6 +978,7 @@ rc_ques_key_pdf_worksheet_id
 				align: 'center'
 			});
 			doc.y+=20;
+			*/
 		}
 		else {
 			doc
@@ -1330,6 +1390,13 @@ rc_ques_key_pdf_worksheet_id
 		*/
 		
 		blocks.push({
+			type: 'notesPage',
+			title: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),		
+			topIdent: 30,		
+		});	
+
+		/*
+		blocks.push({
 			type: 'h1',
 			value: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),
 			headerTitle: {
@@ -1348,21 +1415,8 @@ rc_ques_key_pdf_worksheet_id
 			headerParams: {
 				
 			} 
-		});
-
-		blocks.push({
-			type: 'image',
-			value: 'images/notes-box2.svg',
-			width: 500,
-			svgContentProcessing: (str, x, y)=>{				
-				return str
-					.replace(/\#F05925/ig, colors.unitTitle)
-					.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
-			},
-			//height: 250,
-			x:60,
-			y:20
-		});	
+		});*/
+		
 		
 		/*
 		blocks.push({
@@ -1456,8 +1510,13 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 2,
 			title: translate('Lesson Files'),
 			contentsTitle: translate('Section')+' 2: '+translate('Lesson Files'),
-			text: customPagesGlobal.Section3.content,
+			text: customPagesGlobal.Section2.content,
 			color: colors.unitTitle,
+			addNotes: true,
+			notesTitle: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),
+			notesParams: {
+				topIdent: 30,
+			}
 		});
 	
 		const filenameRaplace={
@@ -1479,7 +1538,8 @@ rc_ques_key_pdf_worksheet_id
 				}
 				console.log('lessonFileWorksheet', lesson.lesson_id, lesson.number, '-', file.fileTitle, file.fileName);
 				const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';				
+				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
+				file.isPhenomenon=isPhenomenon;				
 				return isPhenomenon || (file.worksheet_language_id==languageId
 					&& (argv.firstExport || (!argv.firstExport && file.for_student))
 					&& file.type==='pdf' 
@@ -1497,18 +1557,24 @@ rc_ques_key_pdf_worksheet_id
 				title: translate(chapter.name),
 				subTitle: translate('This chapter covers lesson sequence')+` ${chapter.lessonSequence}.`,
 				contentsTitle: translate('Chapter '+chapter.number)+': '+translate(chapter.name),
-				text: chapter.student_description || chapter.description,
+				text: chapter['student_description'+(languageId>1 ? '_spanish' : '')] || chapter.description,
 				color: colors.unitTitle,
 				contentsLevel: 1,
+				addNotes: true,
+				notesTitle: chapter.number > 1 ? translate('Use this area to jot down chapter-related notes.') : '' /*translate('Use this space to jot down notes and ideas about solving the Unit Challenge.')*/,
+				notesParams: {
+					svgFileName: 'notes-box3.svg',
+					svgTopIdent: 20,
+				}
 			});		
 			[
 				{
 				  pdf:'rc_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading' : 'Reading for Lessons '+chapter.lessonSequence,
+				  title: chapter.name && 0 ? chapter.name+' reading' : 'Reading', //'Reading for Lessons '+chapter.lessonSequence,
 				},
 				{
 				  pdf: 'rc_ques_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions for Lessons '+chapter.lessonSequence
+				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions' //'Reading Questions for Lessons '+chapter.lessonSequence
 				},
 				/*
 				{
@@ -1521,7 +1587,7 @@ rc_ques_key_pdf_worksheet_id
 					files.push({
 						chapter,
 						path: chapter[pdf],
-						title,
+						title: 'Chapter '+chapter.number+' '+title,
 						fileName: pathArr[pathArr.length-1]
 					})
 				}
@@ -1590,9 +1656,10 @@ rc_ques_key_pdf_worksheet_id
 						leftBoxWidth: images[0].rotated ? 55 : 0,
 						marginTop: file.for_print ? 0 : 10,
 						headerParams: {
-							type: !file.chapter ? (file.for_print ? 'nameClassDate' : 'line') : 'reading',
+							type: !file.chapter ? (file.isPhenomenon ? 'phenomenon' : (file.for_print ? 'nameClassDate' : 'line')) : 'reading',
 							topWhiteOverlayHeight: file.chapter ? 65 : 52,
 							lineY: 45,
+							title: chapter ? file.title : null,
 							chapter
 						},
 						footerParams: {
@@ -1601,43 +1668,12 @@ rc_ques_key_pdf_worksheet_id
 						}
 					});
 				}
-			})
+			});	
 			blocks.push({
-				type: 'h1',
-				value: translate('Use this area to jot down chapter-related notes.'),
-				headerTitle: {
-					leftTitle: '',	
-					type: 'lamp',
-					topWhiteOverlayHeight: 0,
-					lineY: 45,
-					//chapter: {},
-				},
-				font: fontsHeading.bold,
-				color: colors.unitTitle,
-				leftIdents: {
-					rightPage: 100,
-					leftPage: 90,
-				},
-				topIdent: 50,
-				width: 490,
-				fontSize:18,
-				headerParams: {
-					
-				} 
-			});
-	
-			blocks.push({
-				type: 'image',
-				value: 'images/notes-box2.svg',
-				width: 500,
-				svgContentProcessing: (str, x, y)=>{				
-					return str
-						.replace(/\#F05925/ig, colors.unitTitle)
-						.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
-				},
-				//height: 250,
-				x:60,
-				y:20
+				type: 'notesPage',
+				title: translate('Use this area to jot down chapter-related notes.'),				
+				svgFileName: 'notes-box3.svg',
+				svgTopIdent: 20,
 			});	
 		})
 
@@ -1767,8 +1803,14 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 3,
 			title: translate('Unit Vocabulary'),
 			contentsTitle: translate('Section')+' 3: '+translate('Unit Vocabulary'),
-			text: customPagesGlobal.Section5.content,
+			text: customPagesGlobal.Section3.content,
 			color: colors.unitTitle,
+			addNotes: true,
+			notesTitle: translate('Use this area to jot down chapter-related notes.'),
+			notesParams: {
+				svgFileName: 'notes-box3.svg',
+				svgTopIdent: 20,
+			}
 		});
 		
 		if (unit.vocab.length){
