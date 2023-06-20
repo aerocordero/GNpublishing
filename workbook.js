@@ -712,22 +712,60 @@ rc_ques_key_pdf_worksheet_id
 					.fontSize(24)
 					.fillColor(header.color || colors.unitTitle)
 					.text(header.titleLeft, textIdents.left+70, 30, {
-						width: contentWidth,
-						align: 'left'
+						width: contentWidth-164,
+						align: pageNum%2===0 ? 'left' : 'right'
 					});
 
 				lineY=60;
 				const boxHeight=30;
-				doc
-				.save()
-				.moveTo(0, lineY-boxHeight)
-				//.lineTo(50, 40)
-				.lineTo(textIdents.left+40, lineY-boxHeight)
-				.bezierCurveTo(textIdents.left+40, lineY-boxHeight, textIdents.left+50, lineY-boxHeight, textIdents.left+50, lineY-boxHeight+10)
-				.lineTo(textIdents.left+50, lineY+lineWidth-10)
-				.bezierCurveTo(textIdents.left+50, lineY+lineWidth-10, textIdents.left+50, lineY+lineWidth, textIdents.left+40, lineY+lineWidth)
-				.lineTo(0, lineY+lineWidth)
-				.fill(colors.unitTitle);	
+
+				if (pageNum%2===0){
+					doc
+					.save()
+					.moveTo(-10, lineY-boxHeight)
+					//.lineTo(50, 40)
+					.lineTo(textIdents.left+40, lineY-boxHeight)
+					.bezierCurveTo(textIdents.left+40, lineY-boxHeight, textIdents.left+50, lineY-boxHeight, textIdents.left+50, lineY-boxHeight+10)
+					.lineTo(textIdents.left+50, lineY+lineWidth-10)
+					.bezierCurveTo(textIdents.left+50, lineY+lineWidth-10, textIdents.left+50, lineY+lineWidth, textIdents.left+40, lineY+lineWidth)
+					.lineTo(-10, lineY+lineWidth)
+					.fill(colors.unitTitle);	
+				}
+				else {
+					const boxLeftIdent=514;
+					doc
+						.save()
+						.moveTo(boxLeftIdent, lineY-boxHeight+10)
+						.bezierCurveTo(boxLeftIdent, lineY-boxHeight+10, boxLeftIdent, lineY-boxHeight, boxLeftIdent+10, lineY-boxHeight)
+						.lineTo(boxLeftIdent+200, lineY-boxHeight)						
+						.lineTo(boxLeftIdent+200, lineY+lineWidth)
+						.lineTo(boxLeftIdent+10, lineY+lineWidth)
+						.bezierCurveTo(boxLeftIdent+10, lineY+lineWidth, boxLeftIdent, lineY+lineWidth, boxLeftIdent, lineY+lineWidth-10)
+						.lineTo(boxLeftIdent, lineY-boxHeight+10)
+						.fill(colors.unitTitle);	
+						/*
+						.moveTo(boxLeftIdent+12, lineY-10)
+						//.lineTo(50, 40)
+						.bezierCurveTo(boxLeftIdent+12, lineY-10, boxLeftIdent+12, lineY-20, boxLeftIdent+22, lineY-20) 
+						.lineTo(boxLeftIdent+textIdents.left+35, lineY-20)
+						.lineTo(boxLeftIdent+textIdents.left+35, lineY+boxHeight)
+						.lineTo(boxLeftIdent+12, lineY+boxHeight)
+						.fill(colors.unitTitle);	
+						*/
+
+					/*
+					doc
+					.save()
+					.moveTo(boxLeftIdent, lineY-boxHeight)
+					//.lineTo(50, 40)
+					.lineTo(textIdents.left+40, lineY-boxHeight)
+					.bezierCurveTo(textIdents.left+40, lineY-boxHeight, textIdents.left+50, lineY-boxHeight, textIdents.left+50, lineY-boxHeight+10)
+					.lineTo(textIdents.left+50, lineY+lineWidth-10)
+					.bezierCurveTo(textIdents.left+50, lineY+lineWidth-10, textIdents.left+50, lineY+lineWidth, textIdents.left+40, lineY+lineWidth)
+					.lineTo(0, lineY+lineWidth)
+					.fill(colors.unitTitle);	*/
+				}
+				
 					
 			}
 			else {
@@ -758,12 +796,12 @@ rc_ques_key_pdf_worksheet_id
 
 				doc
 				  .save()
-				  .moveTo(0, lineY-20)
+				  .moveTo(-10, lineY-20)
 				  //.lineTo(50, 40)
 				  .lineTo(textIdents.left+16-10, lineY-20)
 				  .bezierCurveTo(textIdents.left+16-10, lineY-20, textIdents.left+16, lineY-20, textIdents.left+16, lineY-10)
 				  .lineTo(textIdents.left+16, lineY+lineWidth)
-				  .lineTo(0, lineY+lineWidth)
+				  .lineTo(-10, lineY+lineWidth)
 				  .fill(colors.unitTitle);	
 
 				if(!hideLine){
@@ -771,8 +809,8 @@ rc_ques_key_pdf_worksheet_id
 					.save()
 					.moveTo(textIdents.left+16, lineY)
 					//.lineTo(50, 40)
-					.lineTo(contentWidth+textIdents.left-10, lineY)
-					.lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
+					.lineTo(contentWidth+textIdents.left-14, lineY)
+					.lineTo(contentWidth+textIdents.left-14, lineY+lineWidth)
 					.lineTo(textIdents.left+16, lineY+lineWidth)
 					.fill(colors.unitTitle);	
 					
@@ -780,7 +818,7 @@ rc_ques_key_pdf_worksheet_id
 						.font(fonts.arial)
 						.fontSize(6)
 						.fill('black')
-						.text('© '+((new Date()).getYear()+1900)+' Green Ninja', textIdents.left-10, lineY+5, {
+						.text('© '+((new Date()).getYear()+1900)+' Green Ninja', textIdents.left-14, lineY+5, {
 							width: contentWidth,
 							continued: false,
 							align: 'right'
@@ -805,12 +843,12 @@ rc_ques_key_pdf_worksheet_id
 
 			doc
 				.save()
-				.moveTo(contentWidth+12, lineY-10)
+				.moveTo(contentWidth+8, lineY-10)
 				//.lineTo(50, 40)
-				.bezierCurveTo(contentWidth+12, lineY-10, contentWidth+12, lineY-20, contentWidth+22, lineY-20) 
+				.bezierCurveTo(contentWidth+8, lineY-10, contentWidth+8, lineY-20, contentWidth+18, lineY-20) 
 				.lineTo(contentWidth+textIdents.left+35, lineY-20)
 				.lineTo(contentWidth+textIdents.left+35, lineY+lineWidth)
-				.lineTo(contentWidth+12, lineY+lineWidth)
+				.lineTo(contentWidth+8, lineY+lineWidth)
 				.fill(colors.unitTitle);	
 
 			
@@ -841,7 +879,7 @@ rc_ques_key_pdf_worksheet_id
 			.font(fonts.regular)
 			.fontSize(12)
 			.fill('white')
-			.text(pageNum, textIdents.left-10, lineY-17, {
+			.text(pageNum, textIdents.left-14, lineY-17, {
 				width: contentWidth,
 				continued: false,
 				align: 'right'
@@ -1019,7 +1057,7 @@ rc_ques_key_pdf_worksheet_id
 			console.log(image);
 			PDFUtils.drawActions.image(doc, {
 				value: image,
-				width: 340,
+				width: 240,
 				align: 'center'
 			})
 			
@@ -1810,7 +1848,8 @@ rc_ques_key_pdf_worksheet_id
 			notesParams: {
 				svgFileName: 'notes-box3.svg',
 				svgTopIdent: 20,
-			}
+			},
+			image: 'images/vocabulary-graphic-bigger.png'
 		});
 		
 		if (unit.vocab.length){
