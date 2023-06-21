@@ -1053,7 +1053,7 @@ rc_ques_key_pdf_worksheet_id
 			
 		}
 		if (image){
-			//doc.y-=15;
+			//doc.y-=15; a-design-solutions-evaluations
 			console.log(image);
 			PDFUtils.drawActions.image(doc, {
 				value: image,
@@ -1567,7 +1567,7 @@ rc_ques_key_pdf_worksheet_id
 			const files=allWorkShets.filter(file=>{
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id && chapter.lessons.find(chl=>chl.lesson_id===l.lesson_id));
 				if (!lesson){
-					//console.log('Not Found lesson', file.lesson_id, chapter.name, chapter.lessons.map(chl=>chl.lesson_id));
+					console.log('Not Found lesson', file.lesson_id, chapter.name, chapter.lessons.map(chl=>chl.lesson_id));
 					//console.log(chapter.lessons);
 					return;
 				}
@@ -1668,6 +1668,7 @@ rc_ques_key_pdf_worksheet_id
 
 				await asyncForEach(imgPaths, async (item)=>{
 					const imgInfo=await getImgInfoAndRotate(item.imagePath);
+					console.log(imgInfo);
 					images.push({
 						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
 						height: getImgPropheight(imgInfo, width),
