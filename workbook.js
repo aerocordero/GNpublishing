@@ -920,6 +920,7 @@ rc_ques_key_pdf_worksheet_id
 					title: notesTitle,
 					...(notesParams || {}),
 				});	
+				PDFUtils.drawActions.setFooter(doc, {hideLine:false});
 			}						
 			doc.addPage();	
 		}
