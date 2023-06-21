@@ -1150,7 +1150,7 @@ rc_ques_key_pdf_worksheet_id
 					width: PDFUtils.textWidth,
 					align: 'center'
 				});
-
+				
 				doc
 				.font(fonts.bold)
 				.fontSize(36)
@@ -1171,7 +1171,7 @@ rc_ques_key_pdf_worksheet_id
 				});
 
 				doc				
-				.roundedRect(textIdents.left+50, 225, 420, 2, 5)
+				.roundedRect(textIdents.left+50, doc.y+20, 420, 2, 5)
 				.fill(colors.unitTitle);
 
 				const maxQuteLength=160;
@@ -1185,7 +1185,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fontsHeading.italic)
 				.fontSize(quoteFontSize)
 				.fill('black')
-				.text(coverObject.Quotes, textIdents.left+120, 250, {
+				.text(coverObject.Quotes, textIdents.left+120, doc.y+35, {
 					width: 320,
 					align: 'left',
 					characterSpacing: 1,
