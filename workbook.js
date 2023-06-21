@@ -633,6 +633,10 @@ rc_ques_key_pdf_worksheet_id
 			const boxIdent=pageNum%2===0 ? 20 : 550;	
 			const boxHeight=80;
 			const boxWidth=40;
+			let iconTopIdent=10;
+			if (header.type==='phenomenon'){
+				iconTopIdent=4
+			}
 			doc
 			.save()
 			.moveTo(boxIdent, 0)
@@ -644,7 +648,7 @@ rc_ques_key_pdf_worksheet_id
 			.lineTo(boxIdent+boxWidth, 0)
 			.fill(colors.unitTitle);			
 			doc
-				.addSVG(fs.readFileSync('images/icons/'+header.type+'-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+10, {
+				.addSVG(fs.readFileSync('images/icons/'+header.type+'-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+iconTopIdent, {
 				  width: boxWidth-10,
 				  height: boxWidth-10,				  
 				});
@@ -675,18 +679,24 @@ rc_ques_key_pdf_worksheet_id
 					.font(fonts.bold)
 					.fontSize(16)
 					.fillColor(header.color || colors.unitTitle)
-					.text(`Phenomenon`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15, {
+					.text(`Phenomenon`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+5, {
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
-					lineY+=10;
+					//lineY+=10;
+					let lineStart=textIdents.left-10;
+					let lineEnd=contentWidth+textIdents.left-35;
+					if (pageNum%2===0){
+						lineStart=textIdents.left+10;
+						lineEnd=contentWidth+textIdents.left-10;
+					}
 					doc
 					.save()
-					.moveTo(textIdents.left-10, lineY)
+					.moveTo(lineStart, lineY)
 					//.lineTo(50, 40)
-					.lineTo(contentWidth+textIdents.left-10, lineY)
-					.lineTo(contentWidth+textIdents.left-10, lineY+lineWidth)
-					.lineTo(textIdents.left-10, lineY+lineWidth)
+					.lineTo(lineEnd, lineY)
+					.lineTo(lineEnd, lineY+lineWidth)
+					.lineTo(lineStart, lineY+lineWidth)
 					.fill(header.color || colors.unitTitle);	
 			}
 		}
