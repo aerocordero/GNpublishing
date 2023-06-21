@@ -635,7 +635,7 @@ rc_ques_key_pdf_worksheet_id
 			const boxWidth=40;
 			let iconTopIdent=10;
 			if (header.type==='phenomenon'){
-				iconTopIdent=4
+				iconTopIdent=3
 			}
 			doc
 			.save()
