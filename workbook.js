@@ -1703,7 +1703,7 @@ rc_ques_key_pdf_worksheet_id
 						bottomBoxY: images[0].rotated ? 745 : 735,
 						rightBoxX: images[0].rotated ? 548 : 600,
 						leftBoxWidth: images[0].rotated ? 55 : 0,
-						marginTop: file.for_print ? 0 : 10,
+						marginTop: file.for_print ? 0 : (images[0].rotated ? 10 : 0),
 						headerParams: {
 							type: !file.chapter ? (file.isPhenomenon ? 'phenomenon' : (file.for_print ? 'nameClassDate' : 'line')) : 'reading',
 							topWhiteOverlayHeight: file.chapter ? 65 : 52,
