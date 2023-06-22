@@ -2535,6 +2535,7 @@ async function main() {
 		
 		});
 		//return; 
+		/*
 		blocks.push({
 			type: 'sectionCover',
 			title: 'Lesson Files',
@@ -2607,6 +2608,7 @@ async function main() {
 				});
 			}
 		});
+		*/
 		
 	}	
 	//5.25, 5.21
