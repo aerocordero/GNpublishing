@@ -1537,7 +1537,7 @@ async function main() {
 			const workshetReplaceFn=(str, params)=>{
 				//console.log('forRegexp: ', str);
 				let images=[];
-				const string=str.replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
+				const string=(str || '').replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 					//console.log('regexp2', match, str, str1);
 					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
 					//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
@@ -1596,7 +1596,10 @@ async function main() {
 				value: 'Lesson Introduction',
 				headerTitle: header,
 				startOnRightSide: true,
-				startOnNewPage: true
+				startOnNewPage: true,
+				blankPageTitle: {
+					color: colors.lessonGreen,
+				}
 			});
 			/*
 			if (lesson.phenomenon){
@@ -2058,7 +2061,7 @@ async function main() {
 						x+=25;
 					}
 					*/
-					let width=155;
+					let width=180;
 					
 					await asyncForEach(imgPaths, async (item, imgIndex)=>{
 						const imgInfo=await getImgInfoAndRotate(item.imagePath);
