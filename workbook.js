@@ -49,7 +49,8 @@ async function main() {
 		flushCache,
 		GDFolderSync,
 		saveQueue,
-		loadQueue
+		loadQueue,
+		convertPptxPdf
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -1137,6 +1138,7 @@ rc_ques_key_pdf_worksheet_id
 			y:-1
 		});	
 		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
+		const spanishRC=await csv().fromFile('Spanish Reading Companion Upload - Sheet1.csv');
 		
 		const coverObject=coverCSV.find(obj=>obj['Grade/Unit']==='G'+model.number+'U'+unit.number);
 		console.log('coverObject', coverObject);
@@ -1620,18 +1622,27 @@ rc_ques_key_pdf_worksheet_id
 				{
 				  pdf:'rc_pdf_worksheet',
 				  title: chapter.name && 0 ? chapter.name+' reading' : 'Reading', //'Reading for Lessons '+chapter.lessonSequence,
+				  spanishCSVcolumn: 'Reading link',
 				},
 				{
 				  pdf: 'rc_ques_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions' //'Reading Questions for Lessons '+chapter.lessonSequence
+				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions', //'Reading Questions for Lessons '+chapter.lessonSequence
+				  spanishCSVcolumn: 'Reading Question link',
 				},
 				/*
 				{
 				  pdf: 'rc_ques_key_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading questions key' : 'Reading Questions key for Lessons '+chapter.lessonSequence
+				  title: chapter.name && 0 ? chapter.name+' reading questions key' : 'Reading Questions key for Lessons '+chapter.lessonSequence,
+				  spanishCSVcolumn: 'Reading Question Key Link',
 				},*/
-			].forEach(({pdf, title})=>{
+			].forEach(({pdf, title, spanishCSVcolumn})=>{
 				if (chapter[pdf]){
+					if (languageId===2){
+						const row=spanishRC.find(item=>{
+							return item.Grade==model.number && item.Unit==unit.number && item.Chapter==chapter.number;
+						})
+						chapter[pdf]=row[spanishCSVcolumn];
+					}
 					const pathArr=chapter[pdf].split('/');
 					files.push({
 						chapter,
@@ -1670,6 +1681,9 @@ rc_ques_key_pdf_worksheet_id
 				//
 				console.log('downloadFile', file.path);
 				const path=await downloadFile(file.path);
+				if (file.fileName.indexOf('edit?usp=drive')>=0){
+					file.fileName=path.split('/')[1];
+				}
 				const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 				//const imgPaths=await convertPdf(path);
 				//console.log(imgPaths);
