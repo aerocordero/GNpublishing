@@ -35,7 +35,8 @@ async function main() {
 		getImgInfoAndRotate,
 		loadQueue,
 		saveQueue,
-		arrayUnique
+		arrayUnique,
+		convertPptxPdf
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
