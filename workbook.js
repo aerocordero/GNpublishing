@@ -1139,6 +1139,7 @@ rc_ques_key_pdf_worksheet_id
 		});	
 		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
 		const spanishRC=await csv().fromFile('Spanish Reading Companion Upload - Sheet1.csv');
+		const spanishChapterDesc=await csv().fromFile('chapter_descriptions_spanish.csv');
 		
 		const coverObject=coverCSV.find(obj=>obj['Grade/Unit']==='G'+model.number+'U'+unit.number);
 		console.log('coverObject', coverObject);
@@ -1577,6 +1578,16 @@ rc_ques_key_pdf_worksheet_id
 		}
 		console.log(unit.chapters);
 		await asyncForEach(unit.chapters, async chapter=>{
+
+			if (languageId===2){
+				const row=spanishChapterDesc.find(item=>{
+					return item.Grade==model.number && item.Unit==unit.number && item.Chapter==chapter.number;
+				})
+				//console.log(spanishChapterDesc);
+				chapter.name=row['Spanish Chapter Name'];
+				chapter.description=row['ChapterDescriptionStidentSpanish'];
+			}
+
 			const files=allWorkShets.filter(file=>{
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id && chapter.lessons.find(chl=>chl.lesson_id===l.lesson_id));
 				if (!lesson){
@@ -1621,12 +1632,12 @@ rc_ques_key_pdf_worksheet_id
 			[
 				{
 				  pdf:'rc_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading' : 'Reading', //'Reading for Lessons '+chapter.lessonSequence,
+				  title: translate('Reading'), //'Reading for Lessons '+chapter.lessonSequence,
 				  spanishCSVcolumn: 'Reading link',
 				},
 				{
 				  pdf: 'rc_ques_pdf_worksheet',
-				  title: chapter.name && 0 ? chapter.name+' reading questions' : 'Reading Questions', //'Reading Questions for Lessons '+chapter.lessonSequence
+				  title: translate('Reading Questions'), //'Reading Questions for Lessons '+chapter.lessonSequence
 				  spanishCSVcolumn: 'Reading Question link',
 				},
 				/*
@@ -1647,7 +1658,7 @@ rc_ques_key_pdf_worksheet_id
 					files.push({
 						chapter,
 						path: chapter[pdf],
-						title: 'Chapter '+chapter.number+' '+title,
+						title: translate('Chapter')+' '+chapter.number+' '+title,
 						fileName: pathArr[pathArr.length-1]
 					})
 				}
