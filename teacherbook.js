@@ -1529,7 +1529,11 @@ async function main() {
 				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
 				titleRight: '', 
 				icon: 'images/icons/Lesson Plan.png',
-				color: colors.lessonGreen
+				color: colors.lessonGreen,
+				chapterBadge: {
+					bageNum: 2,
+					text: 'Chapter 1',
+				},
 			};
 			
 			PDFUtils.showedFiles=[];
@@ -2062,7 +2066,10 @@ async function main() {
 						x+=25;
 					}
 					*/
-					let width=180;
+					let width=185;
+					if (imgPaths.length>2){
+						width=160;
+					}
 					
 					await asyncForEach(imgPaths, async (item, imgIndex)=>{
 						const imgInfo=await getImgInfoAndRotate(item.imagePath);
@@ -2085,6 +2092,7 @@ async function main() {
 							height,  
 							width,
 							x,
+							imgInfo,
 							highlight: imgIndex===0 && file.isOnline ? {
 								color: colors.orange,
 								icon: icons.onlineContent
@@ -2093,7 +2101,7 @@ async function main() {
 						x+=width;
 						
 					});
-					
+					console.log({images, imgPaths});
 					file.images=[{
 						type: 'images',
 						value: images,
