@@ -563,7 +563,7 @@ rc_ques_key_pdf_worksheet_id
 			.font(fontsHeading.bold)
 			.fontSize(18)
 			.fill(colors.unitTitle)
-			.text(title, 100, topIdent || 50, {
+			.text(title, pageNum%2===0 ? 80 : 55, topIdent || 50, {
 			width: 490,
 			align: 'left'
 		});
