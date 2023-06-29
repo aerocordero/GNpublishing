@@ -1692,7 +1692,7 @@ rc_ques_key_pdf_worksheet_id
 				//
 				console.log('downloadFile', file.path);
 				const path=await downloadFile(file.path);
-				if (file.fileName.indexOf('edit?usp=drive')>=0){
+				if (file.fileName.indexOf('edit?usp=')>=0){
 					file.fileName=path.split('/')[1];
 				}
 				const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
