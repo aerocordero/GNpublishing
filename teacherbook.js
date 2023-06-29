@@ -1450,6 +1450,7 @@ async function main() {
 		//return;	
 		
 		await asyncForEach(unit.review, async (review)=>{
+			/*
 			blocks.push({
 				type: 'h1',
 				value: review.name,
@@ -1468,17 +1469,7 @@ async function main() {
 				level: 1, 
 				color: colors.black
 			});
-			/*
-			blocks.push({
-				type: 'h2',
-				value: 'Content', 
-			});
-			blocks.push({
-				type: 'p',
-				value: 'You can use the following resources either as a review toward the end of the unit, or during the unit to supplement particular topics. Resources below requires online access.', 
-				isHtml: false,
-			});	
-			*/		
+			
 			//console.log('review.activityPlan', review.activityPlan);
 			const sortedPlan=_.sortBy(review.activityPlan.filter(p=>['Remote Learning', 'Unit Videos', 'Unit Video'].indexOf(p.title)<0), p=>p.header).filter(
 				plan=>plan.content?.trim()
@@ -1504,6 +1495,7 @@ async function main() {
 				//console.log('sortedPlan', res)		
 			});		
 			//console.log(sortedPlan);
+			*/
 		});		
 	
 		
