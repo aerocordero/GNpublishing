@@ -938,7 +938,16 @@ rc_ques_key_pdf_worksheet_id
 			//PDFUtils.drawActions.setFooter(doc, {hideLine:true});
 			//doc.addPage();			
 		}
-		const top=180;
+		let top=180;
+
+		const titleHeight=doc
+			.fontSize(38)
+			.font(fonts.regular)
+			.heightOfString(title, {
+				width: PDFUtils.textWidth,
+				align: 'center'
+			});
+
 		doc.x=60;
 		
 		if (sectionNum){			
@@ -1044,7 +1053,7 @@ rc_ques_key_pdf_worksheet_id
 				.font(fonts.regular)
 				.fontSize(38)
 				.fill(color)
-				.text(title, textIdents.left, top+80, {
+				.text(title, textIdents.left, top+(titleHeight > 40 ? 20 : 80), {
 					width: PDFUtils.textWidth,
 					align: 'center'
 				});
@@ -1066,7 +1075,7 @@ rc_ques_key_pdf_worksheet_id
 						fontSize: 12,
 						listsIdent: 15,
 						processListsAsBlocks: true,
-						moveDown: 1.7
+						moveDown: 1.0
 					}
 				});
 				//doc.y+=2;
@@ -1895,7 +1904,7 @@ rc_ques_key_pdf_worksheet_id
 				svgFileName: 'notes-box3.svg',
 				svgTopIdent: 20,
 			},
-			image: 'images/vocabulary-graphic-bigger.png'
+			image: 'images/vocabulary-graphic-bigger'+(languageId===2 ? '_spanish' : '')+'.png'
 		});
 		
 		if (unit.vocab.length){
