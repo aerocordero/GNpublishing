@@ -560,11 +560,20 @@ rc_ques_key_pdf_worksheet_id
 			//chapter: {},
 		}, pageNum);
 
+		const titleHeight=doc
+			.fontSize(18)
+			.font(fonts.bold)
+			.heightOfString(title, {
+				width: 490,
+				align: 'left',
+			});
+		
+
 		doc
 			.font(fontsHeading.bold)
 			.fontSize(18)
 			.fill(colors.unitTitle)
-			.text(title, pageNum%2===0 ? 80 : 55, topIdent || 50, {
+			.text(title, pageNum%2===0 ? 80 : 55, (topIdent || 50)-(titleHeight > 24 ? 13 : 0), {
 			width: 490,
 			align: 'left'
 		});
