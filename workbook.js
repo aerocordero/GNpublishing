@@ -530,16 +530,17 @@ rc_ques_key_pdf_worksheet_id
 		level2: {
 			font: fonts.regular,
 			fontSize: 10,
+			//width: contentWidth-textIdents.left-30
 		},
 		headerParams: {
 			icon: 'arrow',
 		},
-		leftIdent: textIdents.left+10,
+		leftIdent: textIdents.left-10,
 		levelIdent: 10,
-		width: contentWidth-textIdents.left,
+		width: contentWidth-textIdents.left+20,
 		lineParams: {
 			leftIdent: textIdents.left,
-			width: contentWidth+20
+			width: contentWidth+20+20
 		},
 		moveDown: 0.5,
 	}
