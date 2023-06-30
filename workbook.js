@@ -666,12 +666,20 @@ rc_ques_key_pdf_worksheet_id
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
 				*/
+					const titleText=`${header.title}: ${header.chapter.name}`;
 
+					const titleHeight=doc
+						.fontSize(16)
+						.font(fonts.bold)
+						.heightOfString(titleText, {
+							width: contentWidth-75,
+							align: pageNum%2===0 ? 'left' : 'right',
+						});
 					doc
 					.font(fonts.bold)
 					.fontSize(16)
 					.fillColor(header.color || colors.unitTitle)
-					.text(`${header.title}: ${header.chapter.name}`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15, {
+					.text(titleText, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15-(titleHeight > 24 ? 13 : 0), {
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
