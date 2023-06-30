@@ -1594,9 +1594,10 @@ async function main() {
 				headerTitle: header,
 				startOnRightSide: true,
 				startOnNewPage: true,
+				/*
 				blankPageTitle: {
 					color: colors.lessonGreen,
-				}
+				}*/
 			});
 			/*
 			if (lesson.phenomenon){
