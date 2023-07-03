@@ -638,8 +638,30 @@ async function main() {
 			x:-1,
 			y:-1
 		});	
-	
 		
+		await asyncForEach(['Dear-Educator.pdf','The-Green-Ninja-Approach.pdf','How-to-Teach-with-Green-Ninja.pdf'], async fileName=>{
+			const paths=await convertPptxPdf('assets/'+fileName, {
+				fileName
+			}, false);
+			console.log({fileName, paths});
+			await asyncForEach(paths, async (item)=>{
+				const imgInfo=await imageInfo(item.imagePath);
+				blocks.push({
+					type: 'pageBreak',
+				});
+				
+				blocks.push({
+					type: 'image',
+					value: item.imagePath,
+					width: 612,
+					x:-1,
+					y:-1
+				});
+				
+			});
+		})
+		//return;
+		/*
 		blocks.push({
 			type: 'h1',
 			value:'Dear Educator,',
@@ -765,6 +787,8 @@ async function main() {
 				width: 520,
 			}},
 		], blocks);
+
+	
 	
 		await asyncForEach([
 			{
@@ -805,7 +829,7 @@ async function main() {
 			y: 550
 		});	
 		
-		
+		*/
 			
 		blocks.push({
 			type: 'pageBreak',

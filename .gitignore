@@ -8,7 +8,9 @@
 /.google-credentials.json
 
 /node_modules
-*.pdf
+tmp/*.pdf
+result/*.pdf
+temp*.pdf
 *.log
 *.zip
 
