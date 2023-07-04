@@ -237,6 +237,14 @@ async function main() {
 			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
+		console.log(lesson.lesson_id, [
+			'SELECT *',
+			'FROM lesson_worksheet_mapping m',
+			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
+			'LEFT OUTER JOIN file f ON f.id = t.file_id',
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
+		].join('\n'));
+		console.log(lesson.worksheet.map(ws=>ws.path));
 		
 		lesson.activityPlan=await dbQuery([
 			'SELECT *',
@@ -253,6 +261,7 @@ async function main() {
 		], [lesson.lesson_id]);		
 		
 	});
+	//return;
 	/*
 	standardTypes.forEach(key=>{
 		unit.orphanStandards[key]=_.sortBy(unit.orphanStandards[key], item=>item.title);
@@ -1137,6 +1146,9 @@ rc_ques_key_pdf_worksheet_id
 	}
 
 	let blocks=[];
+
+	//console.log('allWorkShets', allWorkShets.map(f=>f.path));
+	//return;
 	
 	const generateBlocks=async ()=>{
 		blocks=[];
@@ -1637,7 +1649,7 @@ rc_ques_key_pdf_worksheet_id
 					&& !excludedEnds.find(str=>file.fileNameWithExt.indexOf(str+'.')>0)
 					&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
 			});
-
+			
 			
 			chapter.lessonSequence=`${unit.number}.${chapter.lessons[0].lesson.index+1} - ${unit.number}.${chapter.lessons[chapter.lessons.length-1].lesson.index+1}`;
 			blocks.push({

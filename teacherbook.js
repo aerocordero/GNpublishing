@@ -852,10 +852,19 @@ async function main() {
 		
 		blocks.push({
 			type: 'h1',
-			value:'How a Unit Works - Teacher and Student Perspective',
+			value:'  ',
 			startOnRightSide: false,
 			startOnNewPage: true,
-			noHeader:true,
+			headerTitle: {
+				...PDFUtils.headerTitles.find(t=>t.titleLeft==='Unit Overview'),
+				titleLeft: 'How a Unit Works  \nTeacher and Student Perspective',
+				icon: null,
+				titleLeftFontSize: 25,
+				titleLeftTopIdent: 30,
+				lineStartX: 60,
+				lineEndX: 500,
+				lineY: 95,
+			},
 			color: colors.lessonGreen,
 			font: fonts.regular,
 			leftIdent: 55,
@@ -879,11 +888,20 @@ async function main() {
 		
 		blocks.push({
 			type: 'h1',
-			value:'Differentiation Learning Support',
+			value:'  ',
 			startOnNewPage: true,
 			startOnRightSide: false,
 			font: fonts.regular,
-			noHeader:true,
+			headerTitle: {
+				...PDFUtils.headerTitles.find(t=>t.titleLeft==='Unit Overview'),
+				titleLeft: 'Differentiation \nLearning Support',
+				icon: null,
+				titleLeftFontSize: 25,
+				titleLeftTopIdent: 30,
+				lineStartX: 50,
+				lineEndX: 350,
+				lineY: 95,
+			},
 			color: colors.lessonGreen,
 			leftIdent: 55,
 			fontSize: 20,
@@ -896,8 +914,9 @@ async function main() {
 			{title: 'Differentiation and Special Learning Needs', field:'differentiation', 
 				params: {
 					width: 509,
-					leftTextIdent: 55,
-					moveDown: 0.5,
+					leftTextIdent: 60,
+					moveDown: 0.2,
+					fontSize: 9,
 					//lineGap: 0.6,
 				}
 			},
@@ -905,17 +924,19 @@ async function main() {
 				params: {
 					processListsAsBlocks: true,
 					width: 509,
-					leftTextIdent: 55,
+					leftTextIdent: 60,
 					addSpaceAfterSize: 7,
+					fontSize: 9,
 					//lineGap: 0.6,
-					moveDown: 0.5,
+					moveDown: 0.2,
 				}
 			},
 			{title: 'Additional Support for Differentiated Learning', field:'additional-support', 
 				params: {
 					processListsAsBlocks: true,
 					width: 509,
-					leftTextIdent: 55,
+					leftTextIdent: 60,
+					fontSize: 9,
 					//lineGap: 0.6,
 					//moveDown: -0.0001,
 				}
