@@ -707,7 +707,7 @@ rc_ques_key_pdf_worksheet_id
 					.font(fonts.bold)
 					.fontSize(16)
 					.fillColor(header.color || colors.unitTitle)
-					.text(`Phenomenon`, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+5, {
+					.text(translate("Phenomenon"), textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+5, {
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
