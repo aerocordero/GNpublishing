@@ -364,11 +364,9 @@ async function main() {
 		}
 		obj.unitChapters.push(uch);
 	});
-	chapterGroups.forEach((chapter, index)=>{
+	chapterGroups.forEach((chapter)=>{
 		chapter.lessons=unit.chapterMappings.filter(uch=>uch.chapter_id===chapter.id);
-		chapter.number=index+1;
 	})
-	unit.chapters=chapterGroups;
 	
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
@@ -411,6 +409,18 @@ async function main() {
 		})
 	});
 	lessons=_.sortBy(lessons, l=>l.index);
+
+	unit.chapters=_.sortBy(chapterGroups, ch=>{
+		//ch.lessons[0].lesson?.number
+		const chLesson=ch.lessons[0];
+		const lesson=lessons.find(lesson=>lesson.lesson_id===chLesson.lesson_id);
+		//console.log('lesson.number', lesson.index);
+		return lesson.index;
+	});
+	unit.chapters.forEach((chapter, index)=>{
+		chapter.number=index+1;
+	});
+	//return;
 	
 	lessons.forEach(lesson=>{
 		/*
@@ -1641,7 +1651,7 @@ async function main() {
 	//	return;
 		await asyncForEach(unit.chapters, async chapter=>{
 			const chapterBadge={
-				bageNum: chapter.number+1,
+				bageNum: chapter.number,
 				text: 'Chapter '+chapter.number,
 				color: chapterColors[chapter.number]
 			};
