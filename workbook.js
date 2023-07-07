@@ -1657,7 +1657,7 @@ rc_ques_key_pdf_worksheet_id
 				chapterNum: chapter.number,
 				title: translate(chapter.name),
 				subTitle: translate('This chapter covers lesson sequence')+` ${chapter.lessonSequence}.`,
-				contentsTitle: translate('Chapter '+chapter.number)+': '+translate(chapter.name),
+				contentsTitle: translate('Chapter')+' '+chapter.number+': '+translate(chapter.name),
 				text: chapter['student_description'+(languageId>1 ? '_spanish' : '')] || chapter.description,
 				color: colors.unitTitle,
 				contentsLevel: 1,
@@ -1692,6 +1692,9 @@ rc_ques_key_pdf_worksheet_id
 							return item.Grade==model.number && item.Unit==unit.number && item.Chapter==chapter.number;
 						})
 						chapter[pdf]=row[spanishCSVcolumn];
+						if (!row){
+							console.log('Not found spanish Reading', chapter.number, model.number, unit.number, chapter.number)
+						}
 					}
 					const pathArr=chapter[pdf].split('/');
 					files.push({
