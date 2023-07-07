@@ -36,7 +36,8 @@ async function main() {
 		loadQueue,
 		saveQueue,
 		arrayUnique,
-		convertPptxPdf
+		convertPptxPdf,
+		parseHtml
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -66,6 +67,7 @@ async function main() {
 		'Grade 7': '#15ADCB',						
 		'Grade 8': '#89C440',
 	}
+	const chapterColors=['#bedb83', '#85b838', '#589b31','#3f7c1f', '#346d24', '#205b1a', '#184c12'];
 	
 	const textIdents={
 		left: 65,
@@ -296,6 +298,77 @@ async function main() {
 	const allWorkShets=[];	
 	
 	const unitLessonIds=unit.lessons.split(',');
+
+	let chapters=(await dbQuery([
+		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet FROM `chapter` t',
+		'LEFT OUTER JOIN worksheet rc_pdf_ws ON rc_pdf_ws.worksheet_id=t.rc_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_ques_pdf.worksheet_id=t.rc_ques_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_ques_key_pdf.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
+	], []));
+	let chapterLessonMappings=(await dbQuery([
+		'SELECT * FROM `chapter_lesson_mapping` t',
+		'ORDER BY t.position',
+	], []));
+
+	/* 
+	  {table: 'green_box'},
+  {table: 'green_box_slides'},
+  {table: 'chapter_green_box_mapping'},
+	*/
+	const greenBoxes=(await dbQuery([
+		'SELECT t.*, m.chapter_id FROM `green_box` t',
+		'INNER JOIN chapter_green_box_mapping m ON m.green_box_id=t.id AND m.chapter_id IN ('+chapters.map(ch=>ch.id).join(',')+')',
+		'ORDER BY m.position ASC'
+	], []));
+
+	const greenBoxSlides=(await dbQuery([
+		'SELECT t.*, f.s3_filename, f.s3_bucket FROM `green_box_slides` t',
+		'INNER JOIN file f ON f.id = t.image_file_id',
+		'WHERE t.green_box_id IN ('+greenBoxes.map(ch=>ch.id).join(',')+')',
+		'ORDER BY t.position ASC'
+	], []));
+	
+
+	chapters.forEach(chapter=>{
+		chapter.greenBoxes=greenBoxes.filter(gb=>gb.chapter_id===chapter.id);
+		chapter.greenBoxes.forEach(gb=>{
+			gb.slides=greenBoxSlides.filter(slide=>slide.green_box_id===gb.id);
+			gb.slides.forEach(slide=>{
+				slide.imagePath=slide.s3_filename ? `/getSecuredImages?imagePath=/uploads/lessons/${slide.s3_filename}` : '';
+			})
+		})
+		//console.log(chapter.greenBoxes);
+	})
+	
+
+	unit.chapterMappings=chapterLessonMappings.filter(lm=>{
+		if (!lm.is_review){
+			lm.lesson=lessons.find(l=>l.lesson_id==lm.lesson_id);
+			return lm.lesson;
+		}
+	});
+
+	unit.chapterMappings=_.sortBy(unit.chapterMappings, lm=>lm.lesson.index);
+	const chapterGroups=[];
+	unit.chapterMappings.forEach(uch=>{
+		let obj=chapterGroups.find(chg=>chg.id===uch.chapter_id);
+		const chapterObj=chapters.find(ch=>ch.id==uch.chapter_id);
+		if (!chapterObj){
+			return;
+		}
+		if (!obj){
+			obj=chapterObj;
+			chapterGroups.push(obj);
+			//console.log(uch);
+			obj.unitChapters=[];
+		}
+		obj.unitChapters.push(uch);
+	});
+	chapterGroups.forEach((chapter, index)=>{
+		chapter.lessons=unit.chapterMappings.filter(uch=>uch.chapter_id===chapter.id);
+		chapter.number=index+1;
+	})
+	unit.chapters=chapterGroups;
 	
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
@@ -549,26 +622,38 @@ async function main() {
 	
 	PDFUtils.tocStyles={
 		title: {
-			color: 'black',
-			idents: [textIdents.left-10, 40],
+			text: 'Table of Contents', 
+			idents: [textIdents.left, 40],
 			font: fonts.bold,
 			fontSize: 24,
 		},
 		level0: {
 			font: fonts.bold,
 			fontSize: 12,
+			underline: true
 		},
 		level1: {
-			font: fonts.regular,
+			font: fonts.bold,
 			fontSize: 10,
 		},
+		level2: {
+			font: fonts.regular,
+			fontSize: 10,
+			//width: contentWidth-textIdents.left-30
+		},
+		
+		headerParams: {
+			type: 'outerBox',
+			color: '#41881d'
+		},
 		leftIdent: textIdents.left-10,
-		levelIdent: 5,
-		width: contentWidth-45,
+		levelIdent: 10,
+		width: contentWidth-textIdents.left+20,
 		lineParams: {
-			leftIdent: textIdents.left-10,
-			width: contentWidth+20
-		}
+			leftIdent: textIdents.left,
+			width: contentWidth+20+20
+		},
+		moveDown: 0.5,
 	}
 	PDFUtils.headerTextStyles={
 		h1: {
@@ -1554,117 +1639,35 @@ async function main() {
 			addContents: true,
 		});
 	//	return;
-		
-		await asyncForEach(lessons.filter((l, i)=>{
-			//return i<13 && i>=11;
-			//console.log(l.number, printLessonNum.split(',').indexOf(l.number), printLessonNum.split(','))
-			return printLessonNum ? printLessonNum.split(',').indexOf(l.number)>=0 : true;
-		}), async (lesson)=>{
-			//console.log('lessonlesson', lesson);
-			currentLessonIdGlobal=lesson.old_lesson_id;
-			let header={
-				titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
-				titleRight: '', 
-				icon: 'images/icons/Lesson Plan.png',
-				color: colors.lessonGreen,
-				chapterBadge: {
-					bageNum: 2,
-					text: 'Chapter 1',
-				},
+		await asyncForEach(unit.chapters, async chapter=>{
+			const chapterBadge={
+				bageNum: chapter.number+1,
+				text: 'Chapter '+chapter.number,
+				color: chapterColors[chapter.number]
 			};
-			
-			PDFUtils.showedFiles=[];
-			let worksheetFromAnotherLessons=[];
-			
-			const workshetReplaceFn=(str, params)=>{
-				//console.log('forRegexp: ', str);
-				let images=[];
-				const string=(str || '').replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
-					//console.log('regexp2', match, str, str1);
-					const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-					//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
-					if (workshet){
-						if (!workshet.isOnlineAccess){
-							if (!params.readOnly){
-								if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
-									(workshet.images || []).forEach(img=>images.push(img));
-								}
-								if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
-									PDFUtils.showedFiles.push(workshet.fileNameWithExt);
-								}
-							}
-							if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-								//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
-								worksheetFromAnotherLessons.push(workshet);
-							}
-						}
-						
-						return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
-					}
-					return '';
-				}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.').replace('))', ')').replace('((', '(');
-				if (string.indexOf('; from ')>0){
-					images=[];
-				}
-				/*
-				console.log({
-					string,
-					images
-				})
-				/**/
-			
-				return {
-					string,
-					images
-				};
-			}
-			//worksheetFromAnotherLessons=[];
-			//This for files from another lessons array filing:
-			['teacher_prep'].forEach(field=>{
-				workshetReplaceFn(lesson[field], {readOnly:true}).string;
-			})
-			lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
-				//console.log('planItem!', plan);
-				workshetReplaceFn(plan.content, {readOnly:true}).string;
-			});
-			['anticipated_challenges'].forEach(field=>{
-				workshetReplaceFn(lesson[field], {readOnly:true}).string;
-			})
-			//console.log(lesson.number);
-			//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
-			
 			blocks.push({
 				type: 'h1',
-				value: 'Lesson Introduction',
-				headerTitle: header,
+				value: 'Chapter Overview',
+				headerTitle: {
+					type: 'chapter',
+					titleLeft: 'Chapter '+chapter.number,
+					color: colors.lessonGreen,
+					chapter,
+					chapterBadge,
+				},
 				startOnRightSide: true,
 				startOnNewPage: true,
+				color: colors.lessonGreen,
+				topIdent: 150
 				/*
 				blankPageTitle: {
 					color: colors.lessonGreen,
 				}*/
 			});
-			/*
-			if (lesson.phenomenon){
-				blocks.push({
-					type: 'introductions',
-					value:[
-						{title: 'Unit Challenge', field:'phenomenon'},
-					],
-					color: 'black',
-					fontSize: 10,
-					paddingBottom: 0.5,
-					titleFont: fonts.bold,
-					moveDown: 0,
-					data: lesson
-				});
-			}
-			*/
-			
-			
-		
-			await processObjectFieldsIntoBlocks(lesson, [
+
+			await processObjectFieldsIntoBlocks(chapter, [
 				{title: '', field:'description'},
+				/*
 				{title: 'Phenomenon', field:'phenomenon', headerType:'h3', params: {
 					marginTop: 0.5,
 					//ident:100,
@@ -1678,911 +1681,1264 @@ async function main() {
 					marginBottom: -0.3
 					//ident:100,
 					//width: 350
-				}},
+				}},*/
 			], blocks);
 			
 			blocks.push({
 				type: 'contentsPush',
-				title: 'Lesson '+lesson.number+' '+lesson.name, 
+				title: 'Chapter '+chapter.number+': '+chapter.name, 
 				level: 1, 
-				color: colors.black
+				color: colors.lessonGreen
 			});
-			
-			
-			blocks.push({
-				type: 'h1',
-				value: 'Teaching Resources'
-			});	
-			
-			//console.log('lesson.worksheet', lesson.number, lesson.worksheet);
-			console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
-			if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
-				
-				blocks.push({
-					type: 'h2',
-					value: 'Files'
-				});
-				const lessonFiles=lesson.worksheet.filter((file, index)=>{
-					const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
-					return !existing;
-				});
-				console.log('lessonFiles', lessonFiles);
-				worksheetFromAnotherLessons.forEach(file=>{
-					lessonFiles.push(file);					
-				});
-				let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
-				const hasStudenIcon=data=>(data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf';
-				let hasStudentIcons=!!lessonFiles.find(f=>hasStudenIcon(f));
-			
-				blocks.push({
-					type: 'table',
-					fontSize: 10,
-					hideHeaders: true,
-					borderColor: colors.lessonGreen,
-					//leftIdent: 80,
-					columns: [
-						{
-							id: 'fileTitle',
-							header: false,
-							width: 320,
-							align: 'left',
-							padding: [4,10,4,4],
-							renderer: function (tb, data) {	
-								let str=data.fileTitle;							
-								if (data.lesson_id!==lesson.lesson_id){
-									const fileLesson=lessons.find(l=>l.lesson_id===data.lesson_id);
-									//console.log('fileLesson', fileLesson);
-									if (fileLesson){
-										str+='  (from Lesson '+fileLesson.number+' '+fileLesson.name+')';
-									}
-								}
-								return str;
-							},
-							/*
-							cellAdded: (tb, data, cell, pos)=>{
-								//console.log(tb, data);
-								if (data.isOnline){
-									const doc=tb.pdf;
-									const textWidth=doc.widthOfString(data.fileTitle);
-									let x=pos.x+(textWidth<280 ? textWidth : 270);
-									let strNum=parseInt(textWidth/270);
-									doc.image('images/icons/noun_Refresh_1299685.png', x, pos.y-30-(1*strNum), {
-										  width: 30,
-										  align: 'center',
-										  valign: 'center'
-									});
-								}								
-							}
-							*/
 
-						},
-						{
-							id: 'page',
-							header: '',
-							width: 155,
-							renderer: function (tb, data) {								
-								return data.page || (!hasStudenIcon(data) ? 'Online Access Required' : '');
-							},
-							cellAdded: (tb, data, cell, pos)=>{
-								const doc=tb.pdf;
-								const textWidth=doc.widthOfString(data.page || '');
-								let x=pos.x+textWidth;
-								if (!data.page){
-									x-=4;
-								}
-								//console.log(pos);
-								if (data.isOnline){
-									doc.image(icons.onlineContent, x, pos.baseY-3, {
-										  width: 20,
-										  align: 'center',
-										  valign: 'center'
-									});
-								}	
-								if (hasStudenIcon(data)){
-									doc.image(icons.studentContent, x, pos.baseY-3, {
-										  width: 20,
-										  align: 'center',
-										  valign: 'center'
-									});
-								}								
-							}
-						},
-					],
-					data: _.sortBy(lessonFiles, f=>f.fileTitle),
-					/*
-					dataFilter: (data)=>{
-						//console.log('PDFUtils.pdfGenIterator', PDFUtils.pdfGenIterator, data.map(file=>[file.fileName, file.page]));
-						return data.filter(file=>!PDFUtils.pdfGenIterator || (PDFUtils.pdfGenIterator>0 && file.page));
-					}*/
-				});
-				lesson.worksheet.forEach(file=>{
-					if (!unit.files.find(f=>f.fileName===file.fileName)){
-						unit.files.push(file);
-					}
-				});
-				const legenda=[
-					{icon: icons.onlineContent, text: customPages.messages.onlineContentAfterTableDescription, visible: hasOnlineIcons},
-					{icon: icons.studentContent, text: customPages.messages.studentContent, visible: hasStudentIcons},
-				]
-				if (legenda.filter(l=>l.visible).length){
-					blocks.push({
-						type: 'custom',
-						drawFn: (doc)=>{
-							let y=doc.y-10;
-							legenda.filter(l=>l.visible).forEach(item=>{
-								const x=textIdents.left-5;
-							
-								doc.image(item.icon, x, y, {
-									  width: 25,
-									  align: 'center',
-									  valign: 'center'
+			blocks.push({
+				type: 'custom',
+				drawFn: (doc)=>{
+					const iconWidth=48.5;
+					const width=contentWidth-90;
+					const leftIdent=textIdents.left+(iconWidth/2);
+					const lessonNameLeftIdent=leftIdent+(iconWidth/2)+10;
+					const height=chapter.lessons.length*16+23;
+					doc.y+=10;
+					const boxY=doc.y;
+					
+
+					doc
+						  .save()
+						  .lineWidth(1)
+						  .roundedRect(leftIdent, doc.y, width, height, 10)   
+						  .stroke(colors.lessonGreen);
+					
+					const svg=fs.readFileSync('images/icons/icon-lessons.svg', 'UTF-8')
+					//.replace(/\#F05925/ig, colors.unitTitle)
+					//.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());
+			  
+					  doc
+						  .addSVG(svg, textIdents.left+1, (boxY+height/2)-iconWidth/2, {
+							  width: iconWidth,
+							  //height: 525,				  
+						  });
+					
+					doc.y+=10;
+
+					chapter.lessons.forEach(chLesson=>{
+						const lesson=lessons.find(lesson=>lesson.lesson_id===chLesson.lesson_id);
+						const lessonTitle='Lesson '+lesson.number+' '+lesson.name;
+						let lineY=doc.y+11;
+						const y=doc.y;
+						
+						doc
+							//.font(s.level0.font)
+							//.fontSize(s.level0.fontSize)
+							.fillColor('black')
+							.text(lessonTitle, lessonNameLeftIdent, y, {
+								align: 'left',
+								//underline: s.level0.underline
+							});
+
+							const titleWidth=doc.widthOfString(lessonTitle, {
+								font: fonts.regular,
+								fontSize: 10
+							});
+
+							if (lesson.phenomenon){
+								//phenomenon-green-small.png
+								doc.image('images/icons/phenomenon-green-small.png', doc.x+titleWidth+3, y-2, {
+									width: 15,
 								});
+							}
+
+							if (lesson.pageNum){
+								
+								lineStart=doc.x+titleWidth+7+(lesson.phenomenon ? 15 : 0);
+
 								doc
 								  .font(fonts.regular)
-								  .fontSize(9)
-								  .fill('black')
-								  .text('— '+item.text, x+23, y+5);
-								//doc.moveDown(item.marginBottom || 0.2);
-								y+=20;
-							});
-							doc.moveDown(1);
-						}
-					});	
-				}
-			}
-			//return;
-			
-			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Links', field:'links', headerType:'h2', params: {
-					marginBottom: 0.1
-				}},
-			], blocks);
-		
-			if (lesson.materials.length){
-				blocks.push({
-					type: 'h2',
-					value: 'Materials',
-					/*
-					headerTitle: {
-						titleLeft: 'Lesson Prep', 
-						titleRight: 'Lesson '+lesson.number, 
-						icon: 'images/icons/Lesson Plan.png',
-						color: colors.lessonGreen
-					},*/
-					//paddingBottom: 0.1
-				});
-				
-			}			
-		
-			const lessonMaterials = [];
-			materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).map((material) => {
-				const totalQuantity = parseInt(material.quantity, 10);
-				const balance = material.reusableInd === 0 ? 0 : totalQuantity;
-				const materialToAdd = {
-					material,
-					totalQuantity,
-					balance
-				}
-				if (!lessonMaterials.some((obj) => obj.material.material_id === material.material_id)) {
-					lessonMaterials.push(materialToAdd);
-				} else {
-					const existingMaterial = lessonMaterials.find(
-					(obj) => obj.material.material_id === material.material_id
-					);
-					if (material.reusableInd === 1) {
-					if (material.balance === 0) {
-						material.balance = totalQuantity;
-						existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
-					} else if (material.balance > 0) {
-						if (material.balance <= totalQuantity) {
-						existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
-						material.balance = totalQuantity;
-						}
-					}
-					} else if (material.balance > 0) {
-					if (totalQuantity >= material.balance) {
-						existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
-						material.balance = 0;
-					} else {
-						material.balance = parseInt(material.balance, 10) - parseInt(totalQuantity, 10);
-					}
-					} else {
-					existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
-					material.balance = 0;
-					}
-				}
-				})
-			const lessonMaterialLegenda=[];
-			const materialGroups=[];//For each pair of students
-			[
-				{
-					forWhomInd: 0,
-					title: 'For the teacher',	
-				},
-				{
-					forWhomInd: 3,
-					title: 'For the class',	
-				},
-				{
-					forWhomInd: 2,
-					title: '',	
-				},
-				{
-					forWhomInd: 1,
-					title: 'For each student',	
-				},
-				
-			].forEach(({title, forWhomInd})=>{
-				let materials=lessonMaterials.map(m=>m.material).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
-				//console.log('materialsmaterials', title, materials);
-				if (forWhomInd!=2){
-					materialGroups.push({
-						title,
-						materials
-					});
-				}
-				else {
-					materials=materials.filter(m=>!materials.find(mm=>mm.material_id===m.material_id && mm.group_size>m.group_size));
-					[
-						...[...Array(30).keys()].filter(i=>i>2).reverse().map(i=>{
-							return {
-								val: i,
-								title: 'For each group of '+i+' students',	
-							};
-						}),
-						{
-							val: 2,
-							title: 'For each pair of students',	
-						},
-						{
-							val: 1,
-							title: 'For each student',	
-						},
-					].forEach(item=>{
-						//console.log('Arr intem', item);
-						const stGroupMaterials=materials.filter(m=>m.group_size==item.val);
-						materialGroups.push({
-							title:item.title,
-							materials: stGroupMaterials
-						})
+								  .fontSize(10)
+								  .text(lesson.pageNum, lessonNameLeftIdent, y, {
+									width: width-45,
+									align: 'right'
+								  });
+								PDFUtils.drawCircleDotsLine(doc, lineStart, lineY, (width+68)-((lesson.pageNum+'').length*4)-lineStart, 0.5, 'black');
+							}
+						doc.y+=3;
 					})
+					doc.y+=20;
 				}
-			})
-			//console.log('materialGroups', materialGroups);
-			materialGroups.forEach(({title, materials})=>{
-				//console.log('materialGroups!!!!', title, materials);
+			});	
 
-				if (materials.length){
-					
-					blocks.push({
-						type: 'h3',
-						value: title,
-					});
-					materialsArr=materials.map(item=>{
-						//console.log(item);
-						let nameStr='';
-						let quantity=parseFloat(item.quantity);
-						const nameArr=processMaterialItemName(item, quantity);
-						let sups='';
-						if (nameArr){
-								nameArr.forEach(t=>{
-								let tag='span';
-								if (t.params && t.params.features && t.params.features.indexOf('sups')>=0){
-									tag='sup';
-									if (lessonMaterialLegenda.indexOf(t.text)<0){
-										lessonMaterialLegenda.push(t.text);
-									}
-									sups+='<'+tag+'>'+t.text+'</'+tag+'>';
-								}
-								else {
-									nameStr+='<'+tag+'>'+t.text+'</'+tag+'>';
-								}
-								
-							})
-						}
-						else {
-							nameStr=item.name;
-						}
-						
-						//(quantity ? parseFloat(quantity)+' - ' : '')
-						if (quantity){
-							//console.log('lessonMaterial', item);
-							if (item.plural_quantity_unit && item.quantity_unit){
-								quantity+=' '+(parseInt(quantity) > 1 ? item.plural_quantity_unit : item.quantity_unit);
-							}
-							quantity+=' - ';
-						}
-						else {
-							quantity='';
-						}
-						if (sups){
-							//console.log('supsItem', sups, item);
-						}
-						return {
-							matName: nameStr.replace('\n', ' '),
-							name: quantity + nameStr.replace('\n', ' ') + sups,
-							sups,
-							lesson_material_order: item.lesson_material_order,
-							optionalInd: item.optionalInd,
-							addons: [
-								{
-									label:'Alternative',
-									field: 'alternative'
-								},
-								{
-									label:'Notes',
-									field: 'notes'
-								},
-							].filter(a=>item[a.field]).map(a=>a.label+': '+item[a.field])
-						};
-					});
-					let listHtml='<ul>';
-					_.sortBy(materialsArr, m=>m.lesson_material_order/*!!m.optionalInd*/).forEach(m=>{
-						listHtml+='<li>'+m.name;
-						if (m.addons.length){
-							listHtml+='<ul>';
-							m.addons.forEach(a=>{
-								listHtml+='<li>'+a+'</li>';
-							});
-							listHtml+='</ul>';
-						}
-						listHtml+='</li>';
-						
-					});
-					listHtml+='</ul>';
-					//console.log(materialsArr);
-					blocks.push({
-						type: 'list',
-						html: listHtml,
-						childUlIdent: 15,
-						ulMarginTop: 0.001,
-						childUlAddSpaceAfterSize: -0.0000000001,
-						//addSpaceAfter: false
-					});
-				}
-			})
-			if (lessonMaterialLegenda && lessonMaterialLegenda.length){
-				const lessonMaterialLegendaItems=materialsSupLegenda.filter(item=>lessonMaterialLegenda.find(id=>id==item.val));
-				const tableDescr=parse(
-					lessonMaterialLegendaItems.map((item, i)=>{
-						return '<sup>'+item.val+'</sup> — '+item.text+(lessonMaterialLegendaItems.length !=i+1 ? '<br />' : '');
-					}).join('')
-				);
-
-				await parseHTMLIntoBlocks(tableDescr, {}, blocks);
-			}
-			
-		
-			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Teacher Prep', field:'teacher_prep', 
-					headerType:'h1',
-					
-					params: {
-						listsIdent: 13,
-						replaceFn: workshetReplaceFn,
-						notShowTitleWhenParagraphBreaks: true,
-						dontShowImagesAfter: true,
-						imgParams: {
-							align: 'center',
-							maxHeight: 300
-						}
-					},
-				},
-			], blocks);
-
-			await processObjectFieldsIntoBlocks({
-				sequence: `<p className='para-text'>This is the suggested sequence of learning activities for this lesson. Note that session times are estimates. Depending on students' progress, the sessions may be shorter or longer.</p>`
-			}, [
-				{title: 'Lesson Plan', field:'sequence', 
-					headerType:'h1',
-					params: {
-						paddingBottom: 0.2
-					},
-				},
-			], blocks);
 			blocks.push({
-				type: 'line',
-				showOnTopOfThePage: false,
+				type: 'h1',
+				value: 'Unit Roadmap',
+				startOnRightSide: false,
+				startOnNewPage: false,
+				color: colors.lessonGreen,
+				//topIdent: 150
+				/*
+				blankPageTitle: {
+					color: colors.lessonGreen,
+				}*/
 			});
-			//return;
-		
-			
-		
-			let planTotalTime=0;
-			const proceedFile=async (file)=>{
-				//showedFiles.push(file.fileNameWithExt);
-				const path=await downloadFile(file.path);
-				if (file.type==='pdf'){
-					const imgPaths=await convertPptxPdf(path, file);
-					//const imgPaths=await convertPdf(path);
-					//console.log(imgPaths);
-					let x=textIdents.left;
-					const images=[];
-					/*
-					const width=imgPaths.length > 1 ? 232 : 400;
-					if (imgPaths.length === 1){
-						x+=25;
-					}
-					*/
-					let width=185;
-					if (imgPaths.length>2){
-						width=160;
-					}
-					
-					await asyncForEach(imgPaths, async (item, imgIndex)=>{
-						const imgInfo=await getImgInfoAndRotate(item.imagePath);
-						//console.log(item.imagePath, imgInfo);
-						if (file.isOnline && imgIndex > 0){
-							return;
-						}
-						if (imgInfo.rotated && imgInfo.rotatedPath && 0){
-							width=232;
-							const w=imgInfo.width;
-							imgInfo.width=imgInfo.height;
-							imgInfo.height=w;
-						}
-						if ((x+width)>200){
-							x=textIdents.left;
-						}
-						let height=getImgPropheight(imgInfo, width);
-						images.push({
-							path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
-							height,  
-							width,
-							x,
-							imgInfo,
-							highlight: imgIndex===0 && file.isOnline ? {
-								color: colors.orange,
-								icon: icons.onlineContent
-							} : null,
-						})
-						x+=width;
-						
-					});
-					console.log({images, imgPaths});
-					file.images=[{
-						type: 'images',
-						value: images,
-						width: width,
-						firstRowHeight: images[0].height,
-						addBorder: true,
-						dontAttachParagraphToImage: false,
-					}];
-					//console.log('FILEFILE', file);
-				}
-				if (file.type==='pptx'){
-					const pptData=await convertPptxPdf(path, file);
-					//console.log(pptData);
-					file.images=[];
-					await asyncForEach(file.isOnline ? [pptData[0]] : pptData, async (item, index)=>{
-						const imgInfo=await imageInfo(item.imagePath);
-						file.images.push({
-							type: 'pptSlide',
-							value: item,
-							file,
-							hideLabels: file.isOnline,
-							imgInfo,
-							firstRowHeight: getImgPropheight(imgInfo, 170),
-							dontAttachParagraphToImage: false,
-							highlight: file.isOnline && index===0 ? {
-								color: colors.orange,
-								icon: icons.onlineContent
-							} : null,
-						});
-					});
-				}
-			}
-			
-			await asyncForEach(lesson.files, async (file)=>{
-				await proceedFile(file);
-			});
-			//console.log('activityPlan', lesson.activityPlan);
-			const lessonPlanItems=lesson.activityPlan.filter(p=>!parseInt(p.student));
-			await asyncForEach(lessonPlanItems, async (plan, planIndex)=>{
-				//console.log(plan);
-				await asyncForEach(plan.files, async (file)=>{
-					await proceedFile(file);
-				});
-				await processObjectFieldsIntoBlocks(plan, [
-					{
-						title: plan.header.trim(), 
-						field:'content', 
-						titleRight: '~ '+plan.time, 
-						headerType: 'lessonPlanHeader',
-						params: {
-							resetCurentH2: true,
-							replaceFn: workshetReplaceFn,
-							processListsAsBlocks: true,
-							ulMarginTop: 7,
-							planIndex,
-							imgParams: {
-								width: 155,
-								align: 'center',
-								maxHeight: 350
-							}
-						}
-					},
-				], blocks);
-				if (planIndex+1<lessonPlanItems.length){
-					blocks.push({
-						type: 'line',
-						showOnTopOfThePage: false,
-					});
-				}
-				planTotalTime+=parseInt(plan.time);
-			});
-			if (planTotalTime){
-				if (planTotalTime<45){
-					planTotalTime=45;
-				}
-				blocks.push({
-					type: 'lessonPlanHeader',
-					isTotalTile: true,
-					value: 'Total Time', 
-					rightText: '~ '+planTotalTime+' minutes',
-					planIndex:100500,
-					moveDownAfter: 0.001,
-					addTopLine: true,
-					addBottomLine: true,
-				});
-			}
-			
-			await processObjectFieldsIntoBlocks(lesson, [
-				{
-					title: 'Teacher Tips', 
-					field:'anticipated_challenges',
-					headerType: 'h1',
-					params: {
-						replaceFn: workshetReplaceFn,
-						dontShowImagesAfter: true,
-						imgParams: {
-							width: 390,
-							align: 'center',
-							maxHeight: 300
-						}
-					}
-				},
-			], blocks);
 
-			const backgroundForTeachersBlocks=[
-				{title: 'Content Knowledge', field:'background', headerType: 'h2',
-					params: {
-						replaceFn: workshetReplaceFn,
-						imgParams: {
-							width: 350,
-							align: 'center',
-							maxHeight: 300
-							//fitToPage: true,
-						}
-					}
-				},
-				{title: 'Access and Equity', field:'access_equity', headerType: 'h2', 
-					params: {
-						replaceFn: workshetReplaceFn
-					}
-				},
-				{title: 'Home to School Connections', field:'home_to_school', headerType: 'h2', 
-					params: {
-						replaceFn: workshetReplaceFn
-					}
-				},
-				{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h2', 
-					params: {
-						replaceFn: workshetReplaceFn
-					}},
-				{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h2', 
-					params: {
-						replaceFn: workshetReplaceFn
-					}
-				},
-			];
-			if (backgroundForTeachersBlocks.find(bl=>lesson[bl.field])){
-				blocks.push({
-					type: 'h1',
-					value: 'Background for Teachers',
-				});
-				await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
-			}
-			console.log('lesson.pe', lesson.pe);
-			//return;
-			const lessonStandards=lesson.standards.find(st=>st.name==='pe');
+			//introduction_challenge_description
 
-			/*
-			const otherStandards=[
-				{
-					type:'pe',
-					title: 'Performance Expectation(s)'
-				},
-				{
-					type:'sep',
-					title: 'Science and Engineering Practice(s)'
-				},
-				{
-					type:'dci',
-					title: 'Disciplinary Core Idea(s)'
-				},
-				{
-					type:'ccc',
-					title: 'Crosscutting Concept(s)'
-				},
-			];
-			otherStandards.forEach(st=>{
-				st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
-			})*/
-
-			if (lessonStandards?.items?.length || lesson.orphanStandards.find(st=>st.items.length)){
-				blocks.push({
-					type: 'h1',
-					value: 'Standards',
-					paddingBottom: 0.2
-				})
-				if (lesson.ngss_description?.trim()){
-					await asyncForEach(parse(lesson.ngss_description).childNodes, async (el)=>{
-						await parseHTMLIntoBlocks(el, {
-							params: {
-								replaceFn: workshetReplaceFn,
-							},
-						}, blocks);
-					});
-				}
-			}
-			
-			//console.log('lessonStandards', lessonStandards);
-			if (lessonStandards?.items?.length){
-				
-				blocks.push({
-					type: 'h2',
-					value: 'NGSS Standards',
-					paddingBottom: 0.2
-				})
-	
-				blocks.push({
-					type: 'table',
-					fontSize: 10,
-					padding: 7,
-					marginTop: lesson.ngss_description?.trim() ? 6 : 0,
-					columns: [
-						{
-							id: 'title',
-							header: 'Performance Expectation(s)',
-							width: 155,
-							align: 'left',
-						},
-						{
-							id: 'progressions',
-							header: 'Progression',
-							width: 155,
-							align: 'left',
-							renderer: function (tb, data) {	
-								let str=data.progressions.map(p=>p.name).join(', ');							
-								return str;
-							},
-						},
-						{
-							id: 'lessons',
-							header: 'Lessons building to PE(s)',
-							width: 155,
-							align: 'left',
-							renderer: function (tb, data) {	
-								let str=_.sortBy(data.lessonIds.map(id=>lessons.find(l=>l.lesson_id==id)).filter(l=>l && l.lesson_id!==lesson.lesson_id), l=>l.index).map(l=>l.number).join(', ');							
-								return str;
-							},
-						},
-					],
-					data: lessonStandards.items
-				});
-				//console.log('lesson.pe', lesson.pe);
-			}
-			
-			//return;
-		
-			if (lesson.orphanStandards.find(st=>st.items.length)){
-				blocks.push({
-					type: 'h3',
-					value: 'Connections to Other NGSS Standards',
-					font: fonts.bold,
-					ident: 0,
-					marginTop: 0,
-					moveToNextPageIfNotFit: true,
-				});
-				let cccHtml='';
-				//cccHtml+='<p><strong>Connections to Other NGSS Standards</strong></p>';
-				cccHtml+='<p>The below PE(s), SEP(s), DCI(s), and CCC(s) are emphasized in this lesson but are not associated with the above PE(s).</p>';
-				//cccHtml+='<p>Crosscutting Concept(s)</p>';				
-				await asyncForEach(parse(cccHtml).childNodes, async (el)=>{
+			if (unit.introduction_challenge_description){
+				const challengeText=`<p><strong>Unit Challenge:</strong> ${unit.introduction_challenge_description}</p>`;
+				await asyncForEach(parse(challengeText).childNodes, async (el)=>{
 					await parseHTMLIntoBlocks(el, {}, blocks);
 				});
-				
-				await asyncForEach(lesson.orphanStandards.filter(st=>st.items.length), async (st)=>{
-					blocks.push({
-						type: 'p',
-						value: st.title,
-						isHtml:false,
-						font:fonts.regular,
-						ident: 0,
-						marginTop: 0.0001,
-						isTitle:false,
-						marginBottom: 0.0000000001
-					});
-					
-					let itemListsHtml='<ul>';
-					
-				
-					st.items.forEach(item=>{
-						//console.log('Lesson_'+st.type, item);
-						itemListsHtml+='<li>'+item.title;
-						itemListsHtml+='<ul><li>'+item.description+'</li></ul>';
-						itemListsHtml+='</li>';
-					});
-					itemListsHtml+='</ul>'
-					
-					await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
-						await parseHTMLIntoBlocks(el, {
-							ulMarginTop: 0,
-						}, blocks);
-					});
-				});
 			}
 			
-			/*
-			const commonCoreStandards=[
-				{title: 'COMMON CORE - ELA/Literacy', field:'ccl'},
-				{title: 'COMMON CORE - Mathematics', field:'ccm'},
-				{title: 'CA ELD', field:'eld'}
-			];
-			commonCoreStandards.forEach(st=>{
-				st.items=lesson[st.field] || [];
-			})
-			*/
-			const lessonCCStandards=lesson.standards.find(st=>st.name==='cc');
-			
-			
-			if (lessonCCStandards?.items?.length){
+			const greenBox=chapter.greenBoxes.find(gb=>gb.name.trim()==='Connections to Unit Roadmap');
+			if (greenBox){
+				console.log(greenBox);
+				const slide=greenBox.slides[0];
+				const path=await downloadFile(slide.imagePath);
+				const imgInfo=await getImgInfoAndRotate(path);
+				const imageWidth=contentWidth/2.5;
+				
+				let imageHeight=getImgPropheight(imgInfo, imageWidth);
+
 				blocks.push({
-					type: 'h2',
-					value: 'Common Core and CA ELD Standards',
-					//marginTop: 0.001,
-					paddingBottom: 0.0001
+					type: 'custom',
+					drawFn: (doc)=>{
+						const iconWidth=48.5;
+						const width=contentWidth-90;
+						const leftIdent=textIdents.left+(iconWidth/2);
+						const textWidth=contentWidth-imageWidth-60;
+						
+						doc.y+=10;
+						let y=doc.y;
+						
+						doc.image(path, leftIdent-30, y, {
+							width: imageWidth,
+						});
+
+						const textHeight=doc
+							.fontSize(10)
+							.font(fonts.regular)
+							.heightOfString(slide.description, {
+								width: textWidth,
+								align: 'left',
+							});
+						
+						const root=parseHtml(slide.description);
+						doc.y=y;
+
+						doc.y+=imageHeight/2-textHeight/2-20;
+
+						root.childNodes.forEach(node=>{
+							PDFUtils.drawActions.p(doc, {
+								value: node.childNodes,
+								parentEl: node,
+								isHtml:true,
+								params: {
+									//addSpaceAfterSize: 3,
+									ident: imageWidth+15,
+									width: textWidth,
+								}
+							})
+						})
+					}
+				});	
+			}
+
+			blocks.push({
+				type: 'h1',
+				value: 'Reading Companion',
+				headerTitle: {
+					type: 'chapter',
+					titleLeft: 'Chapter '+chapter.number,
+					titleRight: 'Chapter Reading',
+					color: colors.lessonGreen,
+					chapter,
+					chapterBadge,
+				},
+				//startOnRightSide: true,
+				
+				startOnNewPage: true,
+				color: colors.lessonGreen,
+				topIdent: 120,
+				svgIcon: 'images/icons/icon-reading.svg'
+				/*
+				blankPageTitle: {
+					color: colors.lessonGreen,
+				}*/
+			});
+			//customPages.
+			await asyncForEach(parse(customPages.Chapters['reading-companion']).childNodes, async (el)=>{
+				await parseHTMLIntoBlocks(el, {}, blocks);
+			});
+
+			//rc_pdf_worksheet
+			const pathArr=chapter.rc_pdf_worksheet.split('/');
+			const RCFile={
+				fileName: pathArr[pathArr.length-1]
+			};
+			const RCpath=await downloadFile(chapter.rc_pdf_worksheet);
+			const RCimgPaths=await convertPptxPdf(RCpath, RCFile);
+			//console.log(RCimgPaths);
+			const RCimgInfo=await getImgInfoAndRotate(RCimgPaths[0].imagePath);
+			let RCimageWidth=230;
+			if (RCimgPaths.length>2){
+				RCimageWidth=160
+			}
+			
+			let imageHeight=getImgPropheight(RCimgInfo, RCimageWidth);
+			let imgX=textIdents.left+(contentWidth-50-(RCimgPaths.length*RCimageWidth))/2;
+			blocks.push({
+				type: 'images',
+				value: RCimgPaths.map(img=>{
+					const image={
+						path: img.imagePath,
+						width: RCimageWidth,
+						height: imageHeight,
+						x: imgX
+					}
+					imgX+=RCimageWidth;
+					return image;
+				}),
+				width: RCimageWidth,
+				firstRowHeight: imageHeight,
+				addBorder: true,
+				borderColor:colors.lessonGreen,
+				dontAttachParagraphToImage: true,
+				marginTop: 30
+			});
+
+			await asyncForEach(chapter.lessons.filter((chLesson, i)=>{
+				const l=lessons.find(lesson=>lesson.lesson_id===chLesson.lesson_id);
+				//return i<13 && i>=11;
+				//console.log(l.number, printLessonNum.split(',').indexOf(l.number), printLessonNum.split(','))
+				return printLessonNum ? printLessonNum.split(',').indexOf(l.number)>=0 : true;
+			}), async (chLesson)=>{
+				const lesson=lessons.find(lesson=>lesson.lesson_id===chLesson.lesson_id);
+				//console.log('lessonlesson', lesson);
+				currentLessonIdGlobal=lesson.old_lesson_id;
+				let header={
+					titleLeft: 'Lesson '+lesson.number+' '+lesson.name, 
+					titleRight: '', 
+					icon: 'images/icons/Lesson Plan.png',
+					color: colors.lessonGreen,
+					chapterBadge,
+				};
+				
+				PDFUtils.showedFiles=[];
+				let worksheetFromAnotherLessons=[];
+				
+				const workshetReplaceFn=(str, params)=>{
+					//console.log('forRegexp: ', str);
+					let images=[];
+					const string=(str || '').replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
+						//console.log('regexp2', match, str, str1);
+						const workshet=allWorkShets.find(file=>file.worksheet_id==str);
+						//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
+						if (workshet){
+							if (!workshet.isOnlineAccess){
+								if (!params.readOnly){
+									if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
+										(workshet.images || []).forEach(img=>images.push(img));
+									}
+									if (workshet.images && workshet.images.length && !params.dontShowImagesAfter){
+										PDFUtils.showedFiles.push(workshet.fileNameWithExt);
+									}
+								}
+								if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
+									//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
+									worksheetFromAnotherLessons.push(workshet);
+								}
+							}
+							
+							return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
+						}
+						return '';
+					}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.').replace('))', ')').replace('((', '(');
+					if (string.indexOf('; from ')>0){
+						images=[];
+					}
+					/*
+					console.log({
+						string,
+						images
+					})
+					/**/
+				
+					return {
+						string,
+						images
+					};
+				}
+				//worksheetFromAnotherLessons=[];
+				//This for files from another lessons array filing:
+				['teacher_prep'].forEach(field=>{
+					workshetReplaceFn(lesson[field], {readOnly:true}).string;
+				})
+				lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
+					//console.log('planItem!', plan);
+					workshetReplaceFn(plan.content, {readOnly:true}).string;
 				});
+				['anticipated_challenges'].forEach(field=>{
+					workshetReplaceFn(lesson[field], {readOnly:true}).string;
+				})
+				//console.log(lesson.number);
+				//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
+				
+				blocks.push({
+					type: 'h1',
+					value: 'Lesson Introduction',
+					headerTitle: header,
+					startOnRightSide: true,
+					startOnNewPage: true,
+					/*
+					blankPageTitle: {
+						color: colors.lessonGreen,
+					}*/
+				});
+				blocks.push({
+					type: 'setObjectPageNum',
+					value: lesson,
+				});
+				
+				/*
+				if (lesson.phenomenon){
+					blocks.push({
+						type: 'introductions',
+						value:[
+							{title: 'Unit Challenge', field:'phenomenon'},
+						],
+						color: 'black',
+						fontSize: 10,
+						paddingBottom: 0.5,
+						titleFont: fonts.bold,
+						moveDown: 0,
+						data: lesson
+					});
+				}
+				*/
+				
+				
+			
 				await processObjectFieldsIntoBlocks(lesson, [
-					{title: '', field:'common_core'},
+					{title: '', field:'description'},
+					{title: 'Phenomenon', field:'phenomenon', headerType:'h3', params: {
+						marginTop: 0.5,
+						//ident:100,
+						//width: 350
+						ulMarginTop: 0,
+						marginBottom: -0.3
+					}},
+					{title: 'Learning Objectives', field:'objectives', headerType:'h3', params: {
+						marginTop: 0.5,
+						ulMarginTop: 0,
+						marginBottom: -0.3
+						//ident:100,
+						//width: 350
+					}},
 				], blocks);
-		
-				lessonCCStandards.items.forEach((st, index)=>{
-					if (st.items.length){
-						//console.log('st.items', st.items);
+				
+				blocks.push({
+					type: 'contentsPush',
+					title: 'Lesson '+lesson.number+' '+lesson.name, 
+					level: 2, 
+					color: colors.black
+				});
+				
+				
+				blocks.push({
+					type: 'h1',
+					value: 'Teaching Resources'
+				});	
+				
+				//console.log('lesson.worksheet', lesson.number, lesson.worksheet);
+				console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
+				if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
+					
+					blocks.push({
+						type: 'h2',
+						value: 'Files'
+					});
+					const lessonFiles=lesson.worksheet.filter((file, index)=>{
+						const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
+						return !existing;
+					});
+					console.log('lessonFiles', lessonFiles);
+					worksheetFromAnotherLessons.forEach(file=>{
+						lessonFiles.push(file);					
+					});
+					let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
+					const hasStudenIcon=data=>(data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf';
+					let hasStudentIcons=!!lessonFiles.find(f=>hasStudenIcon(f));
+				
+					blocks.push({
+						type: 'table',
+						fontSize: 10,
+						hideHeaders: true,
+						borderColor: colors.lessonGreen,
+						//leftIdent: 80,
+						columns: [
+							{
+								id: 'fileTitle',
+								header: false,
+								width: 320,
+								align: 'left',
+								padding: [4,10,4,4],
+								renderer: function (tb, data) {	
+									let str=data.fileTitle;							
+									if (data.lesson_id!==lesson.lesson_id){
+										const fileLesson=lessons.find(l=>l.lesson_id===data.lesson_id);
+										//console.log('fileLesson', fileLesson);
+										if (fileLesson){
+											str+='  (from Lesson '+fileLesson.number+' '+fileLesson.name+')';
+										}
+									}
+									return str;
+								},
+								/*
+								cellAdded: (tb, data, cell, pos)=>{
+									//console.log(tb, data);
+									if (data.isOnline){
+										const doc=tb.pdf;
+										const textWidth=doc.widthOfString(data.fileTitle);
+										let x=pos.x+(textWidth<280 ? textWidth : 270);
+										let strNum=parseInt(textWidth/270);
+										doc.image('images/icons/noun_Refresh_1299685.png', x, pos.y-30-(1*strNum), {
+											width: 30,
+											align: 'center',
+											valign: 'center'
+										});
+									}								
+								}
+								*/
+
+							},
+							{
+								id: 'page',
+								header: '',
+								width: 155,
+								renderer: function (tb, data) {								
+									return data.page || (!hasStudenIcon(data) ? 'Online Access Required' : '');
+								},
+								cellAdded: (tb, data, cell, pos)=>{
+									const doc=tb.pdf;
+									const textWidth=doc.widthOfString(data.page || '');
+									let x=pos.x+textWidth;
+									if (!data.page){
+										x-=4;
+									}
+									//console.log(pos);
+									if (data.isOnline){
+										doc.image(icons.onlineContent, x, pos.baseY-3, {
+											width: 20,
+											align: 'center',
+											valign: 'center'
+										});
+									}	
+									if (hasStudenIcon(data)){
+										doc.image(icons.studentContent, x, pos.baseY-3, {
+											width: 20,
+											align: 'center',
+											valign: 'center'
+										});
+									}								
+								}
+							},
+						],
+						data: _.sortBy(lessonFiles, f=>f.fileTitle),
+						/*
+						dataFilter: (data)=>{
+							//console.log('PDFUtils.pdfGenIterator', PDFUtils.pdfGenIterator, data.map(file=>[file.fileName, file.page]));
+							return data.filter(file=>!PDFUtils.pdfGenIterator || (PDFUtils.pdfGenIterator>0 && file.page));
+						}*/
+					});
+					lesson.worksheet.forEach(file=>{
+						if (!unit.files.find(f=>f.fileName===file.fileName)){
+							unit.files.push(file);
+						}
+					});
+					const legenda=[
+						{icon: icons.onlineContent, text: customPages.messages.onlineContentAfterTableDescription, visible: hasOnlineIcons},
+						{icon: icons.studentContent, text: customPages.messages.studentContent, visible: hasStudentIcons},
+					]
+					if (legenda.filter(l=>l.visible).length){
 						blocks.push({
-							type: 'h3',
-							value: st.title,
-							font: fonts.regular,
-							marginTop: index > 0 || lesson.common_core ? 0.8 : 0.0001,
-							isHtml:false,
-							isTitle: true
-						});
-						let html='<ul>';
-						st.items.forEach(item=>{
-							html+='<li>'+item.title+'<ul><li>'+item.description+'</li></ul></li>';
-						});
-						html+='</ul>';
-		
-						blocks.push({
-							type: 'list',
-							html,
-							ident: 20,
-							notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
+							type: 'custom',
+							drawFn: (doc)=>{
+								let y=doc.y-10;
+								legenda.filter(l=>l.visible).forEach(item=>{
+									const x=textIdents.left-5;
+								
+									doc.image(item.icon, x, y, {
+										width: 25,
+										align: 'center',
+										valign: 'center'
+									});
+									doc
+									.font(fonts.regular)
+									.fontSize(9)
+									.fill('black')
+									.text('— '+item.text, x+23, y+5);
+									//doc.moveDown(item.marginBottom || 0.2);
+									y+=20;
+								});
+								doc.moveDown(1);
+							}
+						});	
+					}
+				}
+				//return;
+				
+				await processObjectFieldsIntoBlocks(lesson, [
+					{title: 'Links', field:'links', headerType:'h2', params: {
+						marginBottom: 0.1
+					}},
+				], blocks);
+			
+				if (lesson.materials.length){
+					blocks.push({
+						type: 'h2',
+						value: 'Materials',
+						/*
+						headerTitle: {
+							titleLeft: 'Lesson Prep', 
+							titleRight: 'Lesson '+lesson.number, 
+							icon: 'images/icons/Lesson Plan.png',
+							color: colors.lessonGreen
+						},*/
+						//paddingBottom: 0.1
+					});
+					
+				}			
+			
+				const lessonMaterials = [];
+				materialDataRaw.filter(m=>m.lesson_id===lesson.lesson_id).map((material) => {
+					const totalQuantity = parseInt(material.quantity, 10);
+					const balance = material.reusableInd === 0 ? 0 : totalQuantity;
+					const materialToAdd = {
+						material,
+						totalQuantity,
+						balance
+					}
+					if (!lessonMaterials.some((obj) => obj.material.material_id === material.material_id)) {
+						lessonMaterials.push(materialToAdd);
+					} else {
+						const existingMaterial = lessonMaterials.find(
+						(obj) => obj.material.material_id === material.material_id
+						);
+						if (material.reusableInd === 1) {
+						if (material.balance === 0) {
+							material.balance = totalQuantity;
+							existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
+						} else if (material.balance > 0) {
+							if (material.balance <= totalQuantity) {
+							existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
+							material.balance = totalQuantity;
+							}
+						}
+						} else if (material.balance > 0) {
+						if (totalQuantity >= material.balance) {
+							existingMaterial.totalQuantity += parseInt(totalQuantity, 10) - parseInt(material.balance, 10);
+							material.balance = 0;
+						} else {
+							material.balance = parseInt(material.balance, 10) - parseInt(totalQuantity, 10);
+						}
+						} else {
+						existingMaterial.totalQuantity += parseInt(totalQuantity, 10);
+						material.balance = 0;
+						}
+					}
+					})
+				const lessonMaterialLegenda=[];
+				const materialGroups=[];//For each pair of students
+				[
+					{
+						forWhomInd: 0,
+						title: 'For the teacher',	
+					},
+					{
+						forWhomInd: 3,
+						title: 'For the class',	
+					},
+					{
+						forWhomInd: 2,
+						title: '',	
+					},
+					{
+						forWhomInd: 1,
+						title: 'For each student',	
+					},
+					
+				].forEach(({title, forWhomInd})=>{
+					let materials=lessonMaterials.map(m=>m.material).filter(item=>(item.plural_name || item.name) && item.forWhomInd==forWhomInd);
+					//console.log('materialsmaterials', title, materials);
+					if (forWhomInd!=2){
+						materialGroups.push({
+							title,
+							materials
 						});
 					}
-				});
-			}
-			//epc
-			//return;
-			const lessonEpc=lesson.standards.find(st=>st.name==='epc');
-			if (lessonEpc && lessonEpc.items.length){
-				//console.log('lesson.epc', lesson.epc);
+					else {
+						materials=materials.filter(m=>!materials.find(mm=>mm.material_id===m.material_id && mm.group_size>m.group_size));
+						[
+							...[...Array(30).keys()].filter(i=>i>2).reverse().map(i=>{
+								return {
+									val: i,
+									title: 'For each group of '+i+' students',	
+								};
+							}),
+							{
+								val: 2,
+								title: 'For each pair of students',	
+							},
+							{
+								val: 1,
+								title: 'For each student',	
+							},
+						].forEach(item=>{
+							//console.log('Arr intem', item);
+							const stGroupMaterials=materials.filter(m=>m.group_size==item.val);
+							materialGroups.push({
+								title:item.title,
+								materials: stGroupMaterials
+							})
+						})
+					}
+				})
+				//console.log('materialGroups', materialGroups);
+				materialGroups.forEach(({title, materials})=>{
+					//console.log('materialGroups!!!!', title, materials);
+
+					if (materials.length){
+						
+						blocks.push({
+							type: 'h3',
+							value: title,
+						});
+						materialsArr=materials.map(item=>{
+							//console.log(item);
+							let nameStr='';
+							let quantity=parseFloat(item.quantity);
+							const nameArr=processMaterialItemName(item, quantity);
+							let sups='';
+							if (nameArr){
+									nameArr.forEach(t=>{
+									let tag='span';
+									if (t.params && t.params.features && t.params.features.indexOf('sups')>=0){
+										tag='sup';
+										if (lessonMaterialLegenda.indexOf(t.text)<0){
+											lessonMaterialLegenda.push(t.text);
+										}
+										sups+='<'+tag+'>'+t.text+'</'+tag+'>';
+									}
+									else {
+										nameStr+='<'+tag+'>'+t.text+'</'+tag+'>';
+									}
+									
+								})
+							}
+							else {
+								nameStr=item.name;
+							}
+							
+							//(quantity ? parseFloat(quantity)+' - ' : '')
+							if (quantity){
+								//console.log('lessonMaterial', item);
+								if (item.plural_quantity_unit && item.quantity_unit){
+									quantity+=' '+(parseInt(quantity) > 1 ? item.plural_quantity_unit : item.quantity_unit);
+								}
+								quantity+=' - ';
+							}
+							else {
+								quantity='';
+							}
+							if (sups){
+								//console.log('supsItem', sups, item);
+							}
+							return {
+								matName: nameStr.replace('\n', ' '),
+								name: quantity + nameStr.replace('\n', ' ') + sups,
+								sups,
+								lesson_material_order: item.lesson_material_order,
+								optionalInd: item.optionalInd,
+								addons: [
+									{
+										label:'Alternative',
+										field: 'alternative'
+									},
+									{
+										label:'Notes',
+										field: 'notes'
+									},
+								].filter(a=>item[a.field]).map(a=>a.label+': '+item[a.field])
+							};
+						});
+						let listHtml='<ul>';
+						_.sortBy(materialsArr, m=>m.lesson_material_order/*!!m.optionalInd*/).forEach(m=>{
+							listHtml+='<li>'+m.name;
+							if (m.addons.length){
+								listHtml+='<ul>';
+								m.addons.forEach(a=>{
+									listHtml+='<li>'+a+'</li>';
+								});
+								listHtml+='</ul>';
+							}
+							listHtml+='</li>';
+							
+						});
+						listHtml+='</ul>';
+						//console.log(materialsArr);
+						blocks.push({
+							type: 'list',
+							html: listHtml,
+							childUlIdent: 15,
+							ulMarginTop: 0.001,
+							childUlAddSpaceAfterSize: -0.0000000001,
+							//addSpaceAfter: false
+						});
+					}
+				})
+				if (lessonMaterialLegenda && lessonMaterialLegenda.length){
+					const lessonMaterialLegendaItems=materialsSupLegenda.filter(item=>lessonMaterialLegenda.find(id=>id==item.val));
+					const tableDescr=parse(
+						lessonMaterialLegendaItems.map((item, i)=>{
+							return '<sup>'+item.val+'</sup> — '+item.text+(lessonMaterialLegendaItems.length !=i+1 ? '<br />' : '');
+						}).join('')
+					);
+
+					await parseHTMLIntoBlocks(tableDescr, {}, blocks);
+				}
 				
+			
+				await processObjectFieldsIntoBlocks(lesson, [
+					{title: 'Teacher Prep', field:'teacher_prep', 
+						headerType:'h1',
+						
+						params: {
+							listsIdent: 13,
+							replaceFn: workshetReplaceFn,
+							notShowTitleWhenParagraphBreaks: true,
+							dontShowImagesAfter: true,
+							imgParams: {
+								align: 'center',
+								maxHeight: 300
+							}
+						},
+					},
+				], blocks);
+
+				await processObjectFieldsIntoBlocks({
+					sequence: `<p className='para-text'>This is the suggested sequence of learning activities for this lesson. Note that session times are estimates. Depending on students' progress, the sessions may be shorter or longer.</p>`
+				}, [
+					{title: 'Lesson Plan', field:'sequence', 
+						headerType:'h1',
+						params: {
+							paddingBottom: 0.2
+						},
+					},
+				], blocks);
 				blocks.push({
-					type: 'h2',
-					value: 'California`s Environmental Principles and Concepts',
-					//marginTop: 0.001,
-					paddingBottom: 0.0001,
-					moveToNextPageIfNotFit: true
+					type: 'line',
+					showOnTopOfThePage: false,
 				});
-				await asyncForEach(lessonEpc.items, async (item)=>{
-					const concepts=item.items;
-					await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.description+'</p>').childNodes, async (el)=>{
+				//return;
+			
+				
+			
+				let planTotalTime=0;
+				const proceedFile=async (file)=>{
+					//showedFiles.push(file.fileNameWithExt);
+					const path=await downloadFile(file.path);
+					if (file.type==='pdf'){
+						const imgPaths=await convertPptxPdf(path, file);
+						//const imgPaths=await convertPdf(path);
+						//console.log(imgPaths);
+						let x=textIdents.left;
+						const images=[];
+						/*
+						const width=imgPaths.length > 1 ? 232 : 400;
+						if (imgPaths.length === 1){
+							x+=25;
+						}
+						*/
+						let width=185;
+						if (imgPaths.length>2){
+							width=160;
+						}
+						
+						await asyncForEach(imgPaths, async (item, imgIndex)=>{
+							const imgInfo=await getImgInfoAndRotate(item.imagePath);
+							//console.log(item.imagePath, imgInfo);
+							if (file.isOnline && imgIndex > 0){
+								return;
+							}
+							if (imgInfo.rotated && imgInfo.rotatedPath && 0){
+								width=232;
+								const w=imgInfo.width;
+								imgInfo.width=imgInfo.height;
+								imgInfo.height=w;
+							}
+							if ((x+width)>200){
+								x=textIdents.left;
+							}
+							let height=getImgPropheight(imgInfo, width);
+							images.push({
+								path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
+								height,  
+								width,
+								x,
+								imgInfo,
+								highlight: imgIndex===0 && file.isOnline ? {
+									color: colors.orange,
+									icon: icons.onlineContent
+								} : null,
+							})
+							x+=width;
+							
+						});
+						console.log({images, imgPaths});
+						file.images=[{
+							type: 'images',
+							value: images,
+							width: width,
+							firstRowHeight: images[0].height,
+							addBorder: true,
+							dontAttachParagraphToImage: false,
+						}];
+						//console.log('FILEFILE', file);
+					}
+					if (file.type==='pptx'){
+						const pptData=await convertPptxPdf(path, file);
+						//console.log(pptData);
+						file.images=[];
+						await asyncForEach(file.isOnline ? [pptData[0]] : pptData, async (item, index)=>{
+							const imgInfo=await imageInfo(item.imagePath);
+							file.images.push({
+								type: 'pptSlide',
+								value: item,
+								file,
+								hideLabels: file.isOnline,
+								imgInfo,
+								firstRowHeight: getImgPropheight(imgInfo, 170),
+								dontAttachParagraphToImage: false,
+								highlight: file.isOnline && index===0 ? {
+									color: colors.orange,
+									icon: icons.onlineContent
+								} : null,
+							});
+						});
+					}
+				}
+				
+				await asyncForEach(lesson.files, async (file)=>{
+					await proceedFile(file);
+				});
+				//console.log('activityPlan', lesson.activityPlan);
+				const lessonPlanItems=lesson.activityPlan.filter(p=>!parseInt(p.student));
+				await asyncForEach(lessonPlanItems, async (plan, planIndex)=>{
+					//console.log(plan);
+					await asyncForEach(plan.files, async (file)=>{
+						await proceedFile(file);
+					});
+					await processObjectFieldsIntoBlocks(plan, [
+						{
+							title: plan.header.trim(), 
+							field:'content', 
+							titleRight: '~ '+plan.time, 
+							headerType: 'lessonPlanHeader',
+							params: {
+								resetCurentH2: true,
+								replaceFn: workshetReplaceFn,
+								processListsAsBlocks: true,
+								ulMarginTop: 7,
+								planIndex,
+								imgParams: {
+									width: 155,
+									align: 'center',
+									maxHeight: 350
+								}
+							}
+						},
+					], blocks);
+					if (planIndex+1<lessonPlanItems.length){
+						blocks.push({
+							type: 'line',
+							showOnTopOfThePage: false,
+						});
+					}
+					planTotalTime+=parseInt(plan.time);
+				});
+				if (planTotalTime){
+					if (planTotalTime<45){
+						planTotalTime=45;
+					}
+					blocks.push({
+						type: 'lessonPlanHeader',
+						isTotalTile: true,
+						value: 'Total Time', 
+						rightText: '~ '+planTotalTime+' minutes',
+						planIndex:100500,
+						moveDownAfter: 0.001,
+						addTopLine: true,
+						addBottomLine: true,
+					});
+				}
+				
+				await processObjectFieldsIntoBlocks(lesson, [
+					{
+						title: 'Teacher Tips', 
+						field:'anticipated_challenges',
+						headerType: 'h1',
+						params: {
+							replaceFn: workshetReplaceFn,
+							dontShowImagesAfter: true,
+							imgParams: {
+								width: 390,
+								align: 'center',
+								maxHeight: 300
+							}
+						}
+					},
+				], blocks);
+
+				const backgroundForTeachersBlocks=[
+					{title: 'Content Knowledge', field:'background', headerType: 'h2',
+						params: {
+							replaceFn: workshetReplaceFn,
+							imgParams: {
+								width: 350,
+								align: 'center',
+								maxHeight: 300
+								//fitToPage: true,
+							}
+						}
+					},
+					{title: 'Access and Equity', field:'access_equity', headerType: 'h2', 
+						params: {
+							replaceFn: workshetReplaceFn
+						}
+					},
+					{title: 'Home to School Connections', field:'home_to_school', headerType: 'h2', 
+						params: {
+							replaceFn: workshetReplaceFn
+						}
+					},
+					{title: 'Student Prior Experience', field:'prior_experience', headerType: 'h2', 
+						params: {
+							replaceFn: workshetReplaceFn
+						}},
+					{title: 'Student Preconceptions', field:'student_preconceptions', headerType: 'h2', 
+						params: {
+							replaceFn: workshetReplaceFn
+						}
+					},
+				];
+				if (backgroundForTeachersBlocks.find(bl=>lesson[bl.field])){
+					blocks.push({
+						type: 'h1',
+						value: 'Background for Teachers',
+					});
+					await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
+				}
+				console.log('lesson.pe', lesson.pe);
+				//return;
+				const lessonStandards=lesson.standards.find(st=>st.name==='pe');
+
+				/*
+				const otherStandards=[
+					{
+						type:'pe',
+						title: 'Performance Expectation(s)'
+					},
+					{
+						type:'sep',
+						title: 'Science and Engineering Practice(s)'
+					},
+					{
+						type:'dci',
+						title: 'Disciplinary Core Idea(s)'
+					},
+					{
+						type:'ccc',
+						title: 'Crosscutting Concept(s)'
+					},
+				];
+				otherStandards.forEach(st=>{
+					st.items=_.values(_.groupBy((lesson[st.type] || []).filter(item=>item.orphan), item=>item.title+item.description)).map(items=>items[0]);
+				})*/
+
+				if (lessonStandards?.items?.length || lesson.orphanStandards.find(st=>st.items.length)){
+					blocks.push({
+						type: 'h1',
+						value: 'Standards',
+						paddingBottom: 0.2
+					})
+					if (lesson.ngss_description?.trim()){
+						await asyncForEach(parse(lesson.ngss_description).childNodes, async (el)=>{
+							await parseHTMLIntoBlocks(el, {
+								params: {
+									replaceFn: workshetReplaceFn,
+								},
+							}, blocks);
+						});
+					}
+				}
+				
+				//console.log('lessonStandards', lessonStandards);
+				if (lessonStandards?.items?.length){
+					
+					blocks.push({
+						type: 'h2',
+						value: 'NGSS Standards',
+						paddingBottom: 0.2
+					})
+		
+					blocks.push({
+						type: 'table',
+						fontSize: 10,
+						padding: 7,
+						marginTop: lesson.ngss_description?.trim() ? 6 : 0,
+						columns: [
+							{
+								id: 'title',
+								header: 'Performance Expectation(s)',
+								width: 155,
+								align: 'left',
+							},
+							{
+								id: 'progressions',
+								header: 'Progression',
+								width: 155,
+								align: 'left',
+								renderer: function (tb, data) {	
+									let str=data.progressions.map(p=>p.name).join(', ');							
+									return str;
+								},
+							},
+							{
+								id: 'lessons',
+								header: 'Lessons building to PE(s)',
+								width: 155,
+								align: 'left',
+								renderer: function (tb, data) {	
+									let str=_.sortBy(data.lessonIds.map(id=>lessons.find(l=>l.lesson_id==id)).filter(l=>l && l.lesson_id!==lesson.lesson_id), l=>l.index).map(l=>l.number).join(', ');							
+									return str;
+								},
+							},
+						],
+						data: lessonStandards.items
+					});
+					//console.log('lesson.pe', lesson.pe);
+				}
+				
+				//return;
+			
+				if (lesson.orphanStandards.find(st=>st.items.length)){
+					blocks.push({
+						type: 'h3',
+						value: 'Connections to Other NGSS Standards',
+						font: fonts.bold,
+						ident: 0,
+						marginTop: 0,
+						moveToNextPageIfNotFit: true,
+					});
+					let cccHtml='';
+					//cccHtml+='<p><strong>Connections to Other NGSS Standards</strong></p>';
+					cccHtml+='<p>The below PE(s), SEP(s), DCI(s), and CCC(s) are emphasized in this lesson but are not associated with the above PE(s).</p>';
+					//cccHtml+='<p>Crosscutting Concept(s)</p>';				
+					await asyncForEach(parse(cccHtml).childNodes, async (el)=>{
+						await parseHTMLIntoBlocks(el, {}, blocks);
+					});
+					
+					await asyncForEach(lesson.orphanStandards.filter(st=>st.items.length), async (st)=>{
+						blocks.push({
+							type: 'p',
+							value: st.title,
+							isHtml:false,
+							font:fonts.regular,
+							ident: 0,
+							marginTop: 0.0001,
+							isTitle:false,
+							marginBottom: 0.0000000001
+						});
+						
+						let itemListsHtml='<ul>';
+						
+					
+						st.items.forEach(item=>{
+							//console.log('Lesson_'+st.type, item);
+							itemListsHtml+='<li>'+item.title;
+							itemListsHtml+='<ul><li>'+item.description+'</li></ul>';
+							itemListsHtml+='</li>';
+						});
+						itemListsHtml+='</ul>'
+						
+						await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
+							await parseHTMLIntoBlocks(el, {
+								ulMarginTop: 0,
+							}, blocks);
+						});
+					});
+				}
+				
+				/*
+				const commonCoreStandards=[
+					{title: 'COMMON CORE - ELA/Literacy', field:'ccl'},
+					{title: 'COMMON CORE - Mathematics', field:'ccm'},
+					{title: 'CA ELD', field:'eld'}
+				];
+				commonCoreStandards.forEach(st=>{
+					st.items=lesson[st.field] || [];
+				})
+				*/
+				const lessonCCStandards=lesson.standards.find(st=>st.name==='cc');
+				
+				
+				if (lessonCCStandards?.items?.length){
+					blocks.push({
+						type: 'h2',
+						value: 'Common Core and CA ELD Standards',
+						//marginTop: 0.001,
+						paddingBottom: 0.0001
+					});
+					await processObjectFieldsIntoBlocks(lesson, [
+						{title: '', field:'common_core'},
+					], blocks);
+			
+					lessonCCStandards.items.forEach((st, index)=>{
+						if (st.items.length){
+							//console.log('st.items', st.items);
+							blocks.push({
+								type: 'h3',
+								value: st.title,
+								font: fonts.regular,
+								marginTop: index > 0 || lesson.common_core ? 0.8 : 0.0001,
+								isHtml:false,
+								isTitle: true
+							});
+							let html='<ul>';
+							st.items.forEach(item=>{
+								html+='<li>'+item.title+'<ul><li>'+item.description+'</li></ul></li>';
+							});
+							html+='</ul>';
+			
+							blocks.push({
+								type: 'list',
+								html,
+								ident: 20,
+								notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
+							});
+						}
+					});
+				}
+				//epc
+				//return;
+				const lessonEpc=lesson.standards.find(st=>st.name==='epc');
+				if (lessonEpc && lessonEpc.items.length){
+					//console.log('lesson.epc', lesson.epc);
+					
+					blocks.push({
+						type: 'h2',
+						value: 'California`s Environmental Principles and Concepts',
+						//marginTop: 0.001,
+						paddingBottom: 0.0001,
+						moveToNextPageIfNotFit: true
+					});
+					await asyncForEach(lessonEpc.items, async (item)=>{
+						const concepts=item.items;
+						await asyncForEach(parse('<p><strong>'+item.title+'</strong><br/>'+item.description+'</p>').childNodes, async (el)=>{
+							await parseHTMLIntoBlocks(el, {
+								ident: 0,
+							}, blocks);
+						});
+						//concepts 18, 22
+
+						concepts.forEach((st, index)=>{
+							blocks.push({
+								type: 'p',
+								value: st.title,
+								font: fonts.regular,
+								marginTop: 0.8,
+								isHtml:false,
+								isTitle: false,
+								leftTextIdent: 30
+							});
+							let html='<ul>';
+							html+='<li>'+st.description+'</li>';
+							html+='</ul>';
+
+							blocks.push({
+								type: 'list',
+								html,
+								ident: 20,
+								marginTop:0.000001,
+								ulMarginTop:0.000001,
+								notMoveDownAfter: false
+							});
+						});
+					})
+					//const item=lesson.epc[0];
+					
+					
+					
+					/*
+					blocks.push({
+						type: 'list',
+						value: st.items.map(item=>item.title),
+						ident: 20,
+						notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
+					});
+					*/
+				}
+
+				
+				
+			
+				if (lesson.vocab && lesson.vocab.length){
+					blocks.push({
+						type: 'h1',
+						value: 'Vocabulary',
+						//marginTop: 0.001
+					});
+					
+					let vocabHtml='';
+					lesson.vocab.forEach(item=>{
+						vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition+'</p>';
+					})				
+					await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
 						await parseHTMLIntoBlocks(el, {
 							ident: 0,
 						}, blocks);
 					});
-					//concepts 18, 22
-
-					concepts.forEach((st, index)=>{
-						blocks.push({
-							type: 'p',
-							value: st.title,
-							font: fonts.regular,
-							marginTop: 0.8,
-							isHtml:false,
-							isTitle: false,
-							leftTextIdent: 30
-						});
-						let html='<ul>';
-						html+='<li>'+st.description+'</li>';
-						html+='</ul>';
-
-						blocks.push({
-							type: 'list',
-							html,
-							ident: 20,
-							marginTop:0.000001,
-							ulMarginTop:0.000001,
-							notMoveDownAfter: false
-						});
-					});
-				})
-				//const item=lesson.epc[0];
+				}
 				
+				await processObjectFieldsIntoBlocks(lesson, [
+					{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { 
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						dontShowImagesAfter: true,
+					}},
+					{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { 
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						dontShowImagesAfter: true,
+					}},
+					{title: 'Extension', field:'extensions', headerType: 'h1', params: { 
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						dontShowImagesAfter: true,
+					}},
+				], blocks);
+			
 				
 				
 				/*
-				blocks.push({
-					type: 'list',
-					value: st.items.map(item=>item.title),
-					ident: 20,
-					notMoveDownAfter: index+1 < lessonCCStandards.length ? true : false
-				});
-				*/
-			}
-
-			
-			
-		
-			if (lesson.vocab && lesson.vocab.length){
-				blocks.push({
-					type: 'h1',
-					value: 'Vocabulary',
-					//marginTop: 0.001
-				});
 				
-				let vocabHtml='';
-				lesson.vocab.forEach(item=>{
-					vocabHtml+='<p><strong>'+item.word+'</strong> - '+item.definition+'</p>';
-				})				
-				await asyncForEach(parse(vocabHtml).childNodes, async (el)=>{
-					await parseHTMLIntoBlocks(el, {
-						ident: 0,
-					}, blocks);
-				});
-			}
-			
-			await processObjectFieldsIntoBlocks(lesson, [
-				{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { 
-					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
-					dontShowImagesAfter: true,
-				}},
-				{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { 
-					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
-					dontShowImagesAfter: true,
-				}},
-				{title: 'Extension', field:'extensions', headerType: 'h1', params: { 
-					replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
-					dontShowImagesAfter: true,
-				}},
-			], blocks);
-		
+				*/
 			
 			
-			/*
 			
-			*/
-		
-		
-		
-		
-			if (lesson.number==='1.6'){
+			
+				if (lesson.number==='1.6'){
 
-			}
-		
+				}
+			
+			});
 		});
 		//return; 
 		/*
