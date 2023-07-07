@@ -1651,7 +1651,7 @@ async function main() {
 	//	return;
 		await asyncForEach(unit.chapters, async chapter=>{
 			const chapterBadge={
-				bageNum: chapter.number,
+				bageNum: chapter.number+1,
 				text: 'Chapter '+chapter.number,
 				color: chapterColors[chapter.number]
 			};
