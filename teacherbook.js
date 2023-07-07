@@ -172,7 +172,7 @@ async function main() {
 		const pathArr=item.path.split('/');
 		item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 		item.fileNameWithExt=item.fileName+'.'+item.type;
-		item.fileTitle=item.fileName;
+		item.fileTitle=item.originalname || item.fileName;
 		if (item.s3_filename){
 			item.path='/getWordDoc?path=/uploads/lessons/'+item.s3_filename
 		}
@@ -432,7 +432,7 @@ async function main() {
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
-			item.fileTitle='Lesson '+lesson.number+item.fileNameWithExt;
+			item.fileTitle='Lesson '+lesson.number+(item.originalname || item.fileNameWithExt);
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
 				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
@@ -2082,13 +2082,17 @@ async function main() {
 					blocks.push({
 						type: 'table',
 						fontSize: 10,
-						hideHeaders: true,
-						borderColor: colors.lessonGreen,
+						hideHeaders: false,
+						borderColor: '#929497',
+						headerBorderColor: '#929497',
+						headerColor: 'white',
+						headerFill: '#c2c3c4',
+						headerPadding: 7,
 						//leftIdent: 80,
 						columns: [
 							{
 								id: 'fileTitle',
-								header: false,
+								header: 'Files Name',
 								width: 320,
 								align: 'left',
 								padding: [4,10,4,4],
@@ -2123,7 +2127,7 @@ async function main() {
 							},
 							{
 								id: 'page',
-								header: '',
+								header: 'Page/Notes',
 								width: 155,
 								renderer: function (tb, data) {								
 									return data.page || (!hasStudenIcon(data) ? 'Online Access Required' : '');
@@ -2512,6 +2516,7 @@ async function main() {
 							firstRowHeight: images[0].height,
 							addBorder: true,
 							dontAttachParagraphToImage: false,
+							file,
 						}];
 						//console.log('FILEFILE', file);
 					}
