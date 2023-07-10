@@ -213,6 +213,7 @@ async function main() {
 	await asyncForEach(lessons, async (lesson)=>{
 		lesson.standards=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonStandards?orphan=0`);
 		lesson.orphanStandards=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonStandards?orphan=1`);
+		lesson.performanceExpectations=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonPerformanceExpectations`);
 		lesson.allStandards=[];
 		['standards', 'orphanStandards'].forEach(key=>{
 			lesson[key].forEach(st=>{
@@ -2698,7 +2699,7 @@ async function main() {
 				}
 				
 				//console.log('lessonStandards', lessonStandards);
-				if (lessonStandards?.items?.length){
+				if (lessonStandards?.items?.length && lesson.performanceExpectations.standards[0]?.items){
 					
 					blocks.push({
 						type: 'h2',
@@ -2734,19 +2735,43 @@ async function main() {
 								width: 155,
 								align: 'left',
 								renderer: function (tb, data) {	
-									let str=_.sortBy(data.lessonIds.map(id=>lessons.find(l=>l.lesson_id==id)).filter(l=>l && l.lesson_id!==lesson.lesson_id), l=>l.index).map(l=>l.number).join(', ');							
+									let str=_.sortBy(data.lessonIds.map(id=>lessons.find(l=>l.lesson_id==id)).filter(l=>l/* && l.lesson_id!==lesson.lesson_id*/), l=>l.index).map(l=>l.number).join(', ');							
 									return str;
 								},
 							},
 						],
-						data: lessonStandards.items
+						data: lesson.performanceExpectations.standards[0]?.items || []
 					});
-					//console.log('lesson.pe', lesson.pe);
+					console.log('lesson.pe', lessonStandards.items);
 				}
 				
 				//return;
+
+				const orphanItems=[
+					{
+						items:lesson.orphanStandards.find(st=>st.name==='pe')?.items || [],
+						name:"PERFORMANCE EXPECTATIONS",
+					},
+					{
+					  items:lesson.orphanStandards.find(st=>st.name==='sep')?.items || [],
+					  name:"SCIENCE AND ENGINEERING PRACTICES",
+					},
+					{
+						items:lesson.orphanStandards.find(st=>st.name==='dci')?.items || [],
+					  name:"DISCIPLINARY CORE IDEAS",
+					},
+					{
+						items:(lesson.orphanStandards.find(st=>st.name==='ccc')?.items || []).filter(item=>item.items.filter(item=>!item.items || !item.items.length).length),
+					  name:"CROSSCUTTING CONCEPTS",
+					},
+					{
+					  items:(lesson.orphanStandards.find(st=>st.name==='ccc')?.items || []).filter(item=>!item.items.filter(item=>!item.items || !item.items.length).length),
+					  name:"",
+					  byCategory: true,
+					},
+				];
 			
-				if (lesson.orphanStandards.find(st=>st.items.length)){
+				if (orphanItems.find(st=>st.items.length)){
 					blocks.push({
 						type: 'h3',
 						value: 'Connections to Other NGSS Standards',
@@ -2763,34 +2788,87 @@ async function main() {
 						await parseHTMLIntoBlocks(el, {}, blocks);
 					});
 					
-					await asyncForEach(lesson.orphanStandards.filter(st=>st.items.length), async (st)=>{
-						blocks.push({
-							type: 'p',
-							value: st.title,
-							isHtml:false,
-							font:fonts.regular,
-							ident: 0,
-							marginTop: 0.0001,
-							isTitle:false,
-							marginBottom: 0.0000000001
-						});
+					await asyncForEach(orphanItems.filter(st=>st.items.length), async (st)=>{
+						if (st.name){
+							blocks.push({
+								type: 'p',
+								value: st.name,
+								isHtml:false,
+								font:fonts.regular,
+								ident: 0,
+								marginTop: 0.0001,
+								isTitle:false,
+								marginBottom: 0.0000000001
+							});
+
+							let itemListsHtml='<ul>';
 						
-						let itemListsHtml='<ul>';
+							st.items.forEach(item=>{
+								//console.log('Lesson_'+st.type, item);
+								itemListsHtml+='<li>'+item.title;
+								if (item.description){
+									itemListsHtml+='<ul><li>'+item.description+'</li></ul>';
+								}
+								else if (item.items) {
+									itemListsHtml+='<ul>';
+										item.items.forEach(item=>{
+											if (item.description){
+												itemListsHtml+='<li>'+item.description+'</li>';
+											}
+										})
+									itemListsHtml+='</ul>';
+								}
+								
+								itemListsHtml+='</li>';
+							});
+							itemListsHtml+='</ul>'
+							
+							await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
+								await parseHTMLIntoBlocks(el, {
+									ulMarginTop: 0,
+								}, blocks);
+							});
+						}
+						else {
+							await asyncForEach(st.items, async st=>{
+								blocks.push({
+									type: 'p',
+									value: st.title,
+									isHtml:false,
+									font:fonts.boldItalic,
+									ident: 0,
+									marginTop: 0.0001,
+									isTitle:false,
+									marginBottom: 0.0000000001
+								});
+	
+								let itemListsHtml='<ul>';
+							
+								st.items.forEach(item=>{
+									//console.log('Lesson_'+st.type, item);
+									itemListsHtml+='<li>'+(item.title || item.name);
+										itemListsHtml+='<ul>';
+											item.items.forEach(item=>{
+												if (item.description){
+													itemListsHtml+='<li>'+item.description+'</li>';
+												}
+											})
+										itemListsHtml+='</ul>';
+									itemListsHtml+='</li>';
+								});
+								itemListsHtml+='</ul>'
+								
+								await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
+									await parseHTMLIntoBlocks(el, {
+										ulMarginTop: 0,
+									}, blocks);
+								});
+							})
+							
+						}
 						
-					
-						st.items.forEach(item=>{
-							//console.log('Lesson_'+st.type, item);
-							itemListsHtml+='<li>'+item.title;
-							itemListsHtml+='<ul><li>'+item.description+'</li></ul>';
-							itemListsHtml+='</li>';
-						});
-						itemListsHtml+='</ul>'
 						
-						await asyncForEach(parse(itemListsHtml).childNodes, async (el)=>{
-							await parseHTMLIntoBlocks(el, {
-								ulMarginTop: 0,
-							}, blocks);
-						});
+						
 					});
 				}
 				
