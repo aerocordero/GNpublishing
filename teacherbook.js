@@ -2039,7 +2039,7 @@ async function main() {
 						ulMarginTop: 0,
 						marginBottom: -0.3
 					}},
-					{title: 'Learning Objectives', field:'objectives', headerType:'h3', params: {
+					{title: 'Lesson Activities', field:'objectives', headerType:'h3', params: {
 						marginTop: 0.5,
 						ulMarginTop: 0,
 						marginBottom: -0.3
