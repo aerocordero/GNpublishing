@@ -383,7 +383,7 @@ async function main() {
 					return str;
 				}
 				//console.log('regexp_'+field, match, str, str1);
-				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1.trim());
+				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1.trim() || file.originalname===str1.trim());
 				//console.log(workshet);
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
