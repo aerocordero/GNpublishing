@@ -216,7 +216,7 @@ async function main() {
 		lesson.performanceExpectations=await apiQuery(`/lessons/${modelId}/${unitId}/${lesson.lesson_id}/lessonPerformanceExpectations`);
 		lesson.allStandards=[];
 		['standards', 'orphanStandards'].forEach(key=>{
-			lesson[key].forEach(st=>{
+			(lesson[key] || []).forEach(st=>{
 				let stObj=lesson.allStandards.find(s=>s.name===st.name);
 				if (!stObj){
 					stObj=_.cloneDeep(st);
@@ -697,7 +697,7 @@ async function main() {
 		{titleLeft: 'Unit Resources', titleRight: '', icon: 'images/icons/Unit Resources.png'},		
 	];	
 
-	let currentLessonIdGlobal;
+	let currentLessonIdGlobal=0;
 	
 	PDFUtils.convertHtml=(text, currentLessonId)=>{
 		if (!currentLessonId && currentLessonIdGlobal){
@@ -1017,7 +1017,8 @@ async function main() {
 			align: 'center',
 			width: 509,
 		});
-		
+		//currentLessonId
+		currentLessonIdGlobal=0;
 		await processObjectFieldsIntoBlocks(customPages.DifferentiationLearningSupport, [
 			{title: 'Differentiation and Special Learning Needs', field:'differentiation', 
 				params: {
@@ -3060,6 +3061,7 @@ async function main() {
 				}
 			
 			});
+			//currentLessonIdGlobal=0;
 		});
 		//return; 
 		/*
