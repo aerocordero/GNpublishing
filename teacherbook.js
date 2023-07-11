@@ -626,8 +626,10 @@ async function main() {
 		materials[key]=_.sortBy(materials[key], m=>m.materialName.replace(' ', ''));
 	});
 	//return;
+	
 	//const unitMaterials=await apiQuery(`/units/${unitId}/unitMaterials`);
 	//console.log(unitMaterials);
+
 	//unitMaterials 
 	//return;
 	//[m.materialName,m.lessons[0]
@@ -1818,7 +1820,7 @@ async function main() {
 				const imgInfo=await getImgInfoAndRotate(path);
 				const imageWidth=contentWidth/2.5;
 				
-				let imageHeight=getImgPropheight(imgInfo, imageWidth);
+				let imageHeight=getImgPropheight(imgInfo, imageWidth, true);
 
 				blocks.push({
 					type: 'custom',
@@ -1845,8 +1847,18 @@ async function main() {
 						
 						const root=parseHtml(slide.description);
 						doc.y=y;
-
-						doc.y+=imageHeight/2-textHeight/2-20;
+						
+						if (imageHeight>textHeight){
+							const margin=imageHeight/2-textHeight/2-20;
+							if (margin>0){
+								doc.y+=margin;
+							}
+							
+							if (chapter.number==5){
+								console.log({imageHeight,textHeight,imageWidth, path, margin, imgInfo})
+							}
+						}
+						
 
 						root.childNodes.forEach(node=>{
 							PDFUtils.drawActions.p(doc, {
@@ -1907,6 +1919,9 @@ async function main() {
 			
 			let imageHeight=getImgPropheight(RCimgInfo, RCimageWidth);
 			let imgX=textIdents.left+(contentWidth-50-(RCimgPaths.length*RCimageWidth))/2;
+			if (imgX<textIdents.left){
+				imgX=textIdents.left;
+			}
 			blocks.push({
 				type: 'images',
 				value: RCimgPaths.map(img=>{
@@ -1917,6 +1932,9 @@ async function main() {
 						x: imgX
 					}
 					imgX+=RCimageWidth;
+					if (imgX>500){
+						imgX=textIdents.left;
+					}
 					return image;
 				}),
 				width: RCimageWidth,
