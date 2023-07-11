@@ -563,20 +563,25 @@ async function main() {
 	['materialLsKit', 'materialLsTeacher', 'materialLsOptional'].map(key=>{
 		const rawData=materialData[key];
 		materials[key]=_.sortBy(_.values(_.groupBy(rawData, m=>m.material_id)).map(materials=>{	
-			const item=materials[0];
+			let item=materials[0];
 			const items=materialData.materialsListUnitOverview.filter(m=>m.material_id===item.material_id && item.optionalInd===m.optionalInd);
 
+
 			let quantity=parseFloat(item.totalQty);
+			
 			
 			if (item.name==='Clear plastic cups'){
 				//console.log('Ice_itemsitemsitemsitems', items);
 			}
-			if (item.plural_name==='Clear plastic cups'){
-				//console.log('Clear plastic cups_itemsitemsitemsitems', items);
+			if (item.plural_name==='PocketLab Temperature Probes'){
+				console.log('PocketLab Temperature Probes_itemsitemsitemsitems', items);
 			}
 		
 			items.forEach(item=>{
 				//quantity+=(parseFloat(item.quantity) || 0);
+				if (parseInt(item.quantity)>quantity){
+					quantity=parseInt(item.quantity);
+				}
 				item.lesson=lessons.find(l=>l.lesson_id==item.lesson_id);
 			});
 		
@@ -619,7 +624,11 @@ async function main() {
 		materials[key]=_.sortBy(materials[key], m=>m.name);
 		materials[key]=_.sortBy(materials[key], m=>m.firstLessonNum);
 		materials[key]=_.sortBy(materials[key], m=>m.materialName.replace(' ', ''));
-	})
+	});
+	//return;
+	//const unitMaterials=await apiQuery(`/units/${unitId}/unitMaterials`);
+	//console.log(unitMaterials);
+	//unitMaterials 
 	//return;
 	//[m.materialName,m.lessons[0]
 	//console.log(materials); return;
