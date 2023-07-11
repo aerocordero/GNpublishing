@@ -258,7 +258,7 @@ async function main() {
 			'SELECT *',
 			'FROM activity_plan t',
 			'WHERE t.lesson_id = ?',
-			'ORDER BY t.header'
+			'ORDER BY t.position ASC, t.header ASC'
 		], [lesson.lesson_id]);
 		lesson.vocab=await dbQuery([
 			'SELECT *',
@@ -451,11 +451,12 @@ async function main() {
 		lesson.activityPlan.forEach(plan=>{
 			plan.files=[];
 			lessonWorkshetTextReplace(lesson, plan, ['content']);		
+			//plan.number=plan.position ? plan.position+1 : '';
 			//console.log(item.content);
 			const headerMatch=plan.header.match(/([\d]+)\.(.*)/i);
 			//console.log(headerMatch);
 			if (headerMatch){
-				plan.number=parseInt(headerMatch[1]);
+				plan.number=plan.position ? plan.position+1 : parseInt(headerMatch[1]);
 				plan.title=(headerMatch[2] || '').trim();
 			}
 			else {
@@ -2556,7 +2557,7 @@ async function main() {
 					});
 					await processObjectFieldsIntoBlocks(plan, [
 						{
-							title: plan.header.trim(), 
+							title: plan.number+'. '+plan.title.trim(), 
 							field:'content', 
 							titleRight: '~ '+plan.time, 
 							headerType: 'lessonPlanHeader',
