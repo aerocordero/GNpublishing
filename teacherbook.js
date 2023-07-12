@@ -373,6 +373,7 @@ async function main() {
 		obj.files=[];
 		fields.forEach(field=>{
 			if (!obj[field]){
+				console.log('Not found field', {field, lesson_id: obj.lesson_id});
 				return;
 			}
 			//console.log(obj[field]);
@@ -380,6 +381,7 @@ async function main() {
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
 				if (!fileLesson){
+					console.log('Not found Lesson', old_lesson_id);
 					return str;
 				}
 				//console.log('regexp_'+field, match, str, str1);
@@ -433,7 +435,8 @@ async function main() {
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
-			item.fileTitle='Lesson '+lesson.number+(item.originalname || item.fileNameWithExt);
+			const originalFileName=(item.originalname || item.fileNameWithExt);
+			item.fileTitle='Lesson '+lesson.number+originalFileName;
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
 				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
@@ -444,6 +447,9 @@ async function main() {
 			}
 			if (item.isOnlineAccess){
 				item.page=customPages.messages.onlineAccessContent;
+			}
+			if (originalFileName.indexOf('phenomenon')>=0){
+				lesson.hasPhenomenonFile=true;
 			}
 		});
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
@@ -1765,7 +1771,7 @@ async function main() {
 								fontSize: 10
 							});
 
-							if (lesson.phenomenon){
+							if (lesson.phenomenon || lesson.hasPhenomenonFile){
 								//phenomenon-green-small.png
 								doc.image('images/icons/phenomenon-green-small.png', doc.x+titleWidth+3, y-2, {
 									width: 15,
