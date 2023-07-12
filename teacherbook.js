@@ -435,8 +435,9 @@ async function main() {
 			const pathArr=item.path.split('/');
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
-			const originalFileName=(item.originalname || item.fileNameWithExt);
-			item.fileTitle='Lesson '+lesson.number+originalFileName;
+			item.originalFileName=(item.originalname || item.fileNameWithExt);
+			item.fileTitle='Lesson '+lesson.number+item.originalFileName;
+			
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
 				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
@@ -448,7 +449,7 @@ async function main() {
 			if (item.isOnlineAccess){
 				item.page=customPages.messages.onlineAccessContent;
 			}
-			if (originalFileName.indexOf('phenomenon')>=0){
+			if (item.originalFileName.indexOf('phenomenon')>=0){
 				lesson.hasPhenomenonFile=true;
 			}
 		});
@@ -1254,25 +1255,28 @@ async function main() {
 				//await renderStandardItems(items);
 				blocks.push({
 					type: 'list',
-					value: items.filter(item=>item.title && !item.items.filter(st=>st.title).length).map(item=>item.title),
+					value: items.filter(item=>item.title && (!item.items.filter(st=>st.title).length || standard.name!=='ccc')).map(item=>item.title),
 					notMoveDownAfter: false
 				});
-				items.filter(item=>item.items.filter(st=>st.title).length).forEach(category=>{
-					blocks.push({
-						type: 'h4',
-						value: category.title,
-						isHtml:false,
-						ident: 0,
-						marginTop: 0.5,
-						isTitle: true,
-						marginBottom: 0.001,
-					});
-					blocks.push({
-						type: 'list',
-						value:category.items.map(item=>item.title),
-						notMoveDownAfter: false
-					});
-				})				
+				if (standard.name==='ccc'){
+					items.filter(item=>item.items.filter(st=>st.title).length).forEach(category=>{
+						blocks.push({
+							type: 'h4',
+							value: category.title,
+							isHtml:false,
+							ident: 0,
+							marginTop: 0.5,
+							isTitle: true,
+							marginBottom: 0.001,
+						});
+						blocks.push({
+							type: 'list',
+							value:category.items.map(item=>item.title),
+							notMoveDownAfter: false
+						});
+					})		
+				}
+						
 				
 			}
 		})		
@@ -2106,7 +2110,7 @@ async function main() {
 						value: 'Files'
 					});
 					const lessonFiles=lesson.worksheet.filter((file, index)=>{
-						const existing=lesson.worksheet.find((f, i)=>f.fileName===file.fileName && i < index);
+						const existing=lesson.worksheet.find((f, i)=>f.originalFileName===file.originalFileName && i < index);
 						return !existing;
 					});
 					console.log('lessonFiles', lessonFiles);
