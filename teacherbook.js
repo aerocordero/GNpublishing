@@ -1973,6 +1973,7 @@ async function main() {
 						//console.log('regexp2', match, str, str1);
 						const workshet=allWorkShets.find(file=>file.worksheet_id==str);
 						//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
+						let fromAnotherLesson=false;
 						if (workshet){
 							if (!workshet.isOnlineAccess){
 								if (!params.readOnly){
@@ -1983,13 +1984,14 @@ async function main() {
 										PDFUtils.showedFiles.push(workshet.fileNameWithExt);
 									}
 								}
-								if (workshet.lesson_id!==lesson.lesson_id && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
+								fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
+								if (fromAnotherLesson && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
 									//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
 									worksheetFromAnotherLessons.push(workshet);
 								}
 							}
 							
-							return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || 'online access'))+') ';
+							return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || (images.length && !fromAnotherLesson ? 'preview below' : (fromAnotherLesson && workshet.pageNum ? 'preview on page '+workshet.pageNum : 'access online'))))+') ';
 						}
 						return '';
 					}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.').replace('))', ')').replace('((', '(');
@@ -2002,7 +2004,7 @@ async function main() {
 						images
 					})
 					/**/
-				
+					//console.log({worksheetFromAnotherLessons})
 					return {
 						string,
 						images
@@ -2157,10 +2159,10 @@ async function main() {
 							},
 							{
 								id: 'page',
-								header: 'Page/Notes',
+								header: 'File Preview',
 								width: 155,
 								renderer: function (tb, data) {								
-									return data.page || (!hasStudenIcon(data) ? 'Online Access Required' : '');
+									return data.page || (!hasStudenIcon(data) ? 'access online' : '');
 								},
 								cellAdded: (tb, data, cell, pos)=>{
 									const doc=tb.pdf;
