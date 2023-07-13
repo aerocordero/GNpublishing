@@ -391,7 +391,7 @@ async function main() {
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
 					console.log('regexp_'+field, match, str, str1);
-					if (str1!=='.' && !notFoundWorksheets.find(item=>item.worksheet===str1)){
+					if (str1!=='.' && !notFoundWorksheets.find(item=>item.worksheet===str1 && item.lesson===lesson.number)){
 						notFoundWorksheets.push({
 							lesson: lesson.number,
 							worksheet: str1,
