@@ -102,8 +102,8 @@ async function main() {
 	console.log(printLessonNum);
 	//return;
 
-	
-	const customPages=await initCustomPages(__dirname+'/gdrive/teacherbook');
+	const gdriveFolder=__dirname+'/gdrive/teacherbook';
+	const customPages=await initCustomPages(gdriveFolder);
 	
 	console.log('Loading data...');
 	
@@ -761,8 +761,8 @@ async function main() {
 			y:-1
 		});	
 		
-		await asyncForEach(['Dear-Educator.pdf','The-Green-Ninja-Approach.pdf','How-to-Teach-with-Green-Ninja.pdf'], async fileName=>{
-			const paths=await convertPptxPdf('assets/'+fileName, {
+		await asyncForEach(['Dear Educator.pdf','The-Green-Ninja-Approach.pdf','How-to-Teach-with-Green-Ninja.pdf'], async fileName=>{
+			const paths=await convertPptxPdf(gdriveFolder+'/FrontMatter-2023'+fileName, {
 				fileName
 			}, false);
 			console.log({fileName, paths});
