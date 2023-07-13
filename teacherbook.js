@@ -13,6 +13,7 @@ async function main() {
 	const _ = require('lodash');
 	const Jimp = require('jimp');
 	const argv = require('yargs').argv;
+	const Json2csvParser = require('json2csv').Parser;
 	
 	const config = require('./config.json');
 	
@@ -47,7 +48,7 @@ async function main() {
 	if (argv.gdSync || argv.gdSync===undefined){
 		await GDFolderSync('19sNmj1BXrBWV6M2JTL4r-lJp5Iw8n-96', 'teacherbook');
 	}
-	
+	const notFoundWorksheets=[];
 	//config.db.Promise=bluebird;
 	
 	const colors={
@@ -390,6 +391,12 @@ async function main() {
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
 					console.log('regexp_'+field, match, str, str1);
+					if (str1!=='.'){
+						notFoundWorksheets.push({
+							lesson: lesson.number,
+							worksheet: str1,
+						})
+					}
 				}
 				if (workshet){
 					if (lesson.lesson_id===fileLesson.lesson_id){
@@ -3185,6 +3192,16 @@ async function main() {
 		queueItem.totalPageNumber=PDFUtils.totalPageNumber;
 		//console.log('queueItem', queueItem);
 		saveQueue(queueData);
+	}
+	if (notFoundWorksheets.length){
+		const json2csvParser = new Json2csvParser({
+			fields: Object.keys(notFoundWorksheets[0]),
+			header: true
+		});
+		
+		const csv = json2csvParser.parse(notFoundWorksheets).toString('utf-8').replace(/’/g, '`');
+	
+		fs.writeFileSync(`./found-content-issues/missing_worksheets_G${model.display_name.replace('Grade ', '')}U${unit.number}.csv`, csv, 'utf-8');
 	}
 }
 main().then(res=>{
