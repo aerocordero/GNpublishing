@@ -2109,9 +2109,12 @@ async function main() {
 						type: 'h2',
 						value: 'Files'
 					});
+					const excludes=[
+						(file)=>file.type==='pdf' && file.originalFileName.indexOf('-presentation.')>0,
+					];
 					const lessonFiles=lesson.worksheet.filter((file, index)=>{
 						const existing=lesson.worksheet.find((f, i)=>f.originalFileName===file.originalFileName && i < index);
-						return !existing;
+						return !existing && !excludes.find(fn=>fn(file));
 					});
 					console.log('lessonFiles', lessonFiles);
 					worksheetFromAnotherLessons.forEach(file=>{
