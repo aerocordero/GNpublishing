@@ -2272,6 +2272,10 @@ async function main() {
 						},*/
 						//paddingBottom: 0.1
 					});
+					//previousLessonMaterials
+					await processObjectFieldsIntoBlocks(lesson, [
+						{title: '', field:'previousLessonMaterials'},
+					], blocks);
 					
 				}			
 			
