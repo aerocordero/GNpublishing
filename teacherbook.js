@@ -246,7 +246,7 @@ async function main() {
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
 			'INNER JOIN file f ON f.id = t.file_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id=1'
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf") AND t.worksheet_language_id=1'
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx').map(item=>{
 			if (item.s3_filename){
@@ -2182,7 +2182,7 @@ async function main() {
 								header: 'File Preview',
 								width: 155,
 								renderer: function (tb, data) {								
-									return data.page || (!hasStudenIcon(data) ? 'access online' : '');
+									return data.page || (!hasStudenIcon(data) ? 'Access Online' : '');
 								},
 								cellAdded: (tb, data, cell, pos)=>{
 									const doc=tb.pdf;
