@@ -2556,6 +2556,7 @@ async function main() {
 								width,
 								x,
 								imgInfo,
+								file,
 								highlight: imgIndex===0 && file.isOnline ? {
 									color: colors.orange,
 									icon: icons.onlineContent
