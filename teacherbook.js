@@ -480,7 +480,7 @@ async function main() {
 			}
 			
 		});
-		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions', 'all_together', 'safety_guidelines', 'extensions']);
+		lessonWorkshetTextReplace(lesson, lesson, ['anticipated_challenges', 'teacher_prep','list_materials', 'background', 'access_equity', 'home_to_school', 'prior_experience', 'student_preconceptions', 'all_together', 'safety_guidelines', 'extensions']);
 	});
 	//return;
 	
@@ -2003,7 +2003,7 @@ async function main() {
 								}
 								fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
 								if (fromAnotherLesson && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-									//console.log('workshetworkshet_worksheetFromAnotherLessons', workshet);
+									console.log('workshetworkshet_worksheetFromAnotherLessons', workshet.fileNameWithExt);
 									worksheetFromAnotherLessons.push(workshet);
 								}
 							}
@@ -2029,7 +2029,7 @@ async function main() {
 				}
 				//worksheetFromAnotherLessons=[];
 				//This for files from another lessons array filing:
-				['teacher_prep'].forEach(field=>{
+				['teacher_prep', 'list_materials'].forEach(field=>{
 					workshetReplaceFn(lesson[field], {readOnly:true}).string;
 				})
 				lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
