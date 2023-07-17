@@ -760,11 +760,10 @@ async function main() {
 			x:-1,
 			y:-1
 		});	
-		
-		await asyncForEach(['Dear Educator.pdf','The-Green-Ninja-Approach.pdf','How-to-Teach-with-Green-Ninja.pdf'], async fileName=>{
-			const paths=await convertPptxPdf(gdriveFolder+'/FrontMatter-2023'+fileName, {
-				fileName
-			}, false);
+		//console.log(customPages);
+		await asyncForEach(['Dear-Educator','The-Green-Ninja-Approach','How-to-Teach-with-Green-Ninja'], async fileName=>{
+
+			const paths=customPages['FrontMatter-2023'][fileName];
 			console.log({fileName, paths});
 			await asyncForEach(paths, async (item)=>{
 				const imgInfo=await imageInfo(item.imagePath);
