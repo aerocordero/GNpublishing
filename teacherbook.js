@@ -457,6 +457,7 @@ async function main() {
 				item.page=customPages.messages.onlineAccessContent;
 			}
 			if (item.originalFileName.indexOf('phenomenon')>=0){
+				console.log('phenomenonWS', item.originalFileName);
 				lesson.hasPhenomenonFile=true;
 			}
 		});
@@ -1781,7 +1782,7 @@ async function main() {
 								fontSize: 10
 							});
 
-							if (lesson.phenomenon || lesson.hasPhenomenonFile){
+							if (/*lesson.phenomenon || */lesson.hasPhenomenonFile){
 								//phenomenon-green-small.png
 								doc.image('images/icons/phenomenon-green-small.png', doc.x+titleWidth+3, y-2, {
 									width: 15,
@@ -1790,7 +1791,7 @@ async function main() {
 
 							if (lesson.pageNum){
 								
-								lineStart=doc.x+titleWidth+7+(lesson.phenomenon ? 15 : 0);
+								lineStart=doc.x+titleWidth+7+(lesson.hasPhenomenonFile ? 15 : 0);
 
 								doc
 								  .font(fonts.regular)
