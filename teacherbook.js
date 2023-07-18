@@ -377,7 +377,7 @@ async function main() {
 				console.log('Not found field', {field, lesson_id: obj.lesson_id});
 				return;
 			}
-			//console.log(obj[field]);
+			
 			obj[field]=obj[field].replace(new RegExp('\(\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
@@ -386,7 +386,7 @@ async function main() {
 					return str;
 				}
 				//console.log('regexp_'+field, match, str, str1);
-				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt===str1.trim() || file.originalname===str1.trim());
+				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt?.toLowerCase()===str1.trim().toLowerCase() || file.originalname?.toLowerCase()===str1.trim().toLowerCase());
 				//console.log(workshet);
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
@@ -408,6 +408,7 @@ async function main() {
 				}
 				return str;
 			});
+			console.log(field, obj[field]);
 		})
 	}
 	
@@ -1670,7 +1671,9 @@ async function main() {
 		});		
 	
 		
-		
+		allWorkShets.forEach(workshet=>{
+			workshet.mentionedInLessonId=0;
+		})
 		//return;
 		blocks.push({
 			type: 'sectionCover',
@@ -1986,10 +1989,17 @@ async function main() {
 				const workshetReplaceFn=(str, params)=>{
 					//console.log('forRegexp: ', str);
 					let images=[];
+					if (str.indexOf('15980')>0){
+						//console.log('fuckfick', str);	
+					}
+					
 					const string=(str || '').replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 						//console.log('regexp2', match, str, str1);
 						const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-						//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
+						if (str==15980){
+							//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
+						}
+						
 						let fromAnotherLesson=false;
 						if (workshet){
 							if (!workshet.isOnlineAccess){
@@ -2007,8 +2017,25 @@ async function main() {
 									worksheetFromAnotherLessons.push(workshet);
 								}
 							}
-							
-							return workshet.fileTitle+' ('+(workshet.isOnline ? customPages.messages.onlineContent : (workshet.inlinePageRef || (images.length && !fromAnotherLesson ? 'preview below' : (fromAnotherLesson && workshet.pageNum ? 'preview on page '+workshet.pageNum : 'access online'))))+') ';
+							let referenceStr='';
+							if (workshet.isOnline){
+								referenceStr=customPages.messages.onlineContent;
+							}
+							else if (workshet.inlinePageRef){
+								referenceStr=workshet.inlinePageRef;
+							}
+							else if (!workshet.inlinePageRef && images.length && !fromAnotherLesson && !params.dontShowImagesAfter){
+								workshet.mentionedInLessonId=lesson.lesson_id;
+								referenceStr='preview below';
+							}
+							else if (fromAnotherLesson && workshet.pageNum){
+								referenceStr='preview on page '+workshet.pageNum;
+							}
+							else if (workshet.mentionedInLessonId!==lesson.lesson_id) {
+								referenceStr='access online';
+							}
+
+							return workshet.fileTitle+(referenceStr ? ' ('+referenceStr+') ' : '');
 						}
 						return '';
 					}).replace(/\) \(from /igm, '; from ').replace(/\( from /igm, '; from ').replace(/  /igm, ' ').replace(') (', '; ').replace(' )', ')').replace(' ,', ',').replace(' .', '.').replace('))', ')').replace('((', '(');
@@ -2031,14 +2058,14 @@ async function main() {
 				//This for files from another lessons array filing:
 				['teacher_prep', 'list_materials'].forEach(field=>{
 					workshetReplaceFn(lesson[field], {readOnly:true}).string;
-				})
+				});
 				lesson.activityPlan.filter(p=>!parseInt(p.student)).forEach(plan=>{
 					//console.log('planItem!', plan);
 					workshetReplaceFn(plan.content, {readOnly:true}).string;
 				});
 				['anticipated_challenges'].forEach(field=>{
 					workshetReplaceFn(lesson[field], {readOnly:true}).string;
-				})
+				});
 				//console.log(lesson.number);
 				//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons)
 				
@@ -3061,15 +3088,21 @@ async function main() {
 				
 				await processObjectFieldsIntoBlocks(lesson, [
 					{title: 'Tying It All Together', field:'all_together', headerType: 'h1', params: { 
-						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {
+							dontShowImagesAfter: true
+						}),
 						dontShowImagesAfter: true,
 					}},
 					{title: 'Safety Guidelines', field:'safety_guidelines', headerType: 'h1', params: { 
-						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {
+							dontShowImagesAfter: true
+						}),
 						dontShowImagesAfter: true,
 					}},
 					{title: 'Extension', field:'extensions', headerType: 'h1', params: { 
-						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {}),
+						replaceFn: (str)=>workshetReplaceFn(PDFUtils.convertHtml(str, lesson.old_lesson_id), {
+							dontShowImagesAfter: true
+						}),
 						dontShowImagesAfter: true,
 					}},
 				], blocks);
