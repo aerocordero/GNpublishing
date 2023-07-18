@@ -237,7 +237,7 @@ async function main() {
 			})	
 		})
 		
-		console.log(lesson.orphanStandards);
+		//console.log(lesson.orphanStandards);
 		
 		
 		
@@ -249,6 +249,7 @@ async function main() {
 			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf") AND t.worksheet_language_id=1'
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx').map(item=>{
+			item.text_snapshot='';
 			if (item.s3_filename){
 				item.path='/getWordDoc?path=/uploads/lessons/'+item.s3_filename;
 			}
@@ -390,7 +391,7 @@ async function main() {
 				//console.log(workshet);
 				if (!workshet){
 					console.log('Workshet "'+str1+'" is not found');
-					console.log('regexp_'+field, match, str, str1);
+					//console.log('regexp_'+field, match, str, str1);
 					if (str1!=='.' && !notFoundWorksheets.find(item=>item.worksheet===str1 && item.lesson===lesson.number)){
 						notFoundWorksheets.push({
 							lesson: lesson.number,
@@ -408,7 +409,7 @@ async function main() {
 				}
 				return str;
 			});
-			console.log(field, obj[field]);
+			//console.log(field, obj[field]);
 		})
 	}
 	
@@ -1835,7 +1836,7 @@ async function main() {
 			
 			const greenBox=chapter.greenBoxes.find(gb=>gb.name.trim()==='Connections to Unit Roadmap');
 			if (greenBox){
-				console.log(greenBox);
+				//console.log(greenBox);
 				const slide=greenBox.slides[0];
 				const path=await downloadFile(slide.imagePath);
 				const imgInfo=await getImgInfoAndRotate(path);
@@ -2136,7 +2137,7 @@ async function main() {
 				});	
 				
 				//console.log('lesson.worksheet', lesson.number, lesson.worksheet);
-				console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
+				//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
 				if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
 					
 					blocks.push({
@@ -2592,7 +2593,7 @@ async function main() {
 							x+=width;
 							
 						});
-						console.log({images, imgPaths});
+						//console.log({images, imgPaths});
 						file.images=[{
 							type: 'images',
 							value: images,
@@ -2737,7 +2738,7 @@ async function main() {
 					});
 					await processObjectFieldsIntoBlocks(lesson, backgroundForTeachersBlocks, blocks);
 				}
-				console.log('lesson.pe', lesson.pe);
+				//console.log('lesson.pe', lesson.pe);
 				//return;
 				const lessonStandards=lesson.standards.find(st=>st.name==='pe');
 
@@ -2825,7 +2826,7 @@ async function main() {
 						],
 						data: lesson.performanceExpectations.standards[0]?.items || []
 					});
-					console.log('lesson.pe', lessonStandards.items);
+					//console.log('lesson.pe', lessonStandards.items);
 				}
 				
 				//return;
