@@ -68,7 +68,7 @@ async function main() {
 		'Grade 7': '#15ADCB',						
 		'Grade 8': '#89C440',
 	}
-	const chapterColors=['#bedb83', '#85b838', '#589b31','#3f7c1f', '#346d24', '#205b1a', '#184c12'];
+	const chapterColors=['#bedb83', '#85b838', '#589b31','#3f7c1f', '#346d24', '#205b1a', '#153c0b'];
 	
 	const textIdents={
 		left: 65,
@@ -1687,7 +1687,7 @@ async function main() {
 			const chapterBadge={
 				bageNum: chapter.number+1,
 				text: 'Chapter '+chapter.number,
-				color: chapterColors[chapter.number]
+				color: chapterColors[chapter.number-1]
 			};
 			blocks.push({
 				type: 'h1',
@@ -2150,7 +2150,7 @@ async function main() {
 						const existing=lesson.worksheet.find((f, i)=>f.originalFileName===file.originalFileName && i < index);
 						return !existing && !excludes.find(fn=>fn(file));
 					});
-					console.log('lessonFiles', lessonFiles);
+					//console.log('lessonFiles', lessonFiles);
 					worksheetFromAnotherLessons.forEach(file=>{
 						lessonFiles.push(file);					
 					});
