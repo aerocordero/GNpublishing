@@ -1990,16 +1990,12 @@ async function main() {
 				const workshetReplaceFn=(str, params)=>{
 					//console.log('forRegexp: ', str);
 					let images=[];
-					if (str.indexOf('15980')>0){
-						//console.log('fuckfick', str);	
-					}
+					
 					
 					const string=(str || '').replace(/\(%([\d]+)%\)/igm, (match, str, str1, str2)=>{					
 						//console.log('regexp2', match, str, str1);
 						const workshet=allWorkShets.find(file=>file.worksheet_id==str);
-						if (str==15980){
-							//console.log('workshetReplaceFn', lesson.lesson_id, workshet.lesson_id, workshet);
-						}
+						
 						
 						let fromAnotherLesson=false;
 						if (workshet){
@@ -2012,11 +2008,11 @@ async function main() {
 										PDFUtils.showedFiles.push(workshet.fileNameWithExt);
 									}
 								}
-								fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
-								if (fromAnotherLesson && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
-									console.log('workshetworkshet_worksheetFromAnotherLessons', workshet.fileNameWithExt);
-									worksheetFromAnotherLessons.push(workshet);
-								}
+							}
+							fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
+							if (fromAnotherLesson && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
+								console.log('workshetworkshet_worksheetFromAnotherLessons', workshet.fileNameWithExt);
+								worksheetFromAnotherLessons.push(workshet);
 							}
 							let referenceStr='';
 							if (workshet.isOnline){
