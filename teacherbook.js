@@ -1478,7 +1478,7 @@ async function main() {
 						if (item.items?.filter(sub=>sub.title).length){
 							title+=' (';
 							title+=item.items.filter(sub=>sub.title).map(subItem=>{
-								return subItem.title.replace('Concept ', '').replace('.', '');
+								return (subItem.name || subItem.title).replace('Concept ', '').replace('.', '');
 							}).join(', ');							
 							title+=')';
 						}	
