@@ -2287,7 +2287,7 @@ async function main() {
 					}},
 				], blocks);
 			
-				if (lesson.materials.length){
+				if (lesson.materials.length || lesson.previousLessonMaterials){
 					blocks.push({
 						type: 'h2',
 						value: 'Materials',
