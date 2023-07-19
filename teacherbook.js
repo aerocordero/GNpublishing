@@ -2146,6 +2146,13 @@ async function main() {
 					});
 					const excludes=[
 						(file)=>file.type==='pdf' && file.originalFileName.indexOf('-presentation.')>0,
+						(file)=>{
+							const found=lesson.worksheet.find(ws=>ws.originalFileName.replace('.pptx', '')===file.originalFileName.replace('.pdf', ''));
+							if (found){
+								console.log('foundfound', found);
+							}
+							return found && file.type==='pdf';
+						},
 					];
 					const lessonFiles=lesson.worksheet.filter((file, index)=>{
 						const existing=lesson.worksheet.find((f, i)=>f.originalFileName===file.originalFileName && i < index);
