@@ -403,7 +403,7 @@ async function main() {
 					if (lesson.lesson_id===fileLesson.lesson_id){
 						obj.files.push(workshet);
 					}
-					//console.log(workshet);					
+					//console.log('planWorksheet', workshet);					
 					//return workshet.fileTitle;
 					return '%'+workshet.worksheet_id+'%';
 				}
@@ -1999,8 +1999,9 @@ async function main() {
 						
 						let fromAnotherLesson=false;
 						if (workshet){
+							fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
 							if (!workshet.isOnlineAccess){
-								if (!params.readOnly){
+								if (!params.readOnly && !fromAnotherLesson){
 									if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
 										(workshet.images || []).forEach(img=>images.push(img));
 									}
@@ -2009,7 +2010,7 @@ async function main() {
 									}
 								}
 							}
-							fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
+							
 							if (fromAnotherLesson && !worksheetFromAnotherLessons.find(w=>w.worksheet_id===workshet.worksheet_id)){
 								console.log('workshetworkshet_worksheetFromAnotherLessons', workshet.fileNameWithExt);
 								worksheetFromAnotherLessons.push(workshet);
