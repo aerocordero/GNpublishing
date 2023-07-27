@@ -23,7 +23,10 @@ const {
 	asyncForEach,
 	loadQueue,
 	saveQueue,
-	imgInfoJogPath
+	imgInfoJogPath,
+	downloadFile,
+	convertPdf,
+	convertPptxPdf
 } = require('./lib/utils');
 
 let queue=loadQueue();
@@ -348,9 +351,16 @@ router.get('/queue/:id', async(req, res, next)=>{
 router.get('/pdf-image/:pdfName/:page', async(req, res, next)=>{
 	console.log(req.params);
 	let {pdfName, page}=req.params;
-	pdfName=pdfName.replace(/ /gi, '-');
-	const fileName=pdfName.replace('.pdf', '');
-	fs.createReadStream('./tmp/pptx-export/'+pdfName+'/'+fileName+'-'+page+'.png').pipe(res);
+	pdfFolderName=pdfName.replace(/ /gi, '-');
+	const fileName=pdfFolderName.replace('.pdf', '');
+	const path='./tmp/pptx-export/'+pdfFolderName+'/'+fileName+'-'+page+'.png';
+	if (!fs.existsSync(path)){
+		const pdfFilePath=await downloadFile('https://app.greenninja.org/getWordDoc?path=/uploads/lessons/'+pdfName);
+		await convertPptxPdf(pdfFilePath, {
+			fileName:pdfFolderName
+		});
+	}
+	fs.createReadStream(path).pipe(res);
 });
 
 router.ws('/queue-ws', (ws, req) => {
