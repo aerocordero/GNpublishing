@@ -280,6 +280,7 @@ router.delete('/worksheet', async(req, res, next)=>{
 });
 
 router.get('/queue', async(req, res, next)=>{	
+	console.log('/queue')
 	res.json(queue.filter(item=>!item.hidden));
 });
 
@@ -344,6 +345,14 @@ router.get('/queue/:id', async(req, res, next)=>{
 	
 });
 
+router.get('/pdf-image/:pdfName/:page', async(req, res, next)=>{
+	console.log(req.params);
+	let {pdfName, page}=req.params;
+	pdfName=pdfName.replace(/ /gi, '-');
+	const fileName=pdfName.replace('.pdf', '');
+	fs.createReadStream('./tmp/pptx-export/'+pdfName+'/'+fileName+'-'+page+'.png').pipe(res);
+});
+
 router.ws('/queue-ws', (ws, req) => {
 	//console.log(ws);
 	socketClients.push(ws);
@@ -357,11 +366,11 @@ router.ws('/queue-ws', (ws, req) => {
 	console.log('socket', req.testing);
 });
  
-
+module.exports = router;
 
 queue.filter(item=>item.state==='inProgress').forEach(item=>item.state='error');
 saveCurrentQueue();
 
 processQueue();
 
-module.exports = router;
+
