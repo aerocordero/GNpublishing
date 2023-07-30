@@ -353,6 +353,7 @@ router.get('/pdf-image/:pdfName/:page', async(req, res, next)=>{
 	let {pdfName, page}=req.params;
 	pdfFolderName=pdfName.replace(/ /gi, '-');
 	const fileName=pdfFolderName.replace('.pdf', '');
+	const noPagePath='./tmp/pptx-export/'+pdfFolderName+'/'+fileName+'.png';
 	const path='./tmp/pptx-export/'+pdfFolderName+'/'+fileName+'-'+page+'.png';
 	if (!fs.existsSync(path)){
 		const pdfFilePath=await downloadFile('https://app.greenninja.org/getWordDoc?path=/uploads/lessons/'+pdfName);
@@ -360,7 +361,7 @@ router.get('/pdf-image/:pdfName/:page', async(req, res, next)=>{
 			fileName:pdfFolderName
 		});
 	}
-	fs.createReadStream(path).pipe(res);
+	fs.createReadStream(fs.existsSync(path) ? path : noPagePath).pipe(res);
 });
 
 router.ws('/queue-ws', (ws, req) => {
