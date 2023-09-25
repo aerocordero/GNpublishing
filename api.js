@@ -10,6 +10,7 @@ const filesize=require('filesize');
 const nanoid=require('nanoid').nanoid;
 const config = require('./config.json');
 const rimraf = require("rimraf");
+const mysql = require('mysql2/promise');
 
 
 app.use(bodyParser.json());
@@ -26,7 +27,8 @@ const {
 	imgInfoJogPath,
 	downloadFile,
 	convertPdf,
-	convertPptxPdf
+	convertPptxPdf,
+	dbConfig
 } = require('./lib/utils');
 
 let queue=loadQueue();
@@ -45,7 +47,7 @@ const saveCurrentQueue=()=>{
 }
 const onQueueItemsAdded=()=>{
 	socketClients.forEach(client=>{
-		client.send(JSON.stringify({type:'state', queue: queue.filter(item=>!item.hidden)}));
+		client.send(JSON.stringify({type:'status', queue: queue.filter(item=>!item.hidden)}));
 	})
 };
 
@@ -64,34 +66,39 @@ const processQueue=()=>{
 	const run=async()=>{
 		//queue=loadQueue();
 		refreshQueueItems();
-		let nextItem=queue.find(item=>item.state==='pending');
-		const currentItem=queue.find(item=>item.state==='inProgress');
+		let nextItem=queue.find(item=>item.status==='pending');
+		const currentItem=queue.find(item=>item.status==='inProgress');
 		if (currentItem || !nextItem){
 			return;
 		}
 		if (nextItem){
 			const getPdfFileName={
-				workbook: (item, model, unit)=>'Workbook '+model.display_name+' Unit '+unit.number
+				workbook: (item, model, unit)=>item.params.state.name+' Workbook '+model.display_name+' Unit '+unit.number
 					+(item.params.language && item.params.language==='spanish' ? '(spanish)' : '')
 					+(item.params.type ? ' v'+item.params.type : '')				
 					+(item.params.disableImages ? ' (no images)' : '')	
 					+'.pdf',
-				teacherbook: (item, model, unit)=>'TC '+model.display_name+' Unit '+unit.number
+				teacherbook: (item, model, unit)=>item.params.state.name+' TC '+model.display_name+' Unit '+unit.number
 					+(item.params.disableImages ? ' (no images)' : '')
 					+'.pdf',
 			}
 			const params=nextItem.params;
-			console.log(params);		
+			console.log(params);	
+			const db=params.state.db || 'new';
+			const myPool =  mysql.createPool({
+				...dbConfig,
+				database: 'greenninja_'+db
+			});	
 		
 			const model=(await dbQuery([
 				'SELECT * FROM `model` t',
 				'WHERE t.`model_id` = ?'
-			], [params.model]))[0];
+			], [params.model], myPool))[0];
 	
 			const unit=(await dbQuery([
 				'SELECT * FROM `unit` t',
 				'WHERE t.`unit_id` = ?'
-			], [params.unit]))[0];
+			], [params.unit], myPool))[0];
 			unit.number=model.unit_id.split(',').indexOf(unit.unit_id+"")+1;
 			nextItem.fileName=getPdfFileName[nextItem.type](nextItem, model, unit);
 	
@@ -100,7 +107,7 @@ const processQueue=()=>{
 				fs.unlinkSync('./'+destFilePath);
 			}			
 		
-			const cmd='node '+nextItem.type+'.js --model='+params.model+' --unit='+params.unit
+			const cmd='node '+nextItem.type+'.js --model='+params.model+' --unit='+params.unit+' --db='+params.state.db
 				+(params.type===1 ? ' --first-export' : '')
 				//+(params.flushCache ? ' --flush-cache' : '')
 				+(params.language ? ' --language="'+params.language+'"' : '')
@@ -110,18 +117,18 @@ const processQueue=()=>{
 				+(params.disableImages ? ' --disable-images' : '');
 			console.log(cmd);
 		
-			nextItem.state='inProgress';
+			nextItem.status='inProgress';
 			nextItem.hidden=false;
 			saveCurrentQueue();		
 			onQueueItemUpdated(nextItem);
 			const childProcess=child.exec(cmd, {maxBuffer:10240 * 1024, timeout:0}, (err)=>{
 				refreshQueueItems();				
 				if (err || !fs.existsSync('./'+destFilePath)){
-					nextItem.state='error';
+					nextItem.status='error';
 					nextItem.error=err;
 				}
 				else {
-					nextItem.state='success';
+					nextItem.status='success';
 				}				
 				console.log(nextItem);
 				onQueueItemUpdated(nextItem);
@@ -151,10 +158,10 @@ const processQueue=()=>{
 			childProcess.stderr.on('end', function(){ stderrEnded = true; tryClosingStderr(); });
 			/*
 			if (fs.existsSync('./'+destFilePath)){
-				nextItem.state='success';
+				nextItem.status='success';
 			}
 			else {
-				nextItem.state='error';
+				nextItem.status='error';
 			}*/
 			
 			
@@ -162,13 +169,24 @@ const processQueue=()=>{
 	}
 	run();
 }
+//apiQuery
+
+//apiQuery
+router.get('/gnApiQuery', async(req, res, next)=>{
+	
+});
 
 router.get('/units', async(req, res, next)=>{
+	const db=req.query.db || 'new';
+	const myPool =  mysql.createPool({
+		...dbConfig,
+		database: 'greenninja_'+db
+	  });
 	const modelIds=[11, 9, 19];
 	let models=(await dbQuery([
 		'SELECT model_id, display_name, unit_id FROM `model` t',
 		'WHERE t.`model_id` IN ('+modelIds.join(',')+')'
-	], []));
+	], [], myPool));
 	//console.log(models);
 	models=_.sortBy(models, m=>m.display_name);
 	
@@ -176,7 +194,7 @@ router.get('/units', async(req, res, next)=>{
 		model.units=(await dbQuery([
 			'SELECT unit_id FROM `unit` t',
 			'WHERE t.`unit_id` IN ('+model.unit_id+')'
-		], []));
+		], [], myPool));
 		model.units.forEach(unit=>{
 			unit.number=model.unit_id.split(',').indexOf(unit.unit_id+"")+1;
 			unit.model_id=model.model_id;
@@ -203,7 +221,7 @@ router.get('/res-files', async(req, res, next)=>{
 		const ext=nameArr.splice(nameArr.length-1, 1)[0];
 		if (ext==='pdf'){
 			const qItem=_.sortBy(queue, q=>-q.updatedAt).find(q=>q.fileName===file);
-			if (!qItem || (qItem && qItem.state!=='error')){
+			if (!qItem || (qItem && qItem.status!=='error')){
 				pdfs.push(_.extend(_.cloneDeep(qItem),{
 					fileName: file,
 					updatedAt: stats.mtime,
@@ -294,8 +312,10 @@ router.post('/queue', bodyParser.json(), async(req, res, next)=>{
 		return {
 			id: nanoid(),
 			type: req.body.type,
+			db: item.state.db,
+			state: item.state.id,
 			params: item,
-			state: 'pending',
+			status: 'pending',
 			createdAt: new Date().valueOf(),
 			updatedAt: new Date().valueOf(),
 		}
@@ -314,7 +334,7 @@ router.post('/queue', bodyParser.json(), async(req, res, next)=>{
 router.delete('/queue/:id', async(req, res, next)=>{
 	console.log(req.params);
 	const item=queue.find(item=>item.id===req.params.id);
-	if (item && item.state!=='inProgress'){
+	if (item && item.status!=='inProgress'){
 		if (item.pid){
 			shell.exec('kill '+item.pid);
 			onQueueItemUpdated(item);
@@ -324,7 +344,7 @@ router.delete('/queue/:id', async(req, res, next)=>{
 		}
 		saveCurrentQueue();	
 	}	
-	else if (item && item.state==='inProgress') {
+	else if (item && item.status==='inProgress') {
 		console.log('Cancel request', item);
 		if (item.pid){
 			shell.exec('kill '+item.pid);
@@ -339,7 +359,7 @@ router.get('/queue/:id', async(req, res, next)=>{
 	const item=queue.find(item=>item.id===req.params.id);
 	//logStreams[nextItem.id]={stdoutStream, stderrStream}
 
-	if (logStreams[item.id] && item.state==='inProgress'){
+	if (logStreams[item.id] && item.status==='inProgress'){
 		logStreams[item.id].stdoutStream.pipe(res);
 	}
 	else if (item && fs.existsSync('./logs/'+item.id+'_log.txt')) {
@@ -379,7 +399,7 @@ router.ws('/queue-ws', (ws, req) => {
  
 module.exports = router;
 
-queue.filter(item=>item.state==='inProgress').forEach(item=>item.state='error');
+queue.filter(item=>item.status==='inProgress').forEach(item=>item.status='error');
 saveCurrentQueue();
 
 processQueue();

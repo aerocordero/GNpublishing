@@ -50,10 +50,15 @@ async function main() {
 		GDFolderSync,
 		saveQueue,
 		loadQueue,
-		convertPptxPdf
+		convertPptxPdf,
+		setDBName
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
+
+	if (argv.db){
+		setDBName('greenninja_'+argv.db)
+	}
 	
 	if (argv.flushCache){
 		flushCache();
@@ -319,7 +324,7 @@ rc_ques_key_pdf_worksheet_id
 	*/
 
 	let chapters=(await dbQuery([
-		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet FROM `chapter` t',
+		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_pdf_ws.google_drive_object as rc_pdf_google_drive_object, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_pdf.google_drive_object as rc_ques_pdf_google_drive_object, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet, rc_ques_key_pdf.google_drive_object as rc_ques_key_pdf_google_drive_object FROM `chapter` t',
 		'LEFT OUTER JOIN worksheet rc_pdf_ws ON rc_pdf_ws.worksheet_id=t.rc_pdf_worksheet_id',
 		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_ques_pdf.worksheet_id=t.rc_ques_pdf_worksheet_id',
 		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_ques_key_pdf.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
@@ -1182,104 +1187,107 @@ rc_ques_key_pdf_worksheet_id
 		
 		const coverObject=coverCSV.find(obj=>obj['Grade/Unit']==='G'+model.number+'U'+unit.number);
 		console.log('coverObject', coverObject);
-		blocks.push({
-			type: 'custom',
-			drawFn: (doc)=>{
-				doc
-				.font(fonts.medium)
-				.fontSize(22)
-				.fill(colors.unitTitle)
-				.text(`${translate('Grade')} ${model.number} ${translate('Unit')} ${unit.number}`, textIdents.left, 70, {
-					width: PDFUtils.textWidth,
-					align: 'center'
-				});
+		if (coverObject){
+			blocks.push({
+				type: 'custom',
+				drawFn: (doc)=>{
+					doc
+					.font(fonts.medium)
+					.fontSize(22)
+					.fill(colors.unitTitle)
+					.text(`${translate('Grade')} ${model.number} ${translate('Unit')} ${unit.number}`, textIdents.left, 70, {
+						width: PDFUtils.textWidth,
+						align: 'center'
+					});
+					
+					doc
+					.font(fonts.bold)
+					.fontSize(36)
+					.fill(colors.unitTitle)
+					.text(translate(unit.name), textIdents.left+40, 105, {
+						width: PDFUtils.textWidth-80,
+						align: 'center'
+					});
+	
+					doc
+					.font(fonts.regular)
+					.fontSize(18)
+					.fill('black')
+					.text(translate('Student Workbook'), textIdents.left, doc.y+15, {
+						width: PDFUtils.textWidth,
+						align: 'center',
+						characterSpacing: 3.5
+					});
+	
+					doc				
+					.roundedRect(textIdents.left+50, doc.y+20, 420, 2, 5)
+					.fill(colors.unitTitle);
+	
+					const maxQuteLength=160;
+					let quoteFontSize=22;
+					maxQuteLength-22
+					if (coverObject.Quotes.length>maxQuteLength){
+						quoteFontSize-=(coverObject.Quotes.length-maxQuteLength)/12
+					}
+	
+					doc
+					.font(fontsHeading.italic)
+					.fontSize(quoteFontSize)
+					.fill('black')
+					.text(coverObject.Quotes, textIdents.left+120, doc.y+35, {
+						width: 320,
+						align: 'left',
+						characterSpacing: 1,
+						lineGap: 3,
+					});
+	
+					doc
+					.font(fonts.bold)
+					.fontSize(12)
+					.fill('black')
+					.text('by '+coverObject.People, textIdents.left+270, doc.y+35, {
+						width: 220,
+						align: 'left',
+						//characterSpacing: 1
+					});
+	
+					doc
+					.font(fonts.regular)
+					.fontSize(12)
+					.fill('black')
+					.text(coverObject['Occupation/Title'], textIdents.left+270, doc.y+3, {
+						width: 220,
+						align: 'left',
+						//characterSpacing: 1
+					});
+	
+					doc				
+					.roundedRect(textIdents.left+50, doc.y+30, 420, 2, 5)
+					.fill(colors.unitTitle)
+					.save();
+	
+					doc
+					.font(fonts.regular)
+					.fontSize(11)
+					.fill('black')
+					.text(coverObject['Bio Info'], textIdents.left+60, doc.y+50, {
+						width: PDFUtils.textWidth-130,
+						align: 'left',
+						lineGap: 2,
+						//characterSpacing: 0.5
+					});
+	
+					doc
+					.image('images/gn_logo.png', 250, 690, {
+					  width: 100,
+					  align: 'center',
+					  valign: 'center'
+					});
+				},
 				
-				doc
-				.font(fonts.bold)
-				.fontSize(36)
-				.fill(colors.unitTitle)
-				.text(translate(unit.name), textIdents.left+40, 105, {
-					width: PDFUtils.textWidth-80,
-					align: 'center'
-				});
-
-				doc
-				.font(fonts.regular)
-				.fontSize(18)
-				.fill('black')
-				.text(translate('Student Workbook'), textIdents.left, doc.y+15, {
-					width: PDFUtils.textWidth,
-					align: 'center',
-					characterSpacing: 3.5
-				});
-
-				doc				
-				.roundedRect(textIdents.left+50, doc.y+20, 420, 2, 5)
-				.fill(colors.unitTitle);
-
-				const maxQuteLength=160;
-				let quoteFontSize=22;
-				maxQuteLength-22
-				if (coverObject.Quotes.length>maxQuteLength){
-					quoteFontSize-=(coverObject.Quotes.length-maxQuteLength)/12
-				}
-
-				doc
-				.font(fontsHeading.italic)
-				.fontSize(quoteFontSize)
-				.fill('black')
-				.text(coverObject.Quotes, textIdents.left+120, doc.y+35, {
-					width: 320,
-					align: 'left',
-					characterSpacing: 1,
-					lineGap: 3,
-				});
-
-				doc
-				.font(fonts.bold)
-				.fontSize(12)
-				.fill('black')
-				.text('by '+coverObject.People, textIdents.left+270, doc.y+35, {
-					width: 220,
-					align: 'left',
-					//characterSpacing: 1
-				});
-
-				doc
-				.font(fonts.regular)
-				.fontSize(12)
-				.fill('black')
-				.text(coverObject['Occupation/Title'], textIdents.left+270, doc.y+3, {
-					width: 220,
-					align: 'left',
-					//characterSpacing: 1
-				});
-
-				doc				
-				.roundedRect(textIdents.left+50, doc.y+30, 420, 2, 5)
-				.fill(colors.unitTitle)
-				.save();
-
-				doc
-				.font(fonts.regular)
-				.fontSize(11)
-				.fill('black')
-				.text(coverObject['Bio Info'], textIdents.left+60, doc.y+50, {
-					width: PDFUtils.textWidth-130,
-					align: 'left',
-					lineGap: 2,
-					//characterSpacing: 0.5
-				});
-
-				doc
-				.image('images/gn_logo.png', 250, 690, {
-				  width: 100,
-				  align: 'center',
-				  valign: 'center'
-				});
-			},
-			
-		});
+			});
+		}
+		
 		
 		/*
 		blocks.push({
@@ -1671,11 +1679,13 @@ rc_ques_key_pdf_worksheet_id
 			[
 				{
 				  pdf:'rc_pdf_worksheet',
+				  gdrive:'rc_pdf_google_drive_object',
 				  title: translate('Reading'), //'Reading for Lessons '+chapter.lessonSequence,
 				  spanishCSVcolumn: 'Reading link',
 				},
 				{
 				  pdf: 'rc_ques_pdf_worksheet',
+				  gdrive:'rc_ques_pdf_google_drive_object',
 				  title: translate('Reading Questions'), //'Reading Questions for Lessons '+chapter.lessonSequence
 				  spanishCSVcolumn: 'Reading Question link',
 				},
@@ -1685,7 +1695,13 @@ rc_ques_key_pdf_worksheet_id
 				  title: chapter.name && 0 ? chapter.name+' reading questions key' : 'Reading Questions key for Lessons '+chapter.lessonSequence,
 				  spanishCSVcolumn: 'Reading Question Key Link',
 				},*/
-			].forEach(({pdf, title, spanishCSVcolumn})=>{
+			].forEach(({pdf, title, spanishCSVcolumn, gdrive})=>{
+				if (chapter[gdrive]){
+					const obj=JSON.parse(chapter[gdrive]);
+					if (obj.exportLinks['application/pdf']){
+						chapter[pdf]=obj.exportLinks['application/pdf'];
+					}
+				}
 				if (chapter[pdf]){
 					if (languageId===2){
 						const row=spanishRC.find(item=>{
