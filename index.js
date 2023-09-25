@@ -119,6 +119,8 @@ app.use('/workbook', async(req, res, next)=>{
 */
 
 app.use('/', express.static('./public'));
+app.use('/ca*', express.static('./public'));
+app.use('/tx*', express.static('./public'));
 app.use('/tc', express.static('./public'));
 app.use('/workbook', express.static('./public'));
 app.use('/files', express.static('./public'));

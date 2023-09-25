@@ -38,10 +38,15 @@ async function main() {
 		saveQueue,
 		arrayUnique,
 		convertPptxPdf,
-		parseHtml
+		parseHtml,
+		setDBName
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
+
+	if (argv.db){
+		setDBName('greenninja_'+argv.db)
+	}
 	
 	console.log('Google Drive folder syncing...')
 	//console.log(argv);
