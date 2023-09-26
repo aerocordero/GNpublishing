@@ -587,7 +587,7 @@ rc_ques_key_pdf_worksheet_id
 			.font(fontsHeading.bold)
 			.fontSize(18)
 			.fill(colors.unitTitle)
-			.text(title, pageNum%2===0 ? 80 : 55, (topIdent || 50)-(titleHeight > 24 ? 13 : 0), {
+			.text(title, pageNum%2===0 ? 80 : 55, (topIdent || 50)-(titleHeight > 24 ? 8 : 15), {
 			width: 490,
 			align: 'left'
 		});
@@ -702,7 +702,7 @@ rc_ques_key_pdf_worksheet_id
 					.font(fonts.bold)
 					.fontSize(16)
 					.fillColor(header.color || colors.unitTitle)
-					.text(titleText, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15-(titleHeight > 24 ? 13 : 0), {
+					.text(titleText, textIdents.left+25, ((boxHeight/2)-(boxWidth/2))+15-(titleHeight > 24 ? 10 : 0), {
 						width: contentWidth-75,
 						align: pageNum%2===0 ? 'left' : 'right',
 					});
