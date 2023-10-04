@@ -714,7 +714,7 @@ async function main() {
 	
 	PDFUtils.headerTitles=[
 		{titleLeft: 'Unit Overview', titleRight: '', icon: 'images/icons/Unit Overview.png'},
-		{titleLeft: 'Standards', titleRight: '', icon: 'images/icons/Standards.png'},
+		{titleLeft: 'Standards', titleRight: '', icon: argv.db==='new' ? 'images/icons/Standards.png' : 'images/icons/Standards_texas.png'},
 		{titleLeft: 'Materials', titleRight: '', icon: 'images/icons/Materials.png'},
 		{titleLeft: 'Unit Resources', titleRight: '', icon: 'images/icons/Unit Resources.png'},		
 	];	
@@ -1164,41 +1164,27 @@ async function main() {
 				}
 			},
 		], blocks);
-		
 
-		blocks.push({
-			type: 'h1',
-			value: 'NGSS Standards',
-			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
-			startOnNewPage: true,
-		});
-		blocks.push({
-			type: 'contentsPush',
-			title: 'Standards', 
-			level: 1, 
-			color: colors.black
-		});
-
-		const standardItemsHtml=(items)=>{
+		const standardItemsHtml=(items, level, maxLevel)=>{
 			let html='<ul>';
 			items.forEach(item=>{
-				if (!item.title){
+				if (!item.title && !item.name){
 					return;
 				}
 				html+='<li>';
-				html+=item.title;
-				if (item.items.length){
-					html+=standardItemsHtml(item.items);
+				//html+=(item.title || item.name);			
+				html+=`<strong>${(item.title || item.name)}</strong>: ${item.description}`;	
+				if (item.items.length && level < maxLevel){
+					html+=standardItemsHtml(item.items, level+1, maxLevel);
 				}
 				html+='</li>';
 			})			
-			html+='</ul>';
+			html+='<br/></ul>';
 			return html;			
 		}
-
 		const renderStandardItems=async(items)=>{
-			const html=standardItemsHtml(items);
-			//console.log({html});
+			const html=standardItemsHtml(items, 0, 1);
+			console.log({html});
 			await asyncForEach(parse(html).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {
 					ident: 0,
@@ -1206,6 +1192,57 @@ async function main() {
 				}, blocks);
 			});	
 		}
+		
+		if (unit.ngss_description){
+			blocks.push({
+				type: 'h1',
+				value: 'NGSS Standards',
+				headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
+				startOnNewPage: true,
+			});
+		}
+		const texasStandardKeys=['teks', 'elps'];
+		const texasStandards=texasStandardKeys.map(key=>unit.standards.find(st=>st.name===key)).filter(st=>st);
+		if (texasStandards.length){
+			await asyncForEach(texasStandards, async standard=>{
+				const index=texasStandards.indexOf(standard);
+				blocks.push({
+					type: 'h1',
+					value: standard.title,
+					headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
+					startOnNewPage: true,
+					color: colors.green
+				});
+				if (index===0){
+					blocks.push({
+						type: 'contentsPush',
+						title: 'Standards', 
+						level: 1, 
+						color: colors.black
+					});
+				}
+				//await renderStandardItems(standard.items);
+				let html=`<p>${standard.description || ''}<br/></p>`;
+				standard.items.forEach(item=>{
+					html+=`<p><span style="color:${colors.greenNinja}; pdfFontSize:12; pdfMarginBottom:10"><strong>${(item.title || item.name)}</strong></span> - ${item.description.trim()}</p>`;
+					html+=standardItemsHtml(item.items, 1, 1);
+				})		
+				//html+='<p><br /> .</p>';
+				await asyncForEach(parse(html).childNodes, async (el)=>{
+					await parseHTMLIntoBlocks(el, {
+						ident: 0,
+						brFontSize: 10
+					}, blocks);
+				});				
+				console.log('stItems', standard.items);
+			})
+			
+		}		
+		//return;
+
+		
+
+		
 		
 		await processObjectFieldsIntoBlocks(unit, [
 			{title: '', field:'ngss_description'},
@@ -1231,7 +1268,7 @@ async function main() {
 				}, blocks);
 			});
 		}
-		const otherStandards=unit.orphanStandards.filter(st=>st.items.length);
+		const otherStandards=unit.orphanStandards.filter(st=>st.items.length && texasStandardKeys.indexOf(st.name)<0);
 
 		if (otherStandards.length){
 			blocks.push({
@@ -1353,149 +1390,153 @@ async function main() {
 		}	
 		
 		
-		
-				
-		blocks.push({
-			type: 'h1',
-			value: 'NGSS LESSON MAPPING LEGEND',
-			headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
-			startOnNewPage: true
-		});
-		
-		await processObjectFieldsIntoBlocks(customPages.NgssLessonMapping, [
-			{title: '', field:'intro', 
-				params: {
-					
-				}
-			},
-			{title: 'Performance Expectation (PE)', field:'pe', 
-				headerType: 'h3',
-				params: {
-					marginTop: 0.6,
-					titleColor: colors.green,
-					lineGap: 0.4,
-					marginBottom: 0.0001,
-				}
-			},
-			{title: 'Science and Engineering Practice (SEP)', field:'sep', 
-				headerType: 'h3',
-				params: {
-					marginTop: 0.6,
-					marginBottom: 0.0001,
-					titleColor: colors.green,
-					lineGap: 0.4,
-					//addSpaceAfter: false
-				}
-			},
-			{title: 'Crosscutting Concepts (CCC)', field:'ccc', 
-				headerType: 'h3',
-				params: {
-					marginTop: 0.6,
-					titleColor: colors.green,
-					lineGap: 0.4,
-					marginBottom: 0.0001,
+
+		if (['pe', 'sep', 'dci', 'ccc', 'epc'].find(key=>unit.standards.find(st=>st.name===key && st.items.length))){
+
+			blocks.push({
+				type: 'h1',
+				value: 'NGSS LESSON MAPPING LEGEND',
+				headerTitle: PDFUtils.headerTitles.find(t=>t.titleLeft==='Standards'),
+				startOnNewPage: true
+			});
+			
+			await processObjectFieldsIntoBlocks(customPages.NgssLessonMapping, [
+				{title: '', field:'intro', 
+					params: {
+						
+					}
 				},
-				
-			},					
-		], blocks);		
+				{title: 'Performance Expectation (PE)', field:'pe', 
+					headerType: 'h3',
+					params: {
+						marginTop: 0.6,
+						titleColor: colors.green,
+						lineGap: 0.4,
+						marginBottom: 0.0001,
+					}
+				},
+				{title: 'Science and Engineering Practice (SEP)', field:'sep', 
+					headerType: 'h3',
+					params: {
+						marginTop: 0.6,
+						marginBottom: 0.0001,
+						titleColor: colors.green,
+						lineGap: 0.4,
+						//addSpaceAfter: false
+					}
+				},
+				{title: 'Crosscutting Concepts (CCC)', field:'ccc', 
+					headerType: 'h3',
+					params: {
+						marginTop: 0.6,
+						titleColor: colors.green,
+						lineGap: 0.4,
+						marginBottom: 0.0001,
+					},
+					
+				},					
+			], blocks);		
+	
+			
+			blocks.push({
+				type: 'pageBreak',
+			});
+			
+			blocks.push({
+				type: 'p',
+				value: 'The mapping below outlines how our lessons have aligned to California’s NGSS and EP&Cs.',
+				isHtml: false
+			});
+			blocks.push({
+				type: 'p',
+				value: '',
+				isHtml: false
+			});
+			
+			//		
+			
+			blocks.push({
+				type: 'table',
+				//hideHeaders: true,
+				headerColor: colors.lessonGreen,
+				columns: [
+					{
+						id: 'lesson',
+						header: model.display_name+' Unit '+unit.number,
+						width: 55,
+					},
+					...[
+					{
+						id: 'pe',
+						header: 'PE',
+						align: 'left',
+						width: 110,
+					},
+					{
+						id: 'sep',
+						header: 'SEP',
+						align: 'left',
+						width: 81,
+					},
+					{
+						id: 'dci',
+						header: 'DCI',
+						align: 'left',
+						width: 81,
+					},
+					{
+						id: 'ccc',
+						header: 'CCC',
+						align: 'left',
+						width: 81,
+					},
+					{
+						id: 'epc',
+						header: 'EP&C',
+						align: 'left',
+						width: 81,
+					}].filter(header=>unit.standards.find(st=>st.name===header.id && st.items.length))
+				],
+				data: lessons.map(lesson=>{
+					lesson.ep=[];
+					
+					const progressions={
+						Introductory:'Intro',
+						Developmental:'Dev',
+						Assessment:'Assess',
+						Checkpoint:'Check',
+						'Summative Assessment': 'Assess',
+						'Culminating Experience':'Culm Exp',
+						'Culminating-Experience':'Culm Exp',
+					};
+					const obj={
+						lesson: 'Lesson '+lesson.number,
+					};
+					lesson.allStandards.forEach(standard=>{
+						obj[standard.name]=standard.items.map(item=>{
+							let title=item.name || item.title;
+							if (item.progressions?.length){
+								title+=' ('+item.progressions.map(pr=>progressions[pr.name] || pr.name).join(', ')+')';
+							}
+							if (item.items?.filter(sub=>sub.title).length){
+								title+=' (';
+								title+=item.items.filter(sub=>sub.title).map(subItem=>{
+									return (subItem.name || subItem.title).replace('Concept ', '').replace('.', '');
+								}).join(', ');							
+								title+=')';
+							}	
+							if (standard.name==='ccc' && item.items?.filter(sub=>sub.name).length){
+								title=item.items[0].name;
+							}
+							return title;
+						}).join(', ');
+					});
+					return obj;				
+				})
+			})
+		}
 
 		
-		blocks.push({
-			type: 'pageBreak',
-		});
-		
-		blocks.push({
-			type: 'p',
-			value: 'The mapping below outlines how our lessons have aligned to California’s NGSS and EP&Cs.',
-			isHtml: false
-		});
-		blocks.push({
-			type: 'p',
-			value: '',
-			isHtml: false
-		});
-		
-		//		
-		
-		blocks.push({
-			type: 'table',
-			//hideHeaders: true,
-			headerColor: colors.lessonGreen,
-			columns: [
-				{
-					id: 'lesson',
-					header: model.display_name+' Unit '+unit.number,
-					width: 55,
-				},
-				...[
-				{
-					id: 'pe',
-					header: 'PE',
-					align: 'left',
-					width: 110,
-				},
-				{
-					id: 'sep',
-					header: 'SEP',
-					align: 'left',
-					width: 81,
-				},
-				{
-					id: 'dci',
-					header: 'DCI',
-					align: 'left',
-					width: 81,
-				},
-				{
-					id: 'ccc',
-					header: 'CCC',
-					align: 'left',
-					width: 81,
-				},
-				{
-					id: 'epc',
-					header: 'EP&C',
-					align: 'left',
-					width: 81,
-				}].filter(header=>unit.standards.find(st=>st.name===header.id && st.items.length))
-			],
-			data: lessons.map(lesson=>{
-				lesson.ep=[];
-				
-				const progressions={
-					Introductory:'Intro',
-					Developmental:'Dev',
-					Assessment:'Assess',
-					Checkpoint:'Check',
-					'Summative Assessment': 'Assess',
-					'Culminating Experience':'Culm Exp',
-					'Culminating-Experience':'Culm Exp',
-				};
-				const obj={
-					lesson: 'Lesson '+lesson.number,
-				};
-				lesson.allStandards.forEach(standard=>{
-					obj[standard.name]=standard.items.map(item=>{
-						let title=item.name || item.title;
-						if (item.progressions?.length){
-							title+=' ('+item.progressions.map(pr=>progressions[pr.name] || pr.name).join(', ')+')';
-						}
-						if (item.items?.filter(sub=>sub.title).length){
-							title+=' (';
-							title+=item.items.filter(sub=>sub.title).map(subItem=>{
-								return (subItem.name || subItem.title).replace('Concept ', '').replace('.', '');
-							}).join(', ');							
-							title+=')';
-						}	
-						if (standard.name==='ccc' && item.items?.filter(sub=>sub.name).length){
-							title=item.items[0].name;
-						}
-						return title;
-					}).join(', ');
-				});
-				return obj;				
-			})
-		})
 		
 		
 	
