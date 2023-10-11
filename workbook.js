@@ -1181,7 +1181,7 @@ rc_ques_key_pdf_worksheet_id
 			x:10,
 			y:-1
 		});	
-		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
+		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(argv.db==='texas' ? 'TX - ' : '')+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
 		const spanishRC=await csv().fromFile('Spanish Reading Companion Upload - Sheet1.csv');
 		const spanishChapterDesc=await csv().fromFile('chapter_descriptions_spanish.csv');
 		
