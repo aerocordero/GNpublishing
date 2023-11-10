@@ -2579,8 +2579,9 @@ async function main() {
 					{title: 'Lesson Plan', field:'sequence', 
 						headerType:'h1',
 						params: {
-							paddingBottom: 0.2
-						},
+							paddingBottom: 0.2,
+							startOnNewPageIfYisMoreThan: 600,
+						},						
 					},
 				], blocks);
 				blocks.push({
