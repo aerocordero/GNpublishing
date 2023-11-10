@@ -2260,14 +2260,14 @@ async function main() {
 								header: 'File Preview',
 								width: 155,
 								renderer: function (tb, data) {								
-									return data.page || (!hasStudenIcon(data) ? 'Access Online' : '');
+									return data.page || (!hasStudenIcon(data) ? 'Access Online' : 'Access Online');
 								},
 								cellAdded: (tb, data, cell, pos)=>{
 									const doc=tb.pdf;
-									const textWidth=doc.widthOfString(data.page || '');
+									const textWidth=doc.widthOfString(data.page || 'Access Online');
 									let x=pos.x+textWidth;
 									if (!data.page){
-										x-=4;
+										//x-=4;
 									}
 									//console.log(pos);
 									if (data.isOnline){
