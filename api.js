@@ -396,6 +396,18 @@ router.ws('/queue-ws', (ws, req) => {
     });
 	console.log('socket', req.testing);
 });
+
+router.get('/item-bank', async(req, res, next)=>{
+	const {grade, unit, chapter=''}=req.query;
+	
+	const fileName=`item-bank_${grade}.${unit}${chapter ? '.'+chapter : ''}.pdf`	
+	if (!fs.existsSync('./item-bank/'+fileName)){
+		shell.exec(`node item-bank-output.js --grade-num=${grade}  --unit-num=${unit}  --chapter-num=${chapter} `);
+	}
+	console.log(`node item-bank-output.js --grade-num=${grade}  --unit-num=${unit}  --chapter-num=${chapter} `);
+	return res.sendFile(__dirname+`/item-bank/${fileName}`);
+
+});
  
 module.exports = router;
 
