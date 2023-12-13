@@ -373,16 +373,10 @@ async function main() {
 
 		
 	})	
-	if (!chapterNum && gradeNum && unitNum){
-		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.pdf';
-		console.log('Generating publication PDF '+pdfFileName+'...');
-		PDFUtils.generatePdf(pdfFileName, blocks, true, false);
-	}
-	if (chapterNum && gradeNum && unitNum && !blocks.length){
-		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.'+chapterNum+'.pdf';
-		console.log('Generating publication PDF '+pdfFileName+'...');
-
-		const docTitle=`Grade ${gradeNum} Unit ${unitNum} Chapter ${chapterNum}`;
+	let missingChapterData=false;
+	if (!blocks.length){		
+		missingChapterData=true;
+		const docTitle=`Grade ${gradeNum} Unit ${unitNum} ${chapterNum ? 'Chapter '+chapterNum: ''}`;
 
 		blocks.push({
 			type: 'h1',
@@ -396,7 +390,17 @@ async function main() {
 		blocks.push({
 			type: 'setFooter',
 			leftText: docTitle
-		});	
+		});
+		
+	}
+	if (!chapterNum && gradeNum && unitNum){
+		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.pdf';
+		console.log('Generating publication PDF '+pdfFileName+'...');
+		PDFUtils.generatePdf(pdfFileName, blocks, true, false);
+	}
+	if (chapterNum && gradeNum && unitNum && missingChapterData){
+		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.'+chapterNum+'.pdf';
+		console.log('Generating publication PDF '+pdfFileName+'...');		
 
 		PDFUtils.generatePdf(pdfFileName, blocks, true, false);
 	}		
