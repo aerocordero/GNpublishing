@@ -377,6 +377,28 @@ async function main() {
 		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.pdf';
 		console.log('Generating publication PDF '+pdfFileName+'...');
 		PDFUtils.generatePdf(pdfFileName, blocks, true, false);
+	}
+	if (chapterNum && gradeNum && unitNum && !blocks.length){
+		const pdfFileName='item-bank/item-bank_'+gradeNum+'.'+unitNum+'.'+chapterNum+'.pdf';
+		console.log('Generating publication PDF '+pdfFileName+'...');
+
+		const docTitle=`Grade ${gradeNum} Unit ${unitNum} Chapter ${chapterNum}`;
+
+		blocks.push({
+			type: 'h1',
+			headerTitle: {titleLeft: docTitle},
+			//startOnRightSide: true,
+			value: '',
+			//color: colors.unitTitle,
+			startOnNewPage: true,
+		});			
+		
+		blocks.push({
+			type: 'setFooter',
+			leftText: docTitle
+		});	
+
+		PDFUtils.generatePdf(pdfFileName, blocks, true, false);
 	}		
 	
 }
