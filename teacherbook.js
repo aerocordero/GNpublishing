@@ -39,14 +39,16 @@ async function main() {
 		arrayUnique,
 		convertPptxPdf,
 		parseHtml,
-		setDBName
+		setDBName,
+		gnSubDomains,
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
 
 	if (argv.db){
 		setDBName('greenninja_'+argv.db)
-	}
+	}	
+	const gnAppUrl='https://'+gnSubDomains[argv.db]+'.greenninja.org';
 	
 	console.log('Google Drive folder syncing...')
 	//console.log(argv);
@@ -122,11 +124,16 @@ async function main() {
 	], [modelId]));
 	
 	const unit=(await dbQuery([
-		'SELECT * FROM `unit` t',
+		'SELECT *, f.s3_filename as thumbFileName  FROM `unit` t',
+		'LEFT OUTER JOIN file f ON f.id = t.thumbnail_file_id ',		
 		'WHERE t.`unit_id` = ?'
 	], [unitId]))[0];
 	unit.files=[];
 	unit.number=model.unit_id.split(',').indexOf(unit.unit_id+"")+1;
+	if (unit.thumbFileName){
+		unit.thumbnail=gnAppUrl+'/getWordDoc?path=/uploads/lessons/'+unit.thumbFileName;
+	}
+	console.log(unit);
 	
 	const allUnits=(await dbQuery([
 		'SELECT unit_id, lessons FROM `unit` t',
@@ -761,13 +768,89 @@ async function main() {
 			type: 'pageBreak',
 		});	
 		//console.log('coverIndex', coverIndex, unit.number);
+		/*
 		blocks.push({
 			type: 'image',
 			value: customPages.TeacherHighlight['tc-highlight-pages'][coverIndex].imagePath,
 			width: 610,
 			x:-1,
 			y:-1
+		});	*/
+		
+		
+		//const imgInfo=await getImgInfoAndRotate(path);
+		//const imageWidth=contentWidth/2.5;
+		
+		//let imageHeight=getImgPropheight(imgInfo, imageWidth, true);
+
+		const unitImagePath=await downloadFile(unit.thumbnail);
+		blocks.push({ //Dynamic cover
+			type: 'custom',
+			drawFn: (doc)=>{
+							
+				
+				const iconWidth=48.5;
+				const width=contentWidth-90;
+				const leftIdent=textIdents.left+(iconWidth/2);				
+				
+				//doc.y+=10;
+				let y=60;
+
+				doc
+					.font(fonts.bold)
+					.fontSize(30)
+					.fill('black')
+					.text(`${model.display_name} Unit ${unit.number}`, textIdents.left-30, y, {
+						width: contentWidth,
+						align: 'center'
+					});
+
+				doc
+					.font(fonts.bold)
+					.fontSize(30)
+					.fill('black')
+					.text(`${unit.name}`, textIdents.left-30, doc.y+5, {
+						width: contentWidth,
+						align: 'center'
+					});
+
+				doc
+					.font(fonts.regular)
+					.fontSize(20)
+					.fill('black')
+					.text(`Teacher Companion`, textIdents.left-30, doc.y+10, {
+						width: contentWidth,
+						align: 'center'
+					});
+				
+				doc
+					.moveTo(textIdents.left+35, doc.y+20)
+					//.lineTo(50, 40)
+					.lineTo(textIdents.left+contentWidth-95, doc.y+20)
+					.lineWidth(4)
+					.stroke(colors.brown);
+				
+				doc.image(unitImagePath, 35, 235, {
+					width: contentWidth,
+				});					
+			
+				doc
+				.moveTo(textIdents.left+35, 660)
+				//.lineTo(50, 40)
+				.lineTo(textIdents.left+contentWidth-95, 660)
+				.lineWidth(4)
+				.stroke(colors.brown);
+
+				doc
+					.image('images/gn_logo.png', 250, 690, {
+					  width: 100,
+					  align: 'center',
+					  valign: 'center'
+					});
+				
+			}
 		});	
+
 		//console.log(customPages);
 		await asyncForEach(['Dear-Educator','The-Green-Ninja-Approach','How-to-Teach-with-Green-Ninja'], async fileName=>{
 
@@ -789,7 +872,7 @@ async function main() {
 				
 			});
 		})
-		//return;
+		
 		/*
 		blocks.push({
 			type: 'h1',
