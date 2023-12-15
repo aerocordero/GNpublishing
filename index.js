@@ -74,7 +74,13 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use('/result', express.static('./result'));
+//app.use('/result', express.static('./result'));
+
+app.get('/result/:fileName', function(req, res){
+	const {fileName}=req.params
+	const file = `${__dirname}/result/${fileName}`;
+	res.download(file); 
+  });
 
 app.use('/api', router);
 
