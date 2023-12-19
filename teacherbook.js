@@ -41,6 +41,7 @@ async function main() {
 		parseHtml,
 		setDBName,
 		gnSubDomains,
+		initCustomPagesFromDB,
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -53,7 +54,7 @@ async function main() {
 	console.log('Google Drive folder syncing...')
 	//console.log(argv);
 	if (argv.gdSync || argv.gdSync===undefined){
-		await GDFolderSync('19sNmj1BXrBWV6M2JTL4r-lJp5Iw8n-96', 'teacherbook');
+		//await GDFolderSync('19sNmj1BXrBWV6M2JTL4r-lJp5Iw8n-96', 'teacherbook');
 	}
 	const notFoundWorksheets=[];
 	//config.db.Promise=bluebird;
@@ -110,9 +111,11 @@ async function main() {
 	//return;
 
 	const gdriveFolder=__dirname+'/gdrive/teacherbook';
-	const customPages=await initCustomPages(gdriveFolder);
-	
 	console.log('Loading data...');
+	const customPages=await initCustomPagesFromDB(gdriveFolder);
+	console.log(customPages);
+	//return;
+	
 	
 	const model=(await dbQuery([
 		'SELECT * FROM `model` t',
@@ -461,14 +464,14 @@ async function main() {
 			
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
-				|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
+				//|| customPages['dynamic-content-files'].indexOf(item.fileNameWithExt)>=0
 				//|| item.type==='pptx';
 			item.isOnlineAccess=item.fileName.indexOf('transcript')>0;
 			if (item.isOnline){
-				item.page=customPages.messages.onlineContent;
+				item.page=customPages.onlineContent;
 			}
 			if (item.isOnlineAccess){
-				item.page=customPages.messages.onlineAccessContent;
+				item.page=customPages.onlineAccessContent || 'Access Online';
 			}
 			if (item.originalFileName.indexOf('phenomenon')>=0){
 				console.log('phenomenonWS', item.originalFileName);
@@ -782,8 +785,11 @@ async function main() {
 		//const imageWidth=contentWidth/2.5;
 		
 		//let imageHeight=getImgPropheight(imgInfo, imageWidth, true);
-
-		const unitImagePath=await downloadFile(unit.thumbnail);
+		let unitImagePath;
+		if (unit.thumbnail){
+			unitImagePath=await downloadFile(unit.thumbnail);
+		}
+		
 		blocks.push({ //Dynamic cover
 			type: 'custom',
 			drawFn: (doc)=>{
@@ -830,9 +836,12 @@ async function main() {
 					.lineWidth(4)
 					.stroke(colors.brown);
 				
-				doc.image(unitImagePath, 35, 235, {
-					width: contentWidth,
-				});					
+				if (unitImagePath){
+					doc.image(unitImagePath, 35, 235, {
+						width: contentWidth,
+					});					
+				}
+		
 			
 				doc
 				.moveTo(textIdents.left+35, 660)
@@ -853,8 +862,15 @@ async function main() {
 
 		//console.log(customPages);
 		await asyncForEach(['Dear-Educator','The-Green-Ninja-Approach','How-to-Teach-with-Green-Ninja'], async fileName=>{
+			const file=customPages[fileName];
 
-			const paths=customPages['FrontMatter-2023'][fileName];
+			const RCFile={
+				fileName: file.s3_filename,
+			};
+			console.log(gnAppUrl+file.path);
+			const RCpath=await downloadFile(gnAppUrl+file.path);
+			const paths=await convertPptxPdf(RCpath, RCFile);
+			
 			console.log({fileName, paths});
 			await asyncForEach(paths, async (item)=>{
 				const imgInfo=await imageInfo(item.imagePath);
@@ -1086,17 +1102,21 @@ async function main() {
 			width: 500,
 		});
 		
-		await processObjectFieldsIntoBlocks(customPages.HowUnitWorks, [
-			{title: '', field:'content'},
+		await processObjectFieldsIntoBlocks(customPages, [
+			{title: '', field:'howUnitWorksContent'},
 		], blocks);
 		//console.log('customPages.HowUnitWorks', customPages.HowUnitWorks);
+
+		const RCpath=await downloadFile(gnAppUrl+customPages.howUnitWorksImage.path);		
+
 		blocks.push({
 			type: 'image',
-			value: customPages.HowUnitWorks.image,
+			value: RCpath,
 			width: 380,
 			align: 'center',
 			marginTop: 1
 		});
+		//return;
 		
 		blocks.push({
 			type: 'h1',
@@ -1123,7 +1143,7 @@ async function main() {
 		});
 		//currentLessonId
 		currentLessonIdGlobal=0;
-		await processObjectFieldsIntoBlocks(customPages.DifferentiationLearningSupport, [
+		await processObjectFieldsIntoBlocks(customPages, [
 			{title: 'Differentiation and Special Learning Needs', field:'differentiation', 
 				params: {
 					width: 509,
@@ -1483,13 +1503,13 @@ async function main() {
 				startOnNewPage: true
 			});
 			
-			await processObjectFieldsIntoBlocks(customPages.NgssLessonMapping, [
-				{title: '', field:'intro', 
+			await processObjectFieldsIntoBlocks(customPages, [
+				{title: '', field:'ngss_intro', 
 					params: {
 						
 					}
 				},
-				{title: 'Performance Expectation (PE)', field:'pe', 
+				{title: 'Performance Expectation (PE)', field:'ngss_pe', 
 					headerType: 'h3',
 					params: {
 						marginTop: 0.6,
@@ -1498,7 +1518,7 @@ async function main() {
 						marginBottom: 0.0001,
 					}
 				},
-				{title: 'Science and Engineering Practice (SEP)', field:'sep', 
+				{title: 'Science and Engineering Practice (SEP)', field:'ngss_sep', 
 					headerType: 'h3',
 					params: {
 						marginTop: 0.6,
@@ -1508,7 +1528,7 @@ async function main() {
 						//addSpaceAfter: false
 					}
 				},
-				{title: 'Crosscutting Concepts (CCC)', field:'ccc', 
+				{title: 'Crosscutting Concepts (CCC)', field:'ngss_ccc', 
 					headerType: 'h3',
 					params: {
 						marginTop: 0.6,
@@ -2050,7 +2070,7 @@ async function main() {
 				}*/
 			});
 			//customPages.
-			await asyncForEach(parse(customPages.Chapters['reading-companion']).childNodes, async (el)=>{
+			await asyncForEach(parse(customPages['reading-companion']).childNodes, async (el)=>{
 				await parseHTMLIntoBlocks(el, {}, blocks);
 			});
 
@@ -2146,7 +2166,7 @@ async function main() {
 							}
 							let referenceStr='';
 							if (workshet.isOnline){
-								referenceStr=customPages.messages.onlineContent;
+								referenceStr=customPages.onlineContent;
 							}
 							else if (workshet.inlinePageRef){
 								referenceStr=workshet.inlinePageRef;
@@ -2383,8 +2403,8 @@ async function main() {
 						}
 					});
 					const legenda=[
-						{icon: icons.onlineContent, text: customPages.messages.onlineContentAfterTableDescription, visible: hasOnlineIcons},
-						{icon: icons.studentContent, text: customPages.messages.studentContent, visible: hasStudentIcons},
+						{icon: icons.onlineContent, text: customPages.onlineContentAfterTableDescription, visible: hasOnlineIcons},
+						{icon: icons.studentContent, text: customPages.studentContent, visible: hasStudentIcons},
 					]
 					if (legenda.filter(l=>l.visible).length){
 						blocks.push({

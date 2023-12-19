@@ -51,7 +51,8 @@ async function main() {
 		saveQueue,
 		loadQueue,
 		convertPptxPdf,
-		setDBName
+		setDBName,
+		initCustomPagesFromDB
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -69,7 +70,7 @@ async function main() {
 	console.log('Google Drive folder syncing...')
 	if (argv.gdSync || argv.gdSync===undefined){
 		console.log(customPageFolders[languageId]);
-		await GDFolderSync(customPageFolders[languageId], CPFolderName);
+		//await GDFolderSync(customPageFolders[languageId], CPFolderName);
 	}
 	const queueItemId=argv.queueItemId;
 	const disableImages=argv.disableImages;
@@ -143,10 +144,17 @@ async function main() {
 	//console.log(unit);
 	//return
 	const allMessages={};
-	const customPagesGlobal=await initCustomPages(__dirname+"/gdrive/"+CPFolderName);
+	const customPagesGlobal=await initCustomPagesFromDB();
+	if (languageId >1){
+		Object.keys(customPagesGlobal).forEach(key=>{
+			if (customPagesGlobal[key+'_'+language]){
+				customPagesGlobal[key]=customPagesGlobal[key+'_'+language];
+			}
+		})
+	}
 	const translate=(msg)=>{
 		const translations=customPagesGlobal.translations || {};
-		if (translations[msg]){
+		if (languageId >1 && translations[msg]){
 			return translations[msg];
 		}
 		allMessages[msg]="";
@@ -1160,7 +1168,7 @@ rc_ques_key_pdf_worksheet_id
 		unit.files=[];
 		
 		const coverIndex=((_.keys(gradeColors).indexOf(model.display_name)*6)+unit.number-1);
-		console.log('StudentHighlight',customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex]);
+		//console.log('StudentHighlight',customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex]);
 		
 		blocks.push({
 			type: 'pageBreak',
@@ -1304,7 +1312,7 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 0,
 			title: translate('About This Workbook'),
 			contentsTitle: null,
-			text: customPagesGlobal.About.content,
+			text: customPagesGlobal.wb_about,
 			//textFontSize:12, 
 			color: colors.unitTitle,
 		});
@@ -1333,7 +1341,7 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 1,
 			title: translate('Introduction'),
 			contentsTitle: translate('Section')+' 1: '+translate('Introduction'),
-			text: customPagesGlobal.Section1.content,
+			text: customPagesGlobal.wb_introduction,
 			//textFontSize:12, 
 			color: colors.unitTitle,
 		})
@@ -1609,7 +1617,7 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 2,
 			title: translate('Lesson Files'),
 			contentsTitle: translate('Section')+' 2: '+translate('Lesson Files'),
-			text: customPagesGlobal.Section2.content,
+			text: customPagesGlobal.wb_lessonFiles,
 			color: colors.unitTitle,
 			addNotes: true,
 			notesTitle: translate('Use this space to jot down notes and ideas about solving the Unit Challenge.'),
@@ -1936,7 +1944,7 @@ rc_ques_key_pdf_worksheet_id
 			sectionNum: 3,
 			title: translate('Unit Vocabulary'),
 			contentsTitle: translate('Section')+' 3: '+translate('Unit Vocabulary'),
-			text: customPagesGlobal.Section3.content,
+			text: customPagesGlobal.wb_unitVocabulary,
 			color: colors.unitTitle,
 			addNotes: true,
 			notesTitle: translate('Use this area to jot down chapter-related notes.'),
