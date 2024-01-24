@@ -241,22 +241,46 @@ async function main() {
 	
 	await asyncForEach(lessons, async (lesson)=>{
 		
+		const query=languageId==1 ? [
+			'SELECT t.*, f.*, m.for_student, m.for_print, m.lesson_id',
+			'FROM lesson_worksheet_mapping m',
+			'INNER JOIN worksheet t ON m.worksheet_id = t.worksheet_id',			
+			'LEFT OUTER JOIN file f ON f.id = t.file_id',
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
+		] : [
+			'SELECT child.*, f.*, m.for_student, m.for_print, m.lesson_id',
+			'FROM lesson_worksheet_mapping m',
+			'INNER JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
+			'INNER JOIN worksheet child ON t.worksheet_id = child.version_worksheet_id',
+			'LEFT OUTER JOIN file f ON f.id = child.file_id',
+			'WHERE m.lesson_id = ? AND child.type NOT IN ("rtf", "xlsx", "txt") AND child.worksheet_language_id='+languageId,			
+			'ORDER BY child.worksheet_id DESC',			
+		]
 		
-		lesson.worksheet=await dbQuery([
-			'SELECT *',
-			'FROM lesson_worksheet_mapping m',
-			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
-			'LEFT OUTER JOIN file f ON f.id = t.file_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
-		], [lesson.lesson_id]);
+		lesson.worksheet=await dbQuery(query, [lesson.lesson_id]);
+		
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
-		console.log(lesson.lesson_id, [
-			'SELECT *',
-			'FROM lesson_worksheet_mapping m',
-			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
-			'LEFT OUTER JOIN file f ON f.id = t.file_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
-		].join('\n'));
+		lesson.worksheet=lesson.worksheet.filter(ws=>(ws.type==='pdf' || ws.google_drive_object) && ws.originalname);
+		lesson.worksheet.forEach(ws=>{
+			//console.log(ws.google_drive_object);
+			if (ws.google_drive_object){
+				const obj=_.isObject(ws.google_drive_object) ? ws.google_drive_object : JSON.parse(ws.google_drive_object);
+				if (obj.exportLinks && obj.exportLinks['application/pdf']){
+					ws.path=obj.exportLinks['application/pdf'];
+				}
+			}
+		});
+		lesson.worksheet=_.sortBy(lesson.worksheet.filter(ws=>ws.path), ws=>ws.type==='pdf');
+		/*
+		const groups=_.groupBy(lesson.worksheet, ws=>{
+			return ws.originalname.split('.').slice(0, -1).join('.');
+		})
+		lesson.worksheet=Object.values(groups).map(gr=>gr[0]);*/
+		if (languageId > 1){
+			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.version_worksheet_id)).map(gr=>gr[0]);
+		}
+		
+		console.log(lesson.lesson_id, query.join('\n'));
 		console.log(lesson.worksheet.map(ws=>ws.path));
 		
 		lesson.activityPlan=await dbQuery([
@@ -332,10 +356,29 @@ rc_ques_key_pdf_worksheet_id
 	*/
 
 	let chapters=(await dbQuery([
-		'SELECT t.*, rc_pdf_ws.path as rc_pdf_worksheet, rc_pdf_ws.google_drive_object as rc_pdf_google_drive_object, rc_ques_pdf.path as rc_ques_pdf_worksheet, rc_ques_pdf.google_drive_object as rc_ques_pdf_google_drive_object, rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet, rc_ques_key_pdf.google_drive_object as rc_ques_key_pdf_google_drive_object FROM `chapter` t',
+		`SELECT t.*, 
+			rc_pdf_ws.path as rc_pdf_worksheet, 
+			rc_pdf_ws_spanish.path as rc_pdf_worksheet_spanish, 
+			rc_pdf_ws.google_drive_object as rc_pdf_google_drive_object, 
+			rc_pdf_ws_spanish.google_drive_object as rc_pdf_google_drive_object_spanish, 
+
+			rc_ques_pdf.path as rc_ques_pdf_worksheet, 
+			rc_ques_pdf_spanish.path as rc_ques_pdf_worksheet_spanish, 
+			rc_ques_pdf.google_drive_object as rc_ques_pdf_google_drive_object, 
+			rc_ques_pdf_spanish.google_drive_object as rc_ques_pdf_google_drive_object_spanish, 
+
+			rc_ques_key_pdf.path as rc_ques_key_pdf_worksheet, 
+			rc_ques_key_pdf_spanish.path as rc_ques_key_pdf_worksheet_spanish, 
+			rc_ques_key_pdf.google_drive_object as rc_ques_key_pdf_google_drive_object,
+			rc_ques_key_pdf_spanish.google_drive_object as rc_ques_key_pdf_google_drive_object_spanish
+			
+		FROM chapter t`,
 		'LEFT OUTER JOIN worksheet rc_pdf_ws ON rc_pdf_ws.worksheet_id=t.rc_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_pdf_ws_spanish ON rc_pdf_ws.worksheet_id=rc_pdf_ws_spanish.version_worksheet_id',
 		'LEFT OUTER JOIN worksheet rc_ques_pdf ON rc_ques_pdf.worksheet_id=t.rc_ques_pdf_worksheet_id',
-		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_ques_key_pdf.worksheet_id=t.rc_ques_key_pdf_worksheet_id'
+		'LEFT OUTER JOIN worksheet rc_ques_pdf_spanish ON rc_ques_pdf.worksheet_id=rc_ques_pdf_spanish.version_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_key_pdf ON rc_ques_key_pdf.worksheet_id=t.rc_ques_key_pdf_worksheet_id',
+		'LEFT OUTER JOIN worksheet rc_ques_key_pdf_spanish ON rc_ques_key_pdf.worksheet_id=rc_ques_key_pdf_spanish.version_worksheet_id',
 	], []));
 	let chapterLessonMappings=(await dbQuery([
 		'SELECT * FROM `chapter_lesson_mapping` t',
@@ -1704,22 +1747,17 @@ rc_ques_key_pdf_worksheet_id
 				  spanishCSVcolumn: 'Reading Question Key Link',
 				},*/
 			].forEach(({pdf, title, spanishCSVcolumn, gdrive})=>{
+				if (languageId===2){
+					pdf+='_spanish';
+					gdrive+='_spanish';
+				}
 				if (chapter[gdrive]){
 					const obj=JSON.parse(chapter[gdrive]);
 					if (obj.exportLinks['application/pdf']){
 						chapter[pdf]=obj.exportLinks['application/pdf'];
 					}
 				}
-				if (chapter[pdf]){
-					if (languageId===2){
-						const row=spanishRC.find(item=>{
-							return item.Grade==model.number && item.Unit==unit.number && item.Chapter==chapter.number;
-						})
-						chapter[pdf]=row[spanishCSVcolumn];
-						if (!row){
-							console.log('Not found spanish Reading', chapter.number, model.number, unit.number, chapter.number)
-						}
-					}
+				if (chapter[pdf]){					
 					const pathArr=chapter[pdf].split('/');
 					files.push({
 						chapter,
