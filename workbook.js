@@ -632,13 +632,15 @@ rc_ques_key_pdf_worksheet_id
 				width: 490,
 				align: 'left',
 			});
+			const boxHeight=80;
+			const boxWidth=40;
 		
-
+		//
 		doc
 			.font(fontsHeading.bold)
 			.fontSize(18)
 			.fill(colors.unitTitle)
-			.text(title, pageNum%2===0 ? 80 : 55, (topIdent || 50)-(titleHeight > 24 ? 8 : 15), {
+			.text(title, pageNum%2===0 ? 80 : 55, ((boxHeight/2)-(boxWidth/2))+15-(titleHeight > 24 ? 10 : 0), {
 			width: 490,
 			align: 'left'
 		});
