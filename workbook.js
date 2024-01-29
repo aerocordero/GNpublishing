@@ -1685,8 +1685,8 @@ rc_ques_key_pdf_worksheet_id
 				})
 				//console.log(spanishChapterDesc);
 				
-				chapter.name=chapter.name_spanish || row['Spanish Chapter Name'];// || chapter.name;
-				chapter.description=chapter.student_description_spanish || row['ChapterDescriptionStidentSpanish'];// || chapter.student_description;
+				chapter.name=chapter.name_spanish || row['Spanish Chapter Name'] || '[Missing Translation of Chapter Name]';// || chapter.name;
+				chapter.description=chapter.student_description_spanish || row['ChapterDescriptionStidentSpanish'] || '[Missing Translation of Chapter Description]' ;// || chapter.student_description;
 				if (!chapter.name){
 					throw new Error(`Missing Spanish translation: Chapter ${chapter.number} Name `);
 				}
