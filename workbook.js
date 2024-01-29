@@ -1678,14 +1678,21 @@ rc_ques_key_pdf_worksheet_id
 		}
 		console.log(unit.chapters);
 		await asyncForEach(unit.chapters, async chapter=>{
-
+			
 			if (languageId===2){
-				const row=spanishChapterDesc.find(item=>{
+				const row=argv.db==='texas' ? {} : spanishChapterDesc.find(item=>{
 					return item.Grade==model.number && item.Unit==unit.number && item.Chapter==chapter.number;
 				})
 				//console.log(spanishChapterDesc);
-				chapter.name=row['Spanish Chapter Name'];
-				chapter.description=row['ChapterDescriptionStidentSpanish'];
+				
+				chapter.name=chapter.name_spanish || row['Spanish Chapter Name'];// || chapter.name;
+				chapter.description=chapter.student_description_spanish || row['ChapterDescriptionStidentSpanish'];// || chapter.student_description;
+				if (!chapter.name){
+					throw new Error(`Missing Spanish translation: Chapter ${chapter.number} Name `);
+				}
+				if (!chapter.description){
+					throw new Error(`Missing Spanish translation: Chapter ${chapter.number} Description`);
+				}
 			}
 
 			const files=allWorkShets.filter(file=>{
