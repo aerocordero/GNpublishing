@@ -139,7 +139,16 @@ async function main() {
 	if (gradeColors[model.display_name]){
 		colors.unitTitle=gradeColors[model.display_name];
 	}
-
+	let translations=(await dbQuery([
+		'SELECT * FROM `translation` t',
+		'WHERE t.`class_name` = "Unit" AND t.`item_id` = ?'
+	], [unitId]));
+	
+	translations.forEach(tr=>{
+		if (tr.language_id===languageId && tr.value){
+			unit[tr.field_name]=tr.value;
+		}
+	})
 	
 	//console.log(unit);
 	//return
@@ -1414,9 +1423,8 @@ rc_ques_key_pdf_worksheet_id
 				params: {
 				}
 			},
-		], blocks);		
-		
-		
+		], blocks);				
+
 		blocks.push({
 			type: 'p',
 			value:'',
