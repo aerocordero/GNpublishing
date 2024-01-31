@@ -409,6 +409,19 @@ router.get('/item-bank', async(req, res, next)=>{
 
 });
  
+router.get('/queue/info/:id', async(req, res, next)=>{
+	console.log(req.params);
+	const item=queue.find(item=>item.id===req.params.id);
+	const path='./logs/'+item.id+'.json';
+
+	if (!fs.existsSync(path)){
+		return res.json([]);
+	}
+
+	res.json(JSON.parse(fs.readFileSync(path, 'utf-8')));
+	
+});
+
 module.exports = router;
 
 queue.filter(item=>item.status==='inProgress').forEach(item=>item.status='error');

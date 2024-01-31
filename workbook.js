@@ -52,7 +52,8 @@ async function main() {
 		loadQueue,
 		convertPptxPdf,
 		setDBName,
-		initCustomPagesFromDB
+		initCustomPagesFromDB,
+		gnSubDomains
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -60,6 +61,8 @@ async function main() {
 	if (argv.db){
 		setDBName('greenninja_'+argv.db)
 	}
+
+	const gnAppUrl='https://'+gnSubDomains[argv.db]+'.greenninja.org';
 	
 	if (argv.flushCache){
 		flushCache();
@@ -246,9 +249,12 @@ async function main() {
 
 	
 	
-	
+	const unitLessonIds=unit.lessons.split(',');
 	
 	await asyncForEach(lessons, async (lesson)=>{
+
+		lesson.index=unitLessonIds.indexOf(lesson.old_lesson_id);
+		lesson.number=unit.number+'.'+(lesson.index+1);
 		
 		const query=languageId==1 ? [
 			'SELECT t.*, f.*, m.for_student, m.for_print, m.lesson_id',
@@ -266,16 +272,29 @@ async function main() {
 			'ORDER BY child.worksheet_id DESC',			
 		]
 		
-		lesson.worksheet=await dbQuery(query, [lesson.lesson_id]);
-		
+		lesson.worksheet=await dbQuery(query, [lesson.lesson_id]);		
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx');
+		
+		lesson.worksheet.forEach(ws=>{
+			if (ws.google_drive_object?.title){
+				ws.originalname=ws.google_drive_object?.title;
+				ws.type='pdf';
+			}
+			ws.wsName=ws.originalname.replace(`Lesson${lesson.number}`, '').replace('.pdf', '').replace('-fenomeno-tx', '-fenomeno');
+		});
+		
+		
+		console.log('result', lesson.worksheet.map(ws=>ws.originalname));
+
 		lesson.worksheet=lesson.worksheet.filter(ws=>(ws.type==='pdf' || ws.google_drive_object) && ws.originalname);
+		
 		lesson.worksheet.forEach(ws=>{
 			//console.log(ws.google_drive_object);
 			if (ws.google_drive_object){
 				const obj=_.isObject(ws.google_drive_object) ? ws.google_drive_object : JSON.parse(ws.google_drive_object);
 				if (obj.exportLinks && obj.exportLinks['application/pdf']){
 					ws.path=obj.exportLinks['application/pdf'];
+					ws.editUrl=obj.alternateLink;
 				}
 			}
 		});
@@ -287,10 +306,17 @@ async function main() {
 		lesson.worksheet=Object.values(groups).map(gr=>gr[0]);*/
 		if (languageId > 1){
 			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.version_worksheet_id)).map(gr=>gr[0]);
-		}
+		}	
+		lesson.worksheet=_.sortBy(lesson.worksheet, ws=>!ws.google_drive_object);
+		lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr.find(f=>f.for_student) || gr[0]);	
 		
 		console.log(lesson.lesson_id, query.join('\n'));
-		console.log(lesson.worksheet.map(ws=>ws.path));
+		console.log(lesson.worksheet.map(ws=>{
+			return {
+				path: ws.path,
+				for_student: ws.for_student
+			}
+		}));
 		
 		lesson.activityPlan=await dbQuery([
 			'SELECT *',
@@ -319,7 +345,7 @@ async function main() {
 	
 	let allWorkShets=[];	
 	
-	const unitLessonIds=unit.lessons.split(',');
+	
 	
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		//obj.files=[];
@@ -349,8 +375,6 @@ async function main() {
 	}
 	
 	lessons.forEach(lesson=>{
-		lesson.index=unitLessonIds.indexOf(lesson.old_lesson_id);
-		lesson.number=unit.number+'.'+(lesson.index+1);
 		lesson.worksheet.forEach(file=>{
 			allWorkShets.push(file);
 		})
@@ -434,7 +458,7 @@ rc_ques_key_pdf_worksheet_id
 		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
-			item.fileName=(item.originalname || pathArr[pathArr.length-1]).replace('.'+item.type, '');
+			item.fileName=item.wsName || ((item.originalname || pathArr[pathArr.length-1]).replace('.'+item.type, ''));
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.fileTitle=translate('Lesson')+' '+lesson.number+''+item.fileName;
 			item.lessonIndex=lesson.index;
@@ -1213,13 +1237,14 @@ rc_ques_key_pdf_worksheet_id
 	}
 
 	let blocks=[];
-
+	let exportInfo=[];
 	//console.log('allWorkShets', allWorkShets.map(f=>f.path));
 	//return;
 	
 	const generateBlocks=async ()=>{
 		blocks=[];
 		unit.files=[];
+		exportInfo=[];
 		
 		const coverIndex=((_.keys(gradeColors).indexOf(model.display_name)*6)+unit.number-1);
 		//console.log('StudentHighlight',customPagesGlobal.StudentHighlight['pages'+(languageId >1 ? '_'+language : '')][coverIndex]);
@@ -1415,6 +1440,13 @@ rc_ques_key_pdf_worksheet_id
 			title: translate('Unit Overview'), 
 			level: 1, 
 			color: colors.unitTitle
+		});
+		exportInfo.push({
+			title: 'Unit',
+			subtitle: `G${model.number}U${unit.number} ${unit.name}`,
+			link: gnAppUrl+`/unit/${model.model_id}/${unit.unit_id}/${unit.number}/`,
+			editUrl: gnAppUrl+'/automation2/curriculum/units/'+unit.unit_id,
+			level: 1,
 		});
 		//
 		await processObjectFieldsIntoBlocks(unit, [
@@ -1703,6 +1735,14 @@ rc_ques_key_pdf_worksheet_id
 				}
 			}
 
+			exportInfo.push({
+				title: 'Chapter',
+				subtitle: `${chapter.number} ${chapter.name}`,				
+				link: gnAppUrl+`/chapter/${model.model_id}/${unit.unit_id}/${chapter.id}/`,
+				editUrl:  gnAppUrl+'/automation2/curriculum/chapters/'+chapter.id,
+				level: 2,
+			});
+
 			const files=allWorkShets.filter(file=>{
 				const lesson=lessons.find(l=>l.lesson_id===file.lesson_id && chapter.lessons.find(chl=>chl.lesson_id===l.lesson_id));
 				if (!lesson){
@@ -1725,6 +1765,7 @@ rc_ques_key_pdf_worksheet_id
 					&& !excludedEnds.find(str=>file.fileNameWithExt.indexOf(str+'.')>0)
 					&& !allWorkShets.find(f=>f.fileName===file.fileName && f.type==='pptx'))
 			});
+			console.log(files.map(f=>f.path));
 			
 			
 			chapter.lessonSequence=`${unit.number}.${chapter.lessons[0].lesson.index+1} - ${unit.number}.${chapter.lessons[chapter.lessons.length-1].lesson.index+1}`;
@@ -1768,11 +1809,13 @@ rc_ques_key_pdf_worksheet_id
 					pdf+='_spanish';
 					gdrive+='_spanish';
 				}
+				let editUrl='';
 				if (chapter[gdrive]){
 					console.log(chapter[gdrive]);
 					const obj=_.isObject(chapter[gdrive]) ? chapter[gdrive] : JSON.parse(chapter[gdrive]);
 					if (obj.exportLinks['application/pdf']){
 						chapter[pdf]=obj.exportLinks['application/pdf'];
+						editUrl=obj.alternateLink;
 					}
 				}
 				if (chapter[pdf]){					
@@ -1781,9 +1824,11 @@ rc_ques_key_pdf_worksheet_id
 						chapter,
 						path: chapter[pdf],
 						title: translate('Chapter')+' '+chapter.number+' '+title,
-						fileName: pathArr[pathArr.length-1]
+						fileName: pathArr[pathArr.length-1],
+						editUrl
 					})
 				}
+				
 			});
 			if (!files.length){
 				return;
@@ -1800,6 +1845,13 @@ rc_ques_key_pdf_worksheet_id
 							color: colors.black
 						}
 						currLessonId=file.lesson_id;
+						exportInfo.push({
+							title: 'Lesson',
+							subtitle: translate('Lesson')+' '+lesson.number+' '+translate(lesson.name)+' '+translate('Files'),							
+							link: gnAppUrl+`/lesson/${model.model_id}/${unit.unit_id}/${lesson.lesson_id}/${unit.number}/${lesson.index+1}`,
+							editUrl:  gnAppUrl+'/automation2/curriculum/lessons/'+currLessonId,
+							level: 3,
+						});
 					}
 					
 				}
@@ -1809,6 +1861,13 @@ rc_ques_key_pdf_worksheet_id
 						level: 2, 
 						color: colors.black
 					}
+					exportInfo.push({
+						title: 'Chapter Worksheet',
+						subtitle: file.title,
+						link: file.path,
+						editUrl: file.editUrl,
+						level: 3,
+					});
 					console.log('file.chapter', file);
 				}
 				//
@@ -1818,6 +1877,15 @@ rc_ques_key_pdf_worksheet_id
 				if (file.fileName.indexOf('edit?usp=')>=0 || file.fileName.indexOf('?id=')>=0){
 					file.fileName=path.split('/')[1];
 				}
+				if (!file.chapter){
+					exportInfo.push({
+						title: 'Lesson Worksheet',
+						subtitle: file.fileTitle || file.originalname,
+						link: file.path,
+						editUrl: file.editUrl,
+						level: 4,
+					});
+				}				
 				const imgPaths=await convertPptxPdf(path, file, false, !!argv.firstExport);
 				//const imgPaths=await convertPdf(path);
 				//console.log(imgPaths);
@@ -2128,9 +2196,12 @@ rc_ques_key_pdf_worksheet_id
 	if (queueItem){
 		queueItem.totalPageNumber=PDFUtils.totalPageNumber;
 		console.log('queueItem', queueItem);
+		fs.writeFileSync(`logs/${queueItemId}.json`, JSON.stringify(exportInfo, null, 4));
+		queueItem.exportInfoCreated=true;
 		saveQueue(queueData);
 	}
-	console.log(JSON.stringify(allMessages, null, 4));
+	console.log(JSON.stringify(allMessages, null, 4));	
+	console.log(exportInfo);
 }
 main().then(res=>{
 	console.log('done');
