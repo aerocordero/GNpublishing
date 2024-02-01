@@ -750,13 +750,13 @@ rc_ques_key_pdf_worksheet_id
 			}
 			doc
 			.save()
-			.moveTo(boxIdent, 0)
+			.moveTo(boxIdent, -10)
 			//.lineTo(50, 40)
 			.lineTo(boxIdent, boxHeight-10)
 			.bezierCurveTo(boxIdent, boxHeight-10, boxIdent, boxHeight, boxIdent+10, boxHeight)
 			.lineTo(boxIdent+boxWidth-10, boxHeight)
 			.bezierCurveTo(boxIdent+boxWidth-10, boxHeight, boxIdent+boxWidth, boxHeight, boxIdent+boxWidth, boxHeight-10)
-			.lineTo(boxIdent+boxWidth, 0)
+			.lineTo(boxIdent+boxWidth, -10)
 			.fill(colors.unitTitle);			
 			doc
 				.addSVG(fs.readFileSync('images/icons/'+header.type+'-icon.svg', 'UTF-8'), boxIdent+5, ((boxHeight/2)-(boxWidth/2))+iconTopIdent, {
@@ -1094,7 +1094,7 @@ rc_ques_key_pdf_worksheet_id
 
 			doc
 				.save()
-				.moveTo(0, curveTop)
+				.moveTo(-10, curveTop)
 				//.lineTo(50, 40)
 				.bezierCurveTo(200, curveTop+60, 200, curveTop-40, 420, curveTop+0)
 				.quadraticCurveTo(500, curveTop+15, 640, curveTop)
@@ -1109,7 +1109,7 @@ rc_ques_key_pdf_worksheet_id
 			const curveLeft=PDFUtils.isRightPage() ? 50 : 550;
 			doc
 				.save()
-				.moveTo(curveLeft, 0)
+				.moveTo(curveLeft, -10)
 				//.lineTo(50, 40)
 				.bezierCurveTo(curveLeft-40, 300, curveLeft+80, 600, curveLeft-30, 850)
 				//.quadraticCurveTo(500, curveTop+15, 640, curveTop)
@@ -1206,7 +1206,7 @@ rc_ques_key_pdf_worksheet_id
 			let curveTop=700;
 			doc
 				.save()
-				.moveTo(0, curveTop)
+				.moveTo(-10, curveTop)
 				//.lineTo(50, 40)
 				.bezierCurveTo(200, curveTop+60, 200, curveTop-40, 420, curveTop+0)
 				.quadraticCurveTo(500, curveTop+15, 640, curveTop)
@@ -1257,16 +1257,16 @@ rc_ques_key_pdf_worksheet_id
 		blocks.push({
 			type: 'image',
 			value: 'images/cover_wave.svg',
-			width: 100,
+			width: 110,
 			svgContentProcessing: (str, x, y)=>{				
 				return str
 					.replace(/\#F05925/ig, colors.unitTitle)
 					.replace(/\#E8C3BC/ig, Color(colors.unitTitle).lighten(0.6).hex());					
 
 			},
-			//height: 250,
-			x:10,
-			y:-1
+			height: 840,
+			x:0,
+			y:-10
 		});	
 		const coverCSV=await csv().fromFile('automated_Highlight Quotes and Bios - '+(argv.db==='texas' ? 'TX - ' : '')+(languageId ===1 ? 'English' : 'Spanish')+'.csv');
 		const spanishRC=await csv().fromFile('Spanish Reading Companion Upload - Sheet1.csv');
@@ -1717,6 +1717,7 @@ rc_ques_key_pdf_worksheet_id
 			'Lección 2.23a-diferente-calidad-de-aire':'Lección 2.23a-diferente-calidad-de-aire-fenomeno',
 		}
 		console.log(unit.chapters);
+		//return;
 		await asyncForEach(unit.chapters, async chapter=>{
 			
 			if (languageId===2){
