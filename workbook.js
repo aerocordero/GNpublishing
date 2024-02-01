@@ -1864,7 +1864,7 @@ rc_ques_key_pdf_worksheet_id
 					exportInfo.push({
 						title: 'Chapter Worksheet',
 						subtitle: file.title,
-						link: file.path,
+						link: file.path.indexOf('http')===0 ? file.path : gnAppUrl+'/'+file.path,
 						editUrl: file.editUrl,
 						level: 3,
 					});
@@ -1881,7 +1881,7 @@ rc_ques_key_pdf_worksheet_id
 					exportInfo.push({
 						title: 'Lesson Worksheet',
 						subtitle: file.fileTitle || file.originalname,
-						link: file.path,
+						link: file.path.indexOf('http')===0 ? file.path : gnAppUrl+'/'+file.path,
 						editUrl: file.editUrl,
 						level: 4,
 					});
