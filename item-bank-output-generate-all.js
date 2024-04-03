@@ -72,6 +72,11 @@ async function main() {
 		await asyncForEach(units, async unit=>{
 			shell.exec(`node item-bank-output.js --grade-num=${gradeNum}  --unit-num=${unit.position+1}  --chapter-num=${''} `);
 			console.log(`node item-bank-output.js --grade-num=${gradeNum}  --unit-num=${unit.position+1}  --chapter-num=${''} `);
+
+			await asyncForEach('123456789'.split(''), async chapterNum=>{
+				shell.exec(`node item-bank-output.js --grade-num=${gradeNum}  --unit-num=${unit.position+1}  --chapter-num=${chapterNum} `);
+				console.log(`node item-bank-output.js --grade-num=${gradeNum}  --unit-num=${unit.position+1}  --chapter-num=${chapterNum} `);
+			})
 		})
 	})	
 	
