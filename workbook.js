@@ -53,7 +53,8 @@ async function main() {
 		convertPptxPdf,
 		setDBName,
 		initCustomPagesFromDB,
-		gnSubDomains
+		gnSubDomains,
+		getImgPropWidth
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -72,7 +73,7 @@ async function main() {
 	}
 	console.log('Google Drive folder syncing...')
 	if (argv.gdSync || argv.gdSync===undefined){
-		console.log(customPageFolders[languageId]);
+		//console.log(customPageFolders[languageId]);
 		//await GDFolderSync(customPageFolders[languageId], CPFolderName);
 	}
 	const queueItemId=argv.queueItemId;
@@ -185,7 +186,7 @@ async function main() {
 	//return;
 	
 	//const customPages=await initCustomPages(gdAssetsPath+model.display_name+" Unit "+unit.number+" Assets");
-	console.log(customPagesGlobal);
+	//console.log(customPagesGlobal);
 	unit.review=(await dbQuery([
 		'SELECT * FROM `unit_review` t',
 		'WHERE t.`unit_id` = ?'
@@ -205,7 +206,7 @@ async function main() {
 		item.fileTitle=item.fileName;
 		
 		const node=reviewFilesRoot.find(n=>n.rawText.indexOf(item.fileName)>=0);				
-		console.log(unit.review)
+		//console.log(unit.review)
 		item.textIndex=unit.review.files.indexOf(item.fileName);
 		if(node && node.querySelector('em')){
 			item.title=node.querySelector('em').text.replace(model.display_name, '').replace('Unit '+unit.number, '').trim();
@@ -601,7 +602,7 @@ rc_ques_key_pdf_worksheet_id
 	
 	console.log('Loaded Unit "'+unit.name+'" and '+lessons.length+' lessons');
 	await closeDbConnection();
-	console.log(unit);
+	//console.log(unit);
 	
 	const PDFUtils=new PDFUtilsObj(colors, fonts, textIdents);	
 	const contentWidth=540;	
@@ -763,7 +764,7 @@ rc_ques_key_pdf_worksheet_id
 				  width: boxWidth-10,
 				  height: boxWidth-10,				  
 				});
-			console.log(header);
+			//console.log(header);
 			if (header.chapter && header.type!=='phenomenon'){
 				/*
 				doc
@@ -1716,9 +1717,12 @@ rc_ques_key_pdf_worksheet_id
 			'Lección 2.18b-cubiertos-plasticos':'Lección 2.18b-cubiertos-plasticos-fenomeno',
 			'Lección 2.23a-diferente-calidad-de-aire':'Lección 2.23a-diferente-calidad-de-aire-fenomeno',
 		}
-		console.log(unit.chapters);
+		//console.log(unit.chapters);
 		//return;
 		await asyncForEach(unit.chapters, async chapter=>{
+			if (chapter.number!==3){
+				//return;
+			}
 			
 			if (languageId===2){
 				const row=argv.db==='texas' ? {} : spanishChapterDesc.find(item=>{
@@ -1892,11 +1896,19 @@ rc_ques_key_pdf_worksheet_id
 				//console.log(imgPaths);
 				let x=textIdents.left;
 				const images=[]; 
-				const width=465;
+				let width=465;
 
 				await asyncForEach(imgPaths, async (item)=>{
 					const imgInfo=await getImgInfoAndRotate(item.imagePath);
-					console.log(imgInfo);
+					console.log('getImgPropheight', imgInfo, getImgPropheight(imgInfo, width));
+					
+					width=imgInfo.rotated ? 610 : 612
+
+					if (getImgPropheight(imgInfo, width)>700 && imgInfo.rotated){
+						width=getImgPropWidth(imgInfo, 700);
+					}
+					
+					
 					images.push({
 						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
 						height: getImgPropheight(imgInfo, width),
@@ -1904,13 +1916,20 @@ rc_ques_key_pdf_worksheet_id
 						width,
 						x
 					})
+					console.log({
+						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
+						height: getImgPropheight(imgInfo, width),
+						rotated: imgInfo.rotated,
+						width,
+						x
+					});
 					x+=width;
 					if (x>390){
 						x=textIdents.left;
 					} 
 				});
 				if (images && images.length && images[0]){
-					const width=images[0].rotated ? 590 : 612
+					const width=images[0].width;
 					blocks.push({
 						type: 'lessonFiles',
 						value: images,
@@ -1918,10 +1937,11 @@ rc_ques_key_pdf_worksheet_id
 						contentsObj,
 						leftIdent: (612-width)/2,
 						width,
-						bottomBoxY: images[0].rotated ? 745 : 735,
+						height:images[0].height,
+						bottomBoxY: images[0].rotated ? 730 : 730,
 						rightBoxX: images[0].rotated ? 548 : 600,
 						leftBoxWidth: images[0].rotated ? 55 : 0,
-						marginTop: file.for_print ? 0 : (images[0].rotated ? 10 : 0),
+						marginTop: file.for_print ? 0 : (images[0].rotated ? (792-images[0].height)/2 : 0),
 						headerParams: {
 							type: !file.chapter ? (file.isPhenomenon ? 'phenomenon' : (file.for_print ? 'nameClassDate' : 'line')) : 'reading',
 							topWhiteOverlayHeight: file.chapter ? 65 : 52,
