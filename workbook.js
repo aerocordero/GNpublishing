@@ -1902,10 +1902,10 @@ rc_ques_key_pdf_worksheet_id
 					const imgInfo=await getImgInfoAndRotate(item.imagePath);
 					console.log('getImgPropheight', imgInfo, getImgPropheight(imgInfo, width));
 					
-					width=imgInfo.rotated ? 610 : 612
+					width=imgInfo.rotated ? 612 : 612
 
 					if (getImgPropheight(imgInfo, width)>700 && imgInfo.rotated){
-						width=getImgPropWidth(imgInfo, 700);
+						//width=getImgPropWidth(imgInfo, 700);
 					}
 					
 					
