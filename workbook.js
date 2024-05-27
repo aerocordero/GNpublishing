@@ -1364,13 +1364,24 @@ rc_ques_key_pdf_worksheet_id
 						lineGap: 2,
 						//characterSpacing: 0.5
 					});
-	
-					doc
-					.image('images/gn_logo.png', 250, 690, {
-					  width: 100,
-					  align: 'center',
-					  valign: 'center'
-					});
+					
+					if (argv.db==='texas'){
+						doc
+							.image('images/gn_logo_texas.jpg', 200, 690, {
+							width: 200,
+							align: 'center',
+							valign: 'center'
+							});
+					}
+					else {
+						doc
+							.image('images/gn_logo.png', 250, 690, {
+							width: 100,
+							align: 'center',
+							valign: 'center'
+							});
+					}
+					
 				},
 				
 			});
