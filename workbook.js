@@ -262,14 +262,14 @@ async function main() {
 			'FROM lesson_worksheet_mapping m',
 			'INNER JOIN worksheet t ON m.worksheet_id = t.worksheet_id',			
 			'LEFT OUTER JOIN file f ON f.id = t.file_id',
-			'WHERE m.lesson_id = ? AND m.for_student=1 AND t.type NOT IN ("rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
+			'WHERE m.lesson_id = ? AND t.type NOT IN ("rtf", "xlsx", "txt") AND t.worksheet_language_id='+languageId
 		] : [
 			'SELECT child.*, f.*, m.for_student, m.for_print, m.lesson_id',
 			'FROM lesson_worksheet_mapping m',
 			'INNER JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
 			'INNER JOIN worksheet child ON t.worksheet_id = child.version_worksheet_id',
 			'LEFT OUTER JOIN file f ON f.id = child.file_id',
-			'WHERE m.lesson_id = ? AND m.for_student=1 AND child.type NOT IN ("rtf", "xlsx", "txt") AND child.worksheet_language_id='+languageId,			
+			'WHERE m.lesson_id = ? AND child.type NOT IN ("rtf", "xlsx", "txt") AND child.worksheet_language_id='+languageId,			
 			'ORDER BY child.worksheet_id DESC',			
 		]
 		
