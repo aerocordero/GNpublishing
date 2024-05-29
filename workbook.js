@@ -292,7 +292,7 @@ async function main() {
 		
 		lesson.worksheet.forEach(ws=>{
 			//console.log(ws.google_drive_object);
-			if (ws.google_drive_object){
+			if (ws.google_drive_object && wsSource!=='pdf'){
 				const obj=_.isObject(ws.google_drive_object) ? ws.google_drive_object : JSON.parse(ws.google_drive_object);
 				if (obj.exportLinks && obj.exportLinks['application/pdf']){
 					ws.path=obj.exportLinks['application/pdf'];
@@ -333,19 +333,22 @@ async function main() {
 			});	
 		}
 		if (wsSource==='pdf'){
-			lesson.worksheet=lesson.worksheet.filter(ws=>ws.type==='pdf' && ws.for_student);
+			lesson.worksheet=lesson.worksheet.filter(ws=>ws.type==='pdf' && ws.mime==='application/pdf' && ws.for_student);
 			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr[0]);
 		}
 		
 		console.log(lesson.lesson_id, query.join('\n'));
-		/*
+		/**/
 		console.log(lesson.worksheet.map(ws=>{
 			return {
 				path: ws.path,
-				for_student: ws.for_student
+				for_student: ws.for_student,
+				name: ws.wsName,
+				type: ws.type,
+				mime: ws.mime
 			}
 		}));
-		*/
+		
 		
 		lesson.activityPlan=await dbQuery([
 			'SELECT *',
