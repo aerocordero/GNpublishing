@@ -16,6 +16,7 @@ async function main() {
 	const csv=require("csvtojson");
 
 	const language = argv.language;
+	const wsSource = argv.wsSource || 'mixed';
 	const languageId = language==='spanish' ? 2 : 1;
 	const customPageFolders={
 		1: '1hqsJWKFny-Myf7UiyJOVvpYqt48Em4BZ',
@@ -308,16 +309,42 @@ async function main() {
 		if (languageId > 1){
 			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.version_worksheet_id)).map(gr=>gr[0]);
 		}	
-		lesson.worksheet=_.sortBy(lesson.worksheet, ws=>!ws.google_drive_object);
-		lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr.find(f=>f.for_student) || gr[0]);	
+
+		if (wsSource==='mixed'){
+			lesson.worksheet=_.sortBy(lesson.worksheet, ws=>!ws.google_drive_object);
+			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr.find(f=>f.for_student) || gr[0]);		
+		}
+		if  (wsSource==='gdoc'){
+			lesson.worksheet=_.sortBy(lesson.worksheet, ws=>ws.google_drive_object);
+			console.log('SortedWS', lesson.worksheet.map(ws=>{
+				return {gd: !!ws.google_drive_object, name: ws.wsName};
+			}))
+			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>{
+				let for_student=false;
+				let for_print=false;
+				gr.forEach(ws=>{
+					for_student=ws.for_student || for_student;
+					for_print=ws.for_print || for_print;
+				})
+				const first=/*gr.find(f=>f.for_student) || */gr[0];
+				first.for_print=for_print;
+				first.for_student=for_student;
+				return first;
+			});	
+		}
+		if (wsSource==='pdf'){
+			lesson.worksheet=lesson.worksheet.filter(ws=>ws.type==='pdf' && ws.for_student);
+		}
 		
 		console.log(lesson.lesson_id, query.join('\n'));
+		/*
 		console.log(lesson.worksheet.map(ws=>{
 			return {
 				path: ws.path,
 				for_student: ws.for_student
 			}
 		}));
+		*/
 		
 		lesson.activityPlan=await dbQuery([
 			'SELECT *',

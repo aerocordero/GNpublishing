@@ -71,12 +71,14 @@ const processQueue=()=>{
 		if (currentItem || !nextItem){
 			return;
 		}
+
 		if (nextItem){
 			const getPdfFileName={
 				workbook: (item, model, unit)=>item.params.state.name+' Workbook '+model.display_name+' Unit '+unit.number
 					+(item.params.language && item.params.language==='spanish' ? '(spanish)' : '')
-					+(item.params.type ? ' v'+item.params.type : '')				
-					+(item.params.disableImages ? ' (no images)' : '')	
+					//+(item.params.type ? ' v'+item.params.type : '')				
+					+(item.params.worksheetSource ? ' ('+item.params.worksheetSource+')' : '')	
+					+(item.params.disableImages ? ' (no images)' : '')						
 					+'.pdf',
 				teacherbook: (item, model, unit)=>item.params.state.name+' TC '+model.display_name+' Unit '+unit.number
 					+(item.params.disableImages ? ' (no images)' : '')
@@ -111,6 +113,7 @@ const processQueue=()=>{
 				+(params.type===1 ? ' --first-export' : '')
 				//+(params.flushCache ? ' --flush-cache' : '')
 				+(params.language ? ' --language="'+params.language+'"' : '')
+				+(params.worksheetSource ? ' --ws-source="'+params.worksheetSource+'"' : '')
 				+(config.alwaysFlushDBCache ? ' --ignore-db-cache' : '')
 				+' --dest-path="'+destFilePath+'"'
 				+' --queue-item-id="'+nextItem.id+'"'
@@ -408,6 +411,8 @@ router.get('/item-bank', async(req, res, next)=>{
 	return res.sendFile(__dirname+`/item-bank/${fileName}`);
 
 });
+
+
  
 router.get('/queue/info/:id', async(req, res, next)=>{
 	console.log(req.params);
