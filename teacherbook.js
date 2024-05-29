@@ -147,10 +147,12 @@ async function main() {
 		'WHERE t.`unit_id` = ?  '
 	], [unitId]));
 	
+
 	unit.epc=await dbQuery([
 		'SELECT *',
-		'FROM environmental_principle_copy t',
-		'ORDER BY t.environmental_principle_id'
+		'FROM standard_tree st',
+		'WHERE st.standard_id = 5 AND parent_id = 0',
+		'ORDER BY st.priority'
 	], []);		
 	
 	await asyncForEach(unit.review, async (item)=>{
@@ -217,11 +219,7 @@ async function main() {
 	standardTypes.forEach(key=>{
 		unit.orphanStandards[key]=[];
 		unit.commonCoreStandards[key]=[];		
-	})
-	
-	const epConcepts=(await dbQuery([
-		'SELECT * FROM `EP_concepts` t'
-	], []));
+	})	
 	//console.log('epConcepts', epConcepts);
 
 
