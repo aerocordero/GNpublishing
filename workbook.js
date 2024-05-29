@@ -333,8 +333,8 @@ async function main() {
 			});	
 		}
 		if (wsSource==='pdf'){
-			lesson.worksheet=lesson.worksheet.filter(ws=>ws.type==='pdf' && ws.mime==='application/pdf' && ws.for_student);
-			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr[0]);
+			lesson.worksheet=lesson.worksheet.filter(ws=>ws.type==='pdf' && ws.mime==='application/pdf');
+			lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.wsName)).map(gr=>gr.find(f=>f.for_student) || gr[0]);
 		}
 		
 		console.log(lesson.lesson_id, query.join('\n'));
