@@ -1802,7 +1802,9 @@ rc_ques_key_pdf_worksheet_id
 				}
 				console.log('lessonFileWorksheet', lesson.lesson_id, lesson.number, '-', file.fileTitle, file.fileName);
 				const excludedEnds=['presentation','transcripts','exit-ticket','key'];
-				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 && file.type=='pdf';
+				const isPhenomenon=file.fileTitle.indexOf(phenomenonWord[languageId])>0 
+					&& file.type=='pdf' 
+					&& !['handout', 'worksheet'].find(txt=>file.fileTitle.indexOf(txt)>0);
 				file.isPhenomenon=isPhenomenon;				
 				return isPhenomenon || (file.worksheet_language_id==languageId
 					&& (argv.firstExport || (!argv.firstExport && file.for_student))
