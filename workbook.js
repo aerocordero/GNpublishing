@@ -1952,17 +1952,20 @@ rc_ques_key_pdf_worksheet_id
 						//width=getImgPropWidth(imgInfo, 700);
 					}
 					
-					
+					let height=getImgPropheight(imgInfo, width);
+					if (height>792){
+						height=792;
+					}
 					images.push({
 						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
-						height: getImgPropheight(imgInfo, width),
+						height: height,
 						rotated: imgInfo.rotated,
 						width,
 						x
 					})
 					console.log({
 						path: imgInfo.rotated && imgInfo.rotatedPath ? imgInfo.rotatedPath : item.imagePath,
-						height: getImgPropheight(imgInfo, width),
+						height: height,
 						rotated: imgInfo.rotated,
 						width,
 						x
