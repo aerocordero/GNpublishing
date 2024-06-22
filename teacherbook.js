@@ -266,6 +266,17 @@ async function main() {
 			if (item.s3_filename){
 				item.path='/getWordDoc?path=/uploads/lessons/'+item.s3_filename;
 			}
+			if (item.google_drive_object){
+				const obj=_.isObject(item.google_drive_object) ? item.google_drive_object : JSON.parse(item.google_drive_object);
+				if (obj.title){
+					item.originalname=obj.title;
+				}
+				if (obj.exportLinks && obj.exportLinks['application/pdf']){
+					item.path=obj.exportLinks['application/pdf'];
+					item.editUrl=obj.alternateLink;
+				}
+			}
+			
 			return item;
 		});
 		
@@ -2746,15 +2757,18 @@ async function main() {
 							
 						});
 						//console.log({images, imgPaths});
-						file.images=[{
-							type: 'images',
-							value: images,
-							width: width,
-							firstRowHeight: images[0].height,
-							addBorder: true,
-							dontAttachParagraphToImage: false,
-							file,
-						}];
+						if (images.length){
+							file.images=[{
+								type: 'images',
+								value: images,
+								width: width,
+								firstRowHeight: images[0].height,
+								addBorder: true,
+								dontAttachParagraphToImage: false,
+								file,
+							}];
+						}
+						
 						//console.log('FILEFILE', file);
 					}
 					if (file.type==='pptx'){
