@@ -2808,7 +2808,7 @@ async function main() {
 						{
 							title: plan.number+'. '+plan.title.trim(), 
 							field:'content', 
-							titleRight: '~ '+plan.time+(plan.time.indexOf('minute') < 0 ? ' minutes' : ''), 
+							titleRight: '~ '+plan.time+(plan.time.indexOf('min') < 0 ? ' minutes' : ''), 
 							headerType: 'lessonPlanHeader',
 							params: {
 								resetCurentH2: true,
