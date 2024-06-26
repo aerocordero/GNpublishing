@@ -342,6 +342,11 @@ async function main() {
   {table: 'green_box_slides'},
   {table: 'chapter_green_box_mapping'},
 	*/
+
+	const callOutBoxes=(await dbQuery([
+		'SELECT t.* FROM `call_out_box` t',
+	], []));
+
 	const greenBoxes=(await dbQuery([
 		'SELECT t.*, m.chapter_id FROM `green_box` t',
 		'INNER JOIN chapter_green_box_mapping m ON m.green_box_id=t.id AND m.chapter_id IN ('+chapters.map(ch=>ch.id).join(',')+')',
@@ -402,6 +407,19 @@ async function main() {
 				console.log('Not found field', {field, lesson_id: obj.lesson_id});
 				return;
 			}
+
+			obj[field]=obj[field].replace(/{{calloutBox_([A-Z0-9a-z+\-$–_@\']+)}}/g, (match, boxId)=>{
+				const box=callOutBoxes.find(box=>box.id==parseInt(boxId));
+				if (box){
+				  return `
+				  <div class="tips-box ${box.type}">
+					<p class="para-text bold-text">${box.title}</p>
+					<div class="para-text">${box.content}</div>
+				  </div>
+				  `
+				}
+				return '';
+			});
 			
 			obj[field]=obj[field].replace(new RegExp('\(\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
 				//console.log('old_lesson_id', old_lesson_id, str);
