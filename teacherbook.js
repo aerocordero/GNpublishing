@@ -2200,7 +2200,7 @@ async function main() {
 							}
 							else if (!workshet.inlinePageRef && images.length && !fromAnotherLesson && !params.dontShowImagesAfter){
 								workshet.mentionedInLessonId=lesson.lesson_id;
-								referenceStr='preview below';
+								referenceStr='preview below'+(workshet.partialPreview ? ' - access online for full document' : '');
 							}
 							else if (fromAnotherLesson && workshet.pageNum){
 								referenceStr='preview on page '+workshet.pageNum;
@@ -2776,9 +2776,12 @@ async function main() {
 						});
 						//console.log({images, imgPaths});
 						if (images.length){
+							if (images.length > 9){
+								file.partialPreview=true;
+							}
 							file.images=[{
 								type: 'images',
-								value: images,
+								value: images.slice(0, 9),
 								width: width,
 								firstRowHeight: images[0].height,
 								addBorder: true,
