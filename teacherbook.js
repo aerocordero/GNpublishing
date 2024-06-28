@@ -271,8 +271,13 @@ async function main() {
 				if (obj.title){
 					item.originalname=obj.title;
 				}
+				//
 				if (obj.exportLinks && obj.exportLinks['application/pdf']){
 					item.path=obj.exportLinks['application/pdf'];
+					item.editUrl=obj.alternateLink;
+				}
+				if (item.type==='pptx' && obj.exportLinks && obj.exportLinks['application/vnd.openxmlformats-officedocument.presentationml.presentation']){
+					item.path=obj.exportLinks['application/vnd.openxmlformats-officedocument.presentationml.presentation'];
 					item.editUrl=obj.alternateLink;
 				}
 			}
@@ -429,10 +434,21 @@ async function main() {
 					return str;
 				}
 				//console.log('regexp_'+field, match, str, str1);
-				const workshet=fileLesson.worksheet.find(file=>file.fileNameWithExt?.toLowerCase()===str1.trim().toLowerCase() || file.originalname?.toLowerCase()===str1.trim().toLowerCase());
+				const workshet=fileLesson.worksheet.find(file=>{
+					const filename=file.fileNameWithExt?.toLowerCase();
+					const originalName=file.originalname?.toLowerCase();
+					return filename===str1.trim().toLowerCase() 
+					|| originalName===str1.trim().toLowerCase()
+					|| originalName==='lesson '+fileLesson.number+str1.trim().toLowerCase()
+					|| originalName==='lesson'+fileLesson.number+str1.trim().toLowerCase();
+				}
+				);
 				//console.log(workshet);
 				if (!workshet){
-					console.log('Workshet "'+str1+'" is not found');
+					console.log('Workshet "'+str1+'" is not found', fileLesson.number);
+					if (str1=='a-research-resource-management-project-presentation.pptx'){
+						console.log(fileLesson.worksheet.map(ws=>ws.originalname));
+					}
 					//console.log('regexp_'+field, match, str, str1);
 					if (str1!=='.' && !notFoundWorksheets.find(item=>item.worksheet===str1 && item.lesson===lesson.number)){
 						notFoundWorksheets.push({
