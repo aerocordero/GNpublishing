@@ -487,7 +487,10 @@ async function main() {
 			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			item.originalFileName=(item.originalname || item.fileNameWithExt);
-			item.fileTitle='Lesson '+lesson.number+item.originalFileName;
+			
+			item.fileTitle=(item.originalFileName.indexOf('Lesson')!==0 ? 'Lesson '+lesson.number : '')+item.originalFileName;
+			
+			
 			
 			item.isOnline=item.fileName.indexOf('checkpoint')>0
 				|| item.fileName.indexOf('culminating-experience')>0 
