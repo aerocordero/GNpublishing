@@ -18,3 +18,4 @@ temp*.pdf
 /logs
 /found-content-issues
 /item-bank
+/last-blocks.json

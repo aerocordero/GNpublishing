@@ -42,6 +42,7 @@ async function main() {
 		setDBName,
 		gnSubDomains,
 		initCustomPagesFromDB,
+		removeCircular,
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -2846,6 +2847,7 @@ async function main() {
 					await asyncForEach(plan.files, async (file)=>{
 						await proceedFile(file);
 					});
+					plan.time=plan.time.replace('mins', 'minutes');
 					await processObjectFieldsIntoBlocks(plan, [
 						{
 							title: plan.number+'. '+plan.title.trim(), 
@@ -3432,6 +3434,8 @@ async function main() {
 	const pdfFileName=argv.destPath || 'TC '+model.display_name+' Unit '+unit.number+'.pdf';
 	console.log('Generating publication PDF '+pdfFileName+'...');
 	//PDFUtils.generatePdf('output.pdf', blocks);
+	
+	fs.writeFileSync('last-blocks.json', JSON.stringify(removeCircular(blocks), null, 4), 'utf-8');
 	PDFUtils.generatePdf(pdfFileName, blocks, true, disableImages ? true : false);
 	const queueData=loadQueue();
 	const queueItem=(queueData || []).find(item=>item.id===queueItemId);
