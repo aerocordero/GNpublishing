@@ -506,6 +506,7 @@ async function main() {
 			item.originalFileName=(item.originalname || item.fileNameWithExt);
 			
 			item.fileTitle=(item.originalFileName.indexOf('Lesson')!==0 ? 'Lesson '+lesson.number : '')+item.originalFileName;
+			item.fileTitle=item.fileTitle.replace('Lesson', 'Lesson ').replace('Lesson  ', 'Lesson ');
 			
 			
 			
