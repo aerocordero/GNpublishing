@@ -80,6 +80,7 @@ async function main() {
 	
 	const textIdents={
 		left: 65,
+		right: 62,
 		top: 70
 	}
 	
@@ -2768,11 +2769,11 @@ async function main() {
 							if (file.isOnline && imgIndex > 0){
 								return;
 							}
-							if (imgInfo.rotated && imgInfo.rotatedPath && 0){
-								width=232;
-								const w=imgInfo.width;
-								imgInfo.width=imgInfo.height;
-								imgInfo.height=w;
+							if (imgInfo.rotated && imgInfo.rotatedPath && imgPaths.length==1){
+								width=250;
+								imgInfo.rotated=false;
+								imgInfo.rotatedPath=null;
+								console.log('Single Landscape', imgInfo, getImgPropheight(imgInfo, width));
 							}
 							if ((x+width)>200){
 								x=textIdents.left;
@@ -2793,7 +2794,7 @@ async function main() {
 							x+=width;
 							
 						});
-						//console.log({images, imgPaths});
+						//console.log({images, imgPaths, width});
 						if (images.length){
 							if (images.length > 9){
 								file.partialPreview=true;
