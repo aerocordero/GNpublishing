@@ -2769,7 +2769,7 @@ async function main() {
 							if (file.isOnline && imgIndex > 0){
 								return;
 							}
-							if (imgInfo.rotated && imgInfo.rotatedPath && imgPaths.length==1){
+							if (imgInfo.rotated && imgInfo.rotatedPath && imgPaths.length<3){
 								width=250;
 								imgInfo.rotated=false;
 								imgInfo.rotatedPath=null;
