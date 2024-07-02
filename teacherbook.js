@@ -899,12 +899,22 @@ async function main() {
 				.lineWidth(4)
 				.stroke(colors.brown);
 
-				doc
-					.image('images/gn_logo.png', 250, 690, {
-					  width: 100,
-					  align: 'center',
-					  valign: 'center'
-					});
+				if (argv.db==='texas'){
+					doc
+						.image('images/gn_logo_texas.jpg', 200, 690, {
+						width: 200,
+						align: 'center',
+						valign: 'center'
+						});
+				}
+				else {
+					doc
+						.image('images/gn_logo.png', 250, 690, {
+						width: 100,
+						align: 'center',
+						valign: 'center'
+						});
+				}
 				
 			}
 		});	
