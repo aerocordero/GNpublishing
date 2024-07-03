@@ -28,7 +28,8 @@ const {
 	downloadFile,
 	convertPdf,
 	convertPptxPdf,
-	dbConfig
+	dbConfig,
+	uploadToGoogleDrive
 } = require('./lib/utils');
 
 let queue=loadQueue();
@@ -132,6 +133,20 @@ const processQueue=()=>{
 				}
 				else {
 					nextItem.status='success';
+					nextItem.googleDriveUploading=true;
+					uploadToGoogleDrive(nextItem.fileName).then(res=>{
+						nextItem.googleDriveUploading=false;
+						nextItem.googleDriveFileId=res.id;
+						onQueueItemUpdated(nextItem);
+						saveCurrentQueue();							
+						processQueue();	
+					}).catch(err=>{
+						nextItem.googleDriveUploading=false;
+						nextItem.googleDriveUploadingError=err;
+						onQueueItemUpdated(nextItem);
+						saveCurrentQueue();							
+						processQueue();	
+					})
 				}				
 				console.log(nextItem);
 				onQueueItemUpdated(nextItem);
