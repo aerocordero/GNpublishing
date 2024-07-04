@@ -3424,6 +3424,7 @@ async function main() {
 	//5.25, 5.21
 	console.log('Preparing content blocks...');
 	await generateBlocks();
+	blocks=blocks.filter(b=>b);
 	console.log('Created '+blocks.length+' blocks');
 	
 	console.log('Generating temp PDF file...');
@@ -3446,6 +3447,11 @@ async function main() {
 	//PDFUtils.generatePdf('output.pdf', blocks);
 	
 	fs.writeFileSync('last-blocks.json', JSON.stringify(removeCircular(blocks), null, 4), 'utf-8');
+	fs.writeFileSync('last-blocks-short.json', JSON.stringify(blocks.map(bl=>{
+		const obj=_.pick(bl, 'type', 'blockHeight', 'textHeight', 'sectionHeight');
+		obj.value=bl.value?.[0]?.rawText;
+		return obj;
+	}), null, 4), 'utf-8');
 	PDFUtils.generatePdf(pdfFileName, blocks, true, disableImages ? true : false);
 	const queueData=loadQueue();
 	const queueItem=(queueData || []).find(item=>item.id===queueItemId);
