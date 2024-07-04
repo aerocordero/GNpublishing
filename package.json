@@ -32,7 +32,7 @@
     "node-html-parser": "^1.2.16",
     "pdf-image": "^2.0.0",
     "pdf2pic": "^1.4.0",
-    "pdfkit": "^0.15.0",
+    "pdfkit": "^0.11.0",
     "pptx-compose": "^1.0.0",
     "pptx2pdf": "^1.0.10",
     "rimraf": "^3.0.2",
