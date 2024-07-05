@@ -3428,7 +3428,7 @@ async function main() {
 	console.log('Created '+blocks.length+' blocks');
 	
 	console.log('Generating temp PDF file...');
-	for (let i=0; i<5; i++){
+	for (let i=0; i<6; i++){
 		PDFUtils.generatePdf('temp.pdf', blocks);
 		console.log('PDFUtils.wrongPageReferencing', PDFUtils.wrongPageReferencing);
 	}	
@@ -3448,8 +3448,8 @@ async function main() {
 	
 	fs.writeFileSync('last-blocks.json', JSON.stringify(removeCircular(blocks), null, 4), 'utf-8');
 	fs.writeFileSync('last-blocks-short.json', JSON.stringify(blocks.map(bl=>{
-		const obj=_.pick(bl, 'type', 'blockHeight', 'textHeight', 'sectionHeight');
-		obj.value=bl.value?.[0]?.rawText;
+		const obj=_.pick(bl, 'type', 'blockHeight', 'textHeight', 'sectionHeight', 'startPageNum', 'firstParagraphHeight');
+		obj.value=_.isString(bl.value) ? bl.value : bl.value?.[0]?.rawText;
 		return obj;
 	}), null, 4), 'utf-8');
 	PDFUtils.generatePdf(pdfFileName, blocks, true, disableImages ? true : false);
