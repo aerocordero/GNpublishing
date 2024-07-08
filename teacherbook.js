@@ -2154,7 +2154,7 @@ async function main() {
 			}
 			blocks.push({
 				type: 'images',
-				value: RCimgPaths.map(img=>{
+				value: RCimgPaths.slice(0, 6).map(img=>{
 					const image={
 						path: img.imagePath,
 						width: RCimageWidth,
