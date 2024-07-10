@@ -2373,7 +2373,7 @@ async function main() {
 						value: 'Files'
 					});
 					const excludes=[
-						(file)=>file.type==='pdf' && file.originalFileName.indexOf('-presentation.')>0,
+						(file)=>file.type==='pdf' && (file.originalFileName.indexOf('-presentation.')>0 || file.originalFileName.indexOf('-presentation-')>0),
 						(file)=>{
 							const found=lesson.worksheet.find(ws=>ws.originalFileName.replace('.pptx', '')===file.originalFileName.replace('.pdf', ''));
 							if (found){
