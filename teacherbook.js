@@ -43,6 +43,7 @@ async function main() {
 		gnSubDomains,
 		initCustomPagesFromDB,
 		removeCircular,
+		getImgPropWidth,
 	} = require('./lib/utils');
 	const { materialsQtySet } = require('./lib/greenninja');
 	const PDFUtilsObj  = require('./lib/pdf-utils');
@@ -435,8 +436,18 @@ async function main() {
 					console.log('Not found Lesson', old_lesson_id);
 					return str;
 				}
-				//console.log('regexp_'+field, match, str, str1);
-				const workshet=fileLesson.worksheet.find(file=>{
+				
+				const fileTitle=str1.split('.').slice(0, -1).join('.');
+				console.log('regexp_'+field, {match, str, str1,fileTitle});
+				if (fileTitle=='a-modeling-photosynthesis-presentation-tx'){
+					console.log(fileLesson.worksheet);
+				}
+				const workshet=fileLesson.worksheet.find(file=>file.google_drive_object && (// first looking for Google doc or slides
+					file.fileName===fileTitle 
+					|| file.fileName?.toLowerCase()==='lesson '+fileLesson.number+fileTitle.trim().toLowerCase()
+					|| file.fileName?.toLowerCase()==='lesson'+fileLesson.number+fileTitle.trim().toLowerCase()
+				)) || fileLesson.worksheet.find(file=>{
+					//console.log(str1, file.fileTitle, file.fileNameWithExt, file.originalname);
 					const filename=file.fileNameWithExt?.toLowerCase();
 					const originalName=file.originalname?.toLowerCase();
 					return filename===str1.trim().toLowerCase() 
@@ -502,8 +513,11 @@ async function main() {
 		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
-			item.fileName=pathArr[pathArr.length-1].replace('.'+item.type, '');
+			item.fileName=item.google_drive_object?.title.replace('.'+item.type, '') || pathArr[pathArr.length-1].replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
+			if (item.type && item.originalname.indexOf('.'+item.type)<0){
+				item.originalname=item.originalname+'.'+item.type;
+			}
 			item.originalFileName=(item.originalname || item.fileNameWithExt);
 			
 			item.fileTitle=(item.originalFileName.indexOf('Lesson')!==0 ? 'Lesson '+lesson.number : '')+item.originalFileName;
@@ -2048,7 +2062,7 @@ async function main() {
 				const slide=greenBox.slides[0];
 				const path=await downloadFile(slide.imagePath);
 				const imgInfo=await getImgInfoAndRotate(path);
-				const imageWidth=contentWidth/2.5;
+				let imageWidth=contentWidth/2.5;
 				
 				let imageHeight=getImgPropheight(imgInfo, imageWidth, true);
 
@@ -2062,7 +2076,16 @@ async function main() {
 						
 						doc.y+=10;
 						let y=doc.y;
+						const maxImgHeight=792-y-15;
+
+						if ((y+imageHeight)>740){
+							imageWidth=getImgPropWidth({
+								width:imageWidth,
+								height:imageHeight,
+							}, maxImgHeight)
+						}
 						
+
 						doc.image(path, leftIdent-30, y, {
 							width: imageWidth,
 						});
