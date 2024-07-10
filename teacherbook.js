@@ -518,7 +518,7 @@ async function main() {
 			if (item.type && item.originalname.indexOf('.'+item.type)<0){
 				item.originalname=item.originalname+'.'+item.type;
 			}
-			item.originalFileName=(item.originalname || item.fileNameWithExt);
+			item.originalFileName=(item.originalname || item.fileNameWithExt).replace(new RegExp('^Lesson[ ]*'+lesson.number, 'gi'), '');
 			
 			item.fileTitle=(item.originalFileName.indexOf('Lesson')!==0 ? 'Lesson '+lesson.number : '')+item.originalFileName;
 			item.fileTitle=item.fileTitle.replace('Lesson', 'Lesson ').replace('Lesson  ', 'Lesson ');
@@ -2364,7 +2364,7 @@ async function main() {
 					value: 'Teaching Resources'
 				});	
 				
-				//console.log('lesson.worksheet', lesson.number, lesson.worksheet);
+				console.log('lesson.worksheet', lesson.number, lesson.worksheet);
 				//console.log('worksheetFromAnotherLessons', worksheetFromAnotherLessons);
 				if (lesson.worksheet.length || worksheetFromAnotherLessons.length){
 					
