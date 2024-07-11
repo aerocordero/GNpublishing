@@ -262,7 +262,8 @@ async function main() {
 			'FROM lesson_worksheet_mapping m',
 			'JOIN worksheet t ON m.worksheet_id = t.worksheet_id',
 			'INNER JOIN file f ON f.id = t.file_id',
-			'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf") AND t.worksheet_language_id=1'
+			'WHERE m.lesson_id = ? AND (t.type NOT IN ("docx", "doc", "rtf") OR google_drive_object IS NOT NULL) AND t.worksheet_language_id=1'
+			//'WHERE m.lesson_id = ? AND t.type NOT IN ("docx", "doc", "rtf") AND t.worksheet_language_id=1'
 		], [lesson.lesson_id]);
 		lesson.worksheet=_.sortBy(lesson.worksheet, item=>item.type!=='pptx').map(item=>{
 			item.text_snapshot='';
@@ -271,7 +272,8 @@ async function main() {
 			}
 			if (item.google_drive_object){
 				const obj=_.isObject(item.google_drive_object) ? item.google_drive_object : JSON.parse(item.google_drive_object);
-				if (obj.title){
+				if (obj.title && obj.title!==item.originalname){
+					item.firstUploadedOriginalName=item.originalname;
 					item.originalname=obj.title;
 				}
 				//
@@ -453,7 +455,8 @@ async function main() {
 					return filename===str1.trim().toLowerCase() 
 					|| originalName===str1.trim().toLowerCase()
 					|| originalName==='lesson '+fileLesson.number+str1.trim().toLowerCase()
-					|| originalName==='lesson'+fileLesson.number+str1.trim().toLowerCase();
+					|| originalName==='lesson'+fileLesson.number+str1.trim().toLowerCase()
+					|| file.firstUploadedOriginalName===str1.trim();
 				}
 				);
 				//console.log(workshet);
@@ -513,13 +516,13 @@ async function main() {
 		*/
 		lesson.worksheet.forEach(item=>{
 			const pathArr=item.path.split('/');
-			item.fileName=item.google_drive_object?.title.replace('.'+item.type, '') || pathArr[pathArr.length-1].replace('.'+item.type, '');
+			item.fileName=item.google_drive_object?.title.replace('.'+item.type, '') || (item.originalname || pathArr[pathArr.length-1]).replace('.'+item.type, '');
 			item.fileNameWithExt=item.fileName+'.'+item.type;
 			if (item.type && item.originalname.indexOf('.'+item.type)<0){
 				item.originalname=item.originalname+'.'+item.type;
 			}
 			item.originalFileName=(item.originalname || item.fileNameWithExt).replace(new RegExp('^Lesson[ ]*'+lesson.number, 'gi'), '');
-			
+			item.fileName=item.fileName.replace(new RegExp('^Lesson[ ]*'+lesson.number, 'gi'), '');
 			item.fileTitle=(item.originalFileName.indexOf('Lesson')!==0 ? 'Lesson '+lesson.number : '')+item.originalFileName;
 			item.fileTitle=item.fileTitle.replace('Lesson', 'Lesson ').replace('Lesson  ', 'Lesson ');
 			
@@ -541,7 +544,21 @@ async function main() {
 				lesson.hasPhenomenonFile=true;
 			}
 		});
+		lesson.worksheet=_.sortBy(lesson.worksheet, ws=>!ws.google_drive_object);
+		lesson.worksheet=Object.values(_.groupBy(lesson.worksheet, ws=>ws.fileName)).map(gr=>{
+			let for_student=false;
+			gr.forEach(item=>{
+				if (item.for_student) {
+					for_student=true;
+				}
+			})
+			const item=gr[0];
+			item.for_student=for_student;
+			return item;
+		});
+
 		lesson.worksheet=_.sortBy(lesson.worksheet, file=>file.fileName);
+		
 		//console.log(lesson.worksheet);
 		lesson.activityPlan.forEach(plan=>{
 			plan.files=[];
@@ -2391,7 +2408,7 @@ async function main() {
 						lessonFiles.push(file);					
 					});
 					let hasOnlineIcons=!!lessonFiles.find(f=>f.isOnline);
-					const hasStudenIcon=data=>(data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type==='pdf';
+					const hasStudenIcon=data=>(data.for_student || data.fileTitle.indexOf('phenomenon.pdf')>0) && data.type!=='pptx';
 					let hasStudentIcons=!!lessonFiles.find(f=>hasStudenIcon(f));
 				
 					blocks.push({
@@ -2781,7 +2798,7 @@ async function main() {
 				const proceedFile=async (file)=>{
 					//showedFiles.push(file.fileNameWithExt);
 					const path=await downloadFile(file.path);
-					if (file.type==='pdf'){
+					if (file.type!=='pptx'){
 						const imgPaths=await convertPptxPdf(path, file);
 						//const imgPaths=await convertPdf(path);
 						//console.log(imgPaths);
