@@ -117,8 +117,9 @@ const processQueue=()=>{
 				+(params.worksheetSource ? ' --ws-source="'+params.worksheetSource+'"' : '')
 				+(config.alwaysFlushDBCache ? ' --ignore-db-cache' : '')
 				+' --dest-path="'+destFilePath+'"'
-				+' --queue-item-id="'+nextItem.id+'"'
-				+(params.disableImages ? ' --disable-images' : '');
+				+(params.disableImages ? ' --disable-images' : '')
+				+(params.reloadGDocs ? ' --reload-gdocs' : '')
+				+' --queue-item-id="'+nextItem.id+'"';
 			console.log(cmd);
 		
 			nextItem.status='inProgress';

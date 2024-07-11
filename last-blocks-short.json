@@ -1,0 +1,1916 @@
+[
+    {
+        "type": "pageBreak",
+        "startPageNum": 0
+    },
+    {
+        "type": "custom",
+        "startPageNum": 1
+    },
+    {
+        "type": "pageBreak",
+        "startPageNum": 1
+    },
+    {
+        "type": "image",
+        "startPageNum": 2,
+        "value": "/Users/ilyavlasov/Documents/Greenninja/mini-book/lib/../tmp/pptx-export/Dear-Educator_TX-mYFUWbZfLmrqCxsjSss1y.pdf/Dear-Educator_TX-mYFUWbZfLmrqCxsjSss1y.png"
+    },
+    {
+        "type": "pageBreak",
+        "startPageNum": 2
+    },
+    {
+        "type": "image",
+        "startPageNum": 3,
+        "value": "/Users/ilyavlasov/Documents/Greenninja/mini-book/lib/../tmp/pptx-export/The-Green-Ninja-Approach_TX-sXa1w8nb2XuoF2kOKAZpA.pdf/The-Green-Ninja-Approach_TX-sXa1w8nb2XuoF2kOKAZpA.png"
+    },
+    {
+        "type": "pageBreak",
+        "startPageNum": 3
+    },
+    {
+        "type": "image",
+        "startPageNum": 4,
+        "value": "/Users/ilyavlasov/Documents/Greenninja/mini-book/lib/../tmp/pptx-export/How-to-Teach-with-Green-Ninja-tCJY_lG1hcJK7Ncalu3Xe.pdf/How-to-Teach-with-Green-Ninja-tCJY_lG1hcJK7Ncalu3Xe-0.png"
+    },
+    {
+        "type": "pageBreak",
+        "startPageNum": 4
+    },
+    {
+        "type": "image",
+        "startPageNum": 5,
+        "value": "/Users/ilyavlasov/Documents/Greenninja/mini-book/lib/../tmp/pptx-export/How-to-Teach-with-Green-Ninja-tCJY_lG1hcJK7Ncalu3Xe.pdf/How-to-Teach-with-Green-Ninja-tCJY_lG1hcJK7Ncalu3Xe-1.png"
+    },
+    {
+        "type": "pageBreak",
+        "startPageNum": 5
+    },
+    {
+        "type": "contents",
+        "startPageNum": 6
+    },
+    {
+        "type": "sectionCover",
+        "startPageNum": 7
+    },
+    {
+        "type": "h1",
+        "startPageNum": 10,
+        "value": "  "
+    },
+    {
+        "type": "p",
+        "blockHeight": 37.65000000000002,
+        "textHeight": 37.65000000000002,
+        "startPageNum": 10,
+        "value": "The Green Ninja Science Program enriches both teaching and learning experiences by offering high-quality instructional resources, along with unique, interactive activities that make science education engaging and meaningful. Here's how a typical unit unfolds for teachers and students:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 10,
+        "value": "For Teachers: The online teacher portal provides everything needed to teach. It includes lesson plans with editable slides, hands-on science materials, and professional development opportunities. Printed Teacher Companion serves as a valuable offline resource."
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 10,
+        "value": "For Students: Each unit begins with a challenge, giving a purpose to learning. Students learn science concepts while exploring phenomena, conducting investigations, and participating in hands-on activities. They apply their knowledge in a final project to solve the challenge."
+    },
+    {
+        "type": "image",
+        "startPageNum": 10,
+        "value": "tmp/Teacher-Companion_tx-vzi43oYuRwSmLYgQYIzGl.jpg"
+    },
+    {
+        "type": "h1",
+        "startPageNum": 11,
+        "value": "  "
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 96.25,
+        "startPageNum": 11,
+        "firstParagraphHeight": 96.25,
+        "value": "Differentiation and Special Learning Needs"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 11,
+        "value": "The Texas Essential Knowledge and Skills (TEKS) and Texas English Language Proficiency Standards (ELPS) are part of the provide an excellent framework for differentiated teaching and learning, and the Green Ninja model utilizes and expands on this framework through the creation of a broad array of learning tools. Green Ninja curriculum provides a rich learning environment that can engage many types of learners. Students with disabilities, English Language Learners, as well as students with different learning modalities all benefit from the diversity of teaching and learning strategies."
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 295,
+        "startPageNum": 11,
+        "firstParagraphHeight": 55,
+        "value": "Creating a Climate for Differentiated Instruction"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 11,
+        "value": "The differentiated instruction strategies utilized in the Green Ninja curriculum promote a lively classroom environment through activities, discussions, and the sharing of student work. We look at this classroom climate as a large system composed of natural learning subsystems."
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 235,
+        "startPageNum": 11,
+        "value": "Emotional Learning System: Green Ninja lessons strive to provide multiple ways for students to express themselves. The needs of the Emotional Learning System are met through activities such as writing, role-playing, and creating animations and videos."
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 252.54999999999995,
+        "startPageNum": 11,
+        "firstParagraphHeight": 81.29999999999995,
+        "value": "Additional Support for Differentiated Learning"
+    },
+    {
+        "type": "p",
+        "blockHeight": 67.74999999999983,
+        "textHeight": 67.74999999999994,
+        "startPageNum": 11,
+        "value": "The instructional strategies discussed above create an ideal learning climate, and they also provide the means to engage all types of learners. While it may not be possible to actually know the intelligence and learning profiles of all students, the differentiated approach used by Green Ninja ensures that all students have access to different styles of instruction. We know that having a classroom full of diverse learners is challenging, even with this variety of teaching strategies, so we offer additional support for teachers:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 166.25,
+        "startPageNum": 11,
+        "value": "Access and Equity sections in the lessons contain tips for teachers, with suggestions specific to the particular lesson/activity on how to support students with different learning modalities and styles."
+    },
+    {
+        "type": "h1",
+        "startPageNum": 12,
+        "value": "Introduction"
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 12
+    },
+    {
+        "type": "introductions",
+        "startPageNum": 12
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 207.3850000000001,
+        "startPageNum": 12,
+        "firstParagraphHeight": 207.3850000000001,
+        "value": "Unit Storyline"
+    },
+    {
+        "type": "p",
+        "blockHeight": 182.0500000000001,
+        "textHeight": 182.0500000000001,
+        "startPageNum": 12,
+        "value": "In this unit, students will focus on the Earth systems and life sciences that create and maintain intact, healthy ecosystems. Students will have the opportunity to develop a scientific and personal connection to natural areas called “Ecosystem Study Locations” near their homes and/or school. Students will also observe Earth processes at various temporal and spatial scales around the world and will see how a change in one part of the system can affect other parts of the system. The "
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 535.8913535911602,
+        "startPageNum": 13,
+        "firstParagraphHeight": 535.8913535911602,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 192.5,
+        "textHeight": 192.5,
+        "startPageNum": 13,
+        "value": "This roadmap will serve as a visual to walk students through this unit on ecosystems. The central figure in this image is the student as an investigator of their own ecosystem study. They will consider the interactions between all of Earth's systems in their local ecosystem and throughout the unit. The two people on the right side of the image are shown actively participating in trade, as students will study and investigate the historic trade of natural resources between indigenous groups in Texas. The goal of this investigation is to examine the value of natural resources produced in a healthy local ecosystem. A fox and rabbit are also shown on the right, as students will use their data collection experience and a fox/rabbit/plant simulation to develop insights into ecosystems. The roadmap illustrates evidence for the effects of resource availability via the trees during different seasons. The section of the visual roadmap on the left (mountains, clouds) relates to the abiotic conditions that determine some resource availability. Also on the left, the multi-colored rabbits on the hillslope represent two populations with different variations that help them survive differently. This roadmap image highlights each theme. As the unit unfolds, students will explore ecosystems and ultimately write a letter of thanks and support to local managers of their ecosystem locations."
+    },
+    {
+        "type": "image",
+        "startPageNum": 13,
+        "value": "tmp/Ecosystems-Unit Roadmap-1SAeXKE81dRrth5yMh5KN.png"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 299.03499999999997,
+        "startPageNum": 14,
+        "firstParagraphHeight": 77.53499999999997,
+        "value": "Home to School Connections"
+    },
+    {
+        "type": "p",
+        "blockHeight": 54.999999999999986,
+        "textHeight": 55,
+        "startPageNum": 14,
+        "value": "Green Ninja curriculum connects classroom learning to everyday experiences in the home. It also provides many ways for parents to stay connected to the classroom. During the course of this unit, encourage parents to take their students to visit waterways, marshes, or even city parks. The best way to learn about ecosystems is to see them in action."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 14,
+        "value": "Specific opportunities for parent involvement:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 129.75,
+        "startPageNum": 14,
+        "value": "A short family field trip in the neighborhood or elsewhere can help students gather data for this lesson. Lesson 3.4 My Own Ecosystem Study "
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 14,
+        "value": "Specific opportunities for parents to monitor student progress:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 44.25,
+        "startPageNum": 14,
+        "value": "Invite parents to view the persuasive letters produced by students. Lesson 3.36 Signed, Sealed, Delivered "
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 466.035,
+        "startPageNum": 14,
+        "firstParagraphHeight": 77.53500000000003,
+        "value": "Assessment"
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 14,
+        "value": "The Green Ninja curriculum provides a diverse range of assessment types to ensure comprehensive monitoring of student progress. Each assessment type is designed to serve a specific purpose and offers unique insights into student understanding and performance. Here's more information about each assessment type:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 337.25,
+        "startPageNum": 15,
+        "value": "Pre-assessments: These assessments help gauge students' prior knowledge and understanding of a topic before starting a unit. By identifying existing preconceptions and levels of content knowledge, teachers can tailor their instruction to address misconceptions and meet individual student needs."
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 15,
+        "value": "By incorporating these diverse assessment types into the Green Ninja curriculum, educators can effectively monitor student progress and adapt their teaching strategies to better meet the needs of their students."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 407.78499999999997,
+        "startPageNum": 15,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Access and Equity"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 15,
+        "value": "For English Learners"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 15,
+        "value": "Guidance for strategic learning techniques and vocabulary acquisition to be used throughout Grade 6."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.749999999999943,
+        "textHeight": 13.75,
+        "startPageNum": 15,
+        "value": "Vocabulary:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 141.75,
+        "startPageNum": 15,
+        "value": "Repeat basic and grade-level vocabulary words throughout lessons."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 15,
+        "value": "Learning Techniques:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 144.75,
+        "startPageNum": 16,
+        "value": "During discussions, have students repeat the last sentence they heard before contributing to the conversation (i.e. \"I heard ____ say ____, I think ____\"). "
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 16,
+        "value": "More ways to support English Learner students can be found on each chapter review lesson.  "
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 111.285,
+        "startPageNum": 16,
+        "firstParagraphHeight": 37.535,
+        "value": "Resources"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 82.5,
+        "startPageNum": 16,
+        "firstParagraphHeight": 82.5,
+        "value": "Outside Educational Resources"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 16,
+        "value": "Reading about ecology is informative, but speaking with a real ecologist opens up new vistas for young learners. From the parking lot, a wetland may look like a grassy field with little going on. But with the help of an enthusiastic volunteer or naturalist, a new world is revealed. Students might be able to taste salty pickleweed or see migrating birds. A field trip can greatly enhance learning and literally bring the learning to life."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 247.53500000000003,
+        "startPageNum": 16,
+        "firstParagraphHeight": 146.28500000000003,
+        "value": "Technology and Teaching"
+    },
+    {
+        "type": "p",
+        "blockHeight": 123.75,
+        "textHeight": 123.75,
+        "startPageNum": 16,
+        "value": "PocketLab Devices: "
+    },
+    {
+        "type": "p",
+        "blockHeight": 96.25,
+        "textHeight": 96.25,
+        "startPageNum": 16,
+        "value": "Unit Slide Deck:"
+    },
+    {
+        "type": "h1",
+        "startPageNum": 17,
+        "value": "Texas Essential Knowledge and Skills (TEKS)"
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 17
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 0,
+        "startPageNum": 17,
+        "value": ""
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 17,
+        "value": "6.1"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 152.5,
+        "startPageNum": 17,
+        "value": "6.1A: ask questions and define problems based on observations or information from text, phenomena, models, or investigations;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 17,
+        "value": "6.2"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 30.5,
+        "startPageNum": 17,
+        "value": "6.2B: analyze data by identifying any significant descriptive statistical features, patterns, sources of error, or limitations;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 17,
+        "value": "6.3"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 91.5,
+        "startPageNum": 17,
+        "value": "6.3A: develop explanations and propose solutions supported by data and models and consistent with scientific ideas, principles, and theories;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 17,
+        "value": "6.4"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 74.75,
+        "startPageNum": 17,
+        "value": "6.4A: relate the impact of past and current research on scientific thought and society, including the process of science, cost-benefit analysis, and contributions of diverse scientists as related to the content;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 18,
+        "value": "6.5"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 172.25,
+        "startPageNum": 18,
+        "value": "6.5A: identify and apply patterns to understand and connect scientific phenomena or to design solutions;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 18,
+        "value": "6.10"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 30.5,
+        "startPageNum": 18,
+        "value": "6.10A: differentiate between the biosphere, hydrosphere, atmosphere, and geosphere and identify components of each system;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 18,
+        "value": "6.12"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 105.25,
+        "startPageNum": 18,
+        "value": "6.12A: investigate how organisms and populations in an ecosystem depend on and may compete for biotic factors such as food and abiotic factors such as availability of light and water, range of temperatures, or soil composition;"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 18,
+        "value": "6.13"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 30.5,
+        "startPageNum": 18,
+        "value": "6.13C: describe how variations within a population can be an advantage or disadvantage to the survival of a population as environments change."
+    },
+    {
+        "type": "h1",
+        "startPageNum": 19,
+        "value": "English Language Proficiency Standards (ELPS)"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 0,
+        "startPageNum": 19,
+        "value": ""
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 19,
+        "value": "Cross-curricular second language acquisition/learning strategies."
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 152.5,
+        "startPageNum": 19,
+        "value": "1.A: use prior knowledge and experiences to\nunderstand meanings in English"
+    },
+    {
+        "type": "p",
+        "blockHeight": 96.25,
+        "textHeight": 96.25,
+        "startPageNum": 19,
+        "value": "Cross-curricular second language acquisition/listening"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 105.24999999999994,
+        "startPageNum": 19,
+        "value": "2.C: learn new language structures, expressions, and basic and academic vocabulary heard during classroom instruction and interactions"
+    },
+    {
+        "type": "p",
+        "blockHeight": 110,
+        "textHeight": 110,
+        "startPageNum": 19,
+        "value": "Cross-curricular second language acquisition/speaking"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 251.75,
+        "startPageNum": 20,
+        "value": "3.B: expand and internalize initial English vocabulary by learning and using high-frequency English words\nnecessary for identifying and describing people,\nplaces, and objects, by retelling simple stories and\nbasic information represented or supported by\npictures, and by learning and using routine language\nneeded for classroom communication"
+    },
+    {
+        "type": "p",
+        "blockHeight": 110,
+        "textHeight": 110,
+        "startPageNum": 20,
+        "value": "Cross-curricular second language acquisition/reading"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 149.5,
+        "startPageNum": 20,
+        "value": "4.C: develop basic sight vocabulary, derive meaning of environmental print, and comprehend English vocabulary and language structures used routinely in written classroom materials"
+    },
+    {
+        "type": "p",
+        "blockHeight": 123.75,
+        "textHeight": 123.75,
+        "startPageNum": 20,
+        "value": "Cross-curricular second language acquisition/writing"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 16.75,
+        "startPageNum": 20,
+        "value": "5.B: write using newly acquired basic vocabulary and content-based grade-level vocabulary"
+    },
+    {
+        "type": "h1",
+        "startPageNum": 21,
+        "value": "Materials List Information"
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 21
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 1292.5349999999999,
+        "startPageNum": 21,
+        "firstParagraphHeight": 50.035,
+        "value": "Safety Guidelines"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 21,
+        "value": "Inherent in laboratory-based activities is the potential for injury. As professionals, teachers of science have a duty or standard of care to ensure the safety of students, teachers, and staff."
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 16.75,
+        "startPageNum": 21,
+        "value": "Read about teacher responsibilities here: https://www.nsta.org/about/positions/liability.aspx"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 21,
+        "value": "For additional safety information, refer to:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 218.25,
+        "startPageNum": 21,
+        "value": "TEA Texas Safety Standards https://tea.texas.gov/sites/default/files/TEA%20Texas%20Safety%20Standards.pdf "
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 21,
+        "value": "Outdoor Safety in Schools During Field Investigations"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 21,
+        "value": "Field investigations are an essential part of science education, allowing students to explore and observe the natural world firsthand. However, these experiences can also pose potential hazards, and it is crucial for students to practice science safety during these activities."
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 21,
+        "value": "One important aspect of science safety during field investigations is being aware of poisonous plants. Some of the most common poisonous plants include poison ivy, poison oak, and poison sumac. These plants can cause allergic reactions, dermatitis reactions, and ingestion reactions, and it is important for students to learn to recognize them and avoid contact. If contact occurs, students should wash with soap and water immediately, removing the plant oils from their skin."
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 21,
+        "value": "Another important aspect of science safety during field investigations is being aware of allergies. Allergies can result from an individual's sensitivity to air-borne materials such as algae, fungus, spores, and pollen grains. While it may be impossible to protect students from all allergens, knowledge is still important. Students who suffer from allergy-related respiratory diseases should be identified prior to the field investigation, and precautions should be taken to minimize exposure to allergens as much as possible."
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 21,
+        "value": "Students should also be aware of the dangers of ingesting or coming into contact with unknown plants. They should never eat unknown berries, seeds, fruits, or other plant parts, never rub sap or fruit juices on their skin or open wounds, and never inhale or expose their skin or eyes to smoke from any burning plants. If students handle plants during field investigations, they should always scrub their hands with soap and water before eating or touching their face."
+    },
+    {
+        "type": "p",
+        "blockHeight": 137.5,
+        "textHeight": 137.5,
+        "startPageNum": 21,
+        "value": "Finally, severe weather can occur suddenly during a field investigation, and students should know what to do in case of tornadoes, flash floods, and lightning. Tornadoes can be especially dangerous, and students should seek shelter in a basement or an interior room away from windows or areas with wide-span roofs such as auditoriums. If shelter is not available, students should never stay in a vehicle or bus, as a substantial structure is much safer. Flash floods can be equally dangerous, and students should seek higher ground immediately and avoid walking through any flowing water. When lightning strikes, students should seek safe shelter such as inside a sturdy building or a hard-top automobile or school bus with all windows up. They should also move away from any bodies of water and avoid isolated trees or tall objects. If they feel their hair standing on end, they should squat with their head between their knees but not lie flat."
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.249999999999986,
+        "textHeight": 41.249999999999986,
+        "startPageNum": 22,
+        "value": "Students practicing science safety during field investigations can help ensure a safe and enjoyable experience for all. By being aware of potential hazards and taking necessary precautions, students can continue to explore and learn about the natural world while minimizing the risk of injury or harm."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 22,
+        "value": "Here is a summary list of safety guidelines for teachers to focus on during field investigations:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 277.5,
+        "startPageNum": 22,
+        "value": "Recognize and avoid contact with poisonous plants such as poison ivy, poison oak, and poison sumac."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 22,
+        "value": "Disposal of Materials:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 164.99999999999994,
+        "textHeight": 165,
+        "startPageNum": 22,
+        "value": "The safety of our planet in part depends on the appropriate disposal of materials after they have reached their end of life. At Green Ninja, we of course recommend that any of the materials associated with our curriculum be reused or repurposed whenever possible. This not only saves resources for the classroom and school but also helps demonstrate to students the value of conservation. When products can no longer be used or repurposed, there should be a plan for disposal that includes the potential for composting, recycling, submission to a hazardous waste collection facility, or as a last resort, submission to landfill. Every local municipality has its own waste collection guidelines, so you should check with them to determine your waste disposal options. Many waste providers have printed documentation and including this in your Green Ninja classroom helps students consider the end-of-life options for the materials they see in your classroom. Although in many cases, tossing things in the trash may seem the easiest choice of action, you can help model behavior that both follows local laws and values the safety and health of our natural world.  "
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 22.534999999999968,
+        "startPageNum": 23,
+        "firstParagraphHeight": 22.534999999999968,
+        "value": "Materials Provided by School/Teacher:"
+    },
+    {
+        "type": "table",
+        "startPageNum": 23
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.549999999999955,
+        "textHeight": 13.549999999999955,
+        "startPageNum": 23,
+        "value": "1"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 13.75,
+        "startPageNum": 23,
+        "firstParagraphHeight": 13.75,
+        "value": "Optional Materials"
+    },
+    {
+        "type": "table",
+        "startPageNum": 23
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 22.335000000000036,
+        "startPageNum": 24,
+        "firstParagraphHeight": 22.335000000000036,
+        "value": "Materials in Green Ninja Kit:"
+    },
+    {
+        "type": "table",
+        "startPageNum": 24
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.550000000000011,
+        "textHeight": 13.550000000000011,
+        "startPageNum": 24,
+        "value": "3"
+    },
+    {
+        "type": "sectionCover",
+        "startPageNum": 24
+    },
+    {
+        "type": "h1",
+        "startPageNum": 27,
+        "value": "Chapter Overview"
+    },
+    {
+        "type": "p",
+        "blockHeight": 110,
+        "textHeight": 110,
+        "startPageNum": 27,
+        "value": "This chapter focuses on introducing students to the concept of ecosystems and the importance of protecting them. The chapter also covers the history of trade routes and natural resources of indigenous groups in the southeast U.S. Students are guided in selecting local ecosystem study locations and discuss safety and observation techniques. Students prepare covers for the Ecosystem Notebooks to reflect their association with their local natural world. Finally, they explore the neurological benefits of exposure to nature through reading a scientific paper abstract. Throughout the chapter, students practice their observation skills, which will be essential for their ecosystem studies."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 27
+    },
+    {
+        "type": "custom",
+        "startPageNum": 27
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 27,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 27,
+        "value": "Unit Challenge:"
+    },
+    {
+        "type": "custom",
+        "startPageNum": 27
+    },
+    {
+        "type": "h1",
+        "startPageNum": 28,
+        "value": "Reading Companion"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.49999999999997,
+        "startPageNum": 28,
+        "value": "A Reading Companion is included with each chapter to summarize the key science concepts and highlight vocabulary that students can use to label and discuss the concepts. At the end of each chapter, the Chapter Review lesson incorporates the Reading Companion so that students have an opportunity to review the various science concepts before completing a short assessment. Guidance on how to use the readings and assessments is provided within each Chapter Review Lesson. Login to tx.greenninja.org to access the Chapter Review Lesson."
+    },
+    {
+        "type": "images",
+        "startPageNum": 28
+    },
+    {
+        "type": "h1",
+        "startPageNum": 29,
+        "value": "Chapter Overview"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 29,
+        "value": "Students examine the interactions between Ecosystem ABCs. The Green Ninja "
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 29
+    },
+    {
+        "type": "custom",
+        "startPageNum": 29
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 29,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 29,
+        "value": "Unit Challenge:"
+    },
+    {
+        "type": "custom",
+        "startPageNum": 29
+    },
+    {
+        "type": "h1",
+        "startPageNum": 30,
+        "value": "Reading Companion"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.49999999999997,
+        "startPageNum": 30,
+        "value": "A Reading Companion is included with each chapter to summarize the key science concepts and highlight vocabulary that students can use to label and discuss the concepts. At the end of each chapter, the Chapter Review lesson incorporates the Reading Companion so that students have an opportunity to review the various science concepts before completing a short assessment. Guidance on how to use the readings and assessments is provided within each Chapter Review Lesson. Login to tx.greenninja.org to access the Chapter Review Lesson."
+    },
+    {
+        "type": "images",
+        "startPageNum": 30
+    },
+    {
+        "type": "h1",
+        "startPageNum": 31,
+        "value": "Lesson Introduction"
+    },
+    {
+        "type": "setObjectPageNum",
+        "startPageNum": 31
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.249999999999986,
+        "textHeight": 41.249999999999986,
+        "startPageNum": 31,
+        "value": "Students are introduced to the components that create ecosystems. Then, they model the classification process for ecosystem components, and begin to connect them through identifying interactions, relationships, and shared processes."
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 27.5,
+        "startPageNum": 31,
+        "firstParagraphHeight": 27.5,
+        "value": "Phenomenon"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 31,
+        "value": "Resources available in natural places change depending on the current conditions."
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 74.75,
+        "startPageNum": 31,
+        "firstParagraphHeight": 74.75,
+        "value": "Lesson Activities"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 61,
+        "startPageNum": 31,
+        "value": "Students practice a systems thinking approach through analyzing components of an ecosystem and their interactions."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 31
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 37.33499999999998,
+        "startPageNum": 31,
+        "firstParagraphHeight": 37.33499999999998,
+        "value": "Teaching Resources"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 13.550000000000011,
+        "startPageNum": 31,
+        "firstParagraphHeight": 13.550000000000011,
+        "value": "Files"
+    },
+    {
+        "type": "table",
+        "startPageNum": 31
+    },
+    {
+        "type": "custom",
+        "startPageNum": 31
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 30.100000000000023,
+        "startPageNum": 31,
+        "firstParagraphHeight": 30.100000000000023,
+        "value": "Links"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 16.55000000000001,
+        "startPageNum": 31,
+        "value": "Classification of Plants - The Seed Site: http://theseedsite.co.uk/class.html"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 176.24999999999977,
+        "startPageNum": 31,
+        "firstParagraphHeight": 74.74999999999977,
+        "value": "Materials"
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 67.74999999999977,
+        "startPageNum": 31,
+        "firstParagraphHeight": 67.74999999999977,
+        "value": "For the class"
+    },
+    {
+        "type": "list",
+        "textHeight": 54.19999999999982,
+        "startPageNum": 31
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 41.25,
+        "startPageNum": 31,
+        "firstParagraphHeight": 41.25,
+        "value": "For each pair of students"
+    },
+    {
+        "type": "list",
+        "textHeight": 27.5,
+        "startPageNum": 31
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 73.75,
+        "startPageNum": 32,
+        "firstParagraphHeight": 73.75,
+        "value": "For each student"
+    },
+    {
+        "type": "list",
+        "textHeight": 27.5,
+        "startPageNum": 32
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 32,
+        "value": "2"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 544.4558333333333,
+        "startPageNum": 32,
+        "firstParagraphHeight": 55.035,
+        "value": "Lesson Plan"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 32,
+        "value": "This is the suggested sequence of learning activities for this lesson. Note that session times are estimates. Depending on students' progress, the sessions may be shorter or longer."
+    },
+    {
+        "type": "line",
+        "startPageNum": 32
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 499.42083333333335,
+        "startPageNum": 32,
+        "firstParagraphHeight": 300.67083333333335,
+        "value": "1. Nature Ninja Challenge Update & Phenomenon Introduction"
+    },
+    {
+        "type": "p",
+        "blockHeight": 280.67083333333335,
+        "textHeight": 41.24999999999997,
+        "startPageNum": 32,
+        "value": "Begin class with the"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 32,
+        "value": "Explain to students that, unbeknownst to them, they have already succeeded in some of their Nature Ninja challenges (as set forth in {{n3W$c4OQv}}).  "
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 32,
+        "value": "Present students with two Nature Ninja badges that they have already earned: “Ecosystem Study Location – Chosen” and “Observation and Change Detection Skills”. Students should have chosen and visited their ecosystem study locations, and should be starting to use skills of observation and change detection to investigate the ecosystems. Students affix their badges with tape or glue in their Ecosystem Notebooks on the provided blank pages (if printed)."
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 32,
+        "value": "Show students that the next Nature Ninja badge to earn is “Understanding Ecosystems.” The next few lessons will help them earn this badge. "
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 33,
+        "value": "Return attention to the "
+    },
+    {
+        "type": "line",
+        "startPageNum": 33
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 492,
+        "startPageNum": 33,
+        "firstParagraphHeight": 33.75,
+        "value": "2. Ecosystem ABCs"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 33,
+        "value": "Hand out 4–8 sticky notes to each student."
+    },
+    {
+        "type": "p",
+        "blockHeight": 223.74999999999997,
+        "textHeight": 96.25,
+        "startPageNum": 33,
+        "value": "Choose an image from the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 36,
+        "value": "In small groups, students work together to categorize their sticky notes (duplicate ideas are OK) into three categories agreed upon by the team (e.g., big/medium/small things, dead things, ecosystem things, city things). While students are categorizing, move between groups and ask probing questions on their rationale."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 36,
+        "value": "Have groups share their categories. Write them on the board. "
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 36,
+        "value": "As a class, discuss commonalities and themes of their classifications. Encourage the class to work together to choose three categories that fit all their observations. Facilitation prompts might include:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 67,
+        "startPageNum": 36,
+        "value": "What do you mean by that category?"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 36,
+        "value": "Whether or not the students reach this goal, the process they are modeling is exactly what scientists do when working to classify components of ecosystems. They begin with assumptions or hypotheses, test them, reorganize, seek input from others, and revise their work when new information is presented."
+    },
+    {
+        "type": "line",
+        "startPageNum": 36
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 679.1708333333333,
+        "startPageNum": 36,
+        "firstParagraphHeight": 47.5,
+        "value": "3. Classifying Ecosystems"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 36,
+        "value": "Using the categories the students shared, help students arrive at the three basic ecosystem classifications used by scientists—the Ecosystem ABCs: non-living (abiotic), living (biotic), and human-made (cultural). "
+    },
+    {
+        "type": "p",
+        "blockHeight": 308.17083333333335,
+        "textHeight": 68.75,
+        "startPageNum": 37,
+        "value": "Project the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 37,
+        "value": "Host a classroom discussion around the following questions:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 47.25,
+        "startPageNum": 37,
+        "value": "Were there any items that were difficult to put into just one category? These may be placed in the overlapping area of the circles."
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.74999999999994,
+        "textHeight": 68.75,
+        "startPageNum": 37,
+        "value": "Inform students that the term abiotic refers to being non-living, not a product of a life process, and examples such as light, air, water, and soil. Note:  Although scientifically objects like rocks, water and the air are not considered living, recognize that there are some cultures that believe that life exists within everything. As with any type of belief structure, encourage students who may have this viewpoint to also consider the understandings of science and how they might live with multiple views of the world."
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 37,
+        "value": "Then, inform students that the term biotic refers to the living, or once living, and therefore pertains to living organisms."
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 37,
+        "value": "Introduce the third circle as “cultural” components, adding a human-use dimension to the natural aspects of an ecosystem (the C in the Ecosystem ABCs). Allow students to move any of their sticky notes into the cultural classification or in an overlapping space. "
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 37,
+        "value": "Is there anything students can argue fits into the center of the diagram (i.e., includes aspects of all three classifications)? This may lead to more discussion and questions than answers, and that is OK."
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 38,
+        "value": "Finally, inform students what the term cultural refers to in this context which is part of the environment that represents human-made features. "
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 20,
+        "startPageNum": 38,
+        "value": "Total Time"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 211.285,
+        "startPageNum": 38,
+        "firstParagraphHeight": 105.035,
+        "value": "Teacher Tips"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.5,
+        "startPageNum": 38,
+        "value": "Students will see that items in an ecosystem fit into more than one classification, particularly when they begin analyzing cultural impacts. Guide students to make these claims using supporting evidence. In groups, students can decide where items are placed (the"
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 38,
+        "value": "Sample ecosystem images are provided, but you may choose another ecosystem image that is more relevant to students. Consider using art depicting an ecosystem. It is preferred that the image has some evidence of cultural impact. In macro-view images of ecosystems, you may have to help students infer animals that may be present (e.g., birds, mice) but are not pictured."
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 38,
+        "value": "A three-circle "
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 311.28499999999997,
+        "startPageNum": 38,
+        "firstParagraphHeight": 37.53499999999997,
+        "value": "Background for Teachers"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 235,
+        "startPageNum": 38,
+        "firstParagraphHeight": 82.5,
+        "value": "Content Knowledge"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 38,
+        "value": "Ecosystem science is the study of connections and relationships between living and non-living aspects of a physical environment. Ecosystem scientists embarking on new studies must brainstorm ways to classify (or categorize) subjects before they reach conclusions about how things are related. They may order and reorder their classifications based on newly acquired knowledge over time. In this lesson, students model this process with an ecosystem image that is relevant to their experience."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.749999999999943,
+        "textHeight": 13.75,
+        "startPageNum": 38,
+        "value": "A great example of this is the evolution of plant classification:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 38,
+        "value": "“The traditional ways of classifying plants have been based on the visible physical characterists of the plant. However, since the discovery of DNA, plant scientists have been trying to classify plants more accurately, and to group them according to the similarities of their DNA. This has led to major changes in plant classification, as scientists have discovered that some plants have more in common with other plants which do not look the same, and that other plants which look similar have very different DNA make-up.” Source: http://theseedsite.co.uk/class.html"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 41.25,
+        "startPageNum": 38,
+        "value": "Living organisms, non-living things, and cultural things (things created/impacted by humans) influence one another through relationships, interactions, and shared processes within the ecological system."
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 41.25,
+        "startPageNum": 38,
+        "firstParagraphHeight": 41.25,
+        "value": "Home to School Connections"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 38,
+        "value": "In this lesson, students model the process of identifying and classifying ecosystem components with an image of conditions relevant to their local experience."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 111.28499999999997,
+        "startPageNum": 39,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Vocabulary"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "Abiotic"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "Biotic"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.749999999999986,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "Cultural"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "System"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "Model"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 91.28499999999997,
+        "startPageNum": 39,
+        "firstParagraphHeight": 91.28499999999997,
+        "value": "Tying It All Together"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.74999999999997,
+        "textHeight": 68.74999999999997,
+        "startPageNum": 39,
+        "value": "This lesson begins with the basic classifications (abiotic, biotic, cultural) of ecosystem components and the ways they are related. Subsequent lessons break down the finer aspects of each of these categories and their role in supporting healthy ecosystems. Students will learn that relationships, interactions, and shared processes can be transferable to other organisms and scenarios across multiple ecosystems."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 193.78499999999997,
+        "startPageNum": 39,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Extension"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "1. Reading Extension"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "The Salamander Room "
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 39,
+        "value": "This book is below grade reading level, but lends itself to a fanciful way of representing a scientific concept of the relationships between the abiotic, biotic, and cultural aspects of an ecosystem. A boy finds a salamander in the woods and imagines the many things he can do to turn his room into a perfect salamander home. It is a great way to bring in the ultimate unit challenge of human connection to the protection of healthy ecosystems."
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 39,
+        "value": "2. Creating Links"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 39,
+        "value": "Link classifications from activity 2 back to the goods traded throughout America in {{P3y0Uq0Qv}}. Ask students to recall what their tribes supplied or received in trade, and where they fit in the diagram."
+    },
+    {
+        "type": "h1",
+        "startPageNum": 41,
+        "value": "Chapter Overview"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 41,
+        "value": "What does an ecologist do? Students will learn the answer throughout this unit as they follow the practices of an ecologist through primary research by observing, collecting and analyzing data, asking scientific questions, and reflecting on what they have collected and observed. They participate in a simulation game to find out the relationships in food webs and ecosystems. This game provides authentic data on population dynamics over time. Students consider how a species can benefit from other species in an ecosystem."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 41
+    },
+    {
+        "type": "custom",
+        "startPageNum": 41
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 41,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 41,
+        "value": "Unit Challenge:"
+    },
+    {
+        "type": "custom",
+        "startPageNum": 41
+    },
+    {
+        "type": "h1",
+        "startPageNum": 42,
+        "value": "Reading Companion"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.49999999999997,
+        "startPageNum": 42,
+        "value": "A Reading Companion is included with each chapter to summarize the key science concepts and highlight vocabulary that students can use to label and discuss the concepts. At the end of each chapter, the Chapter Review lesson incorporates the Reading Companion so that students have an opportunity to review the various science concepts before completing a short assessment. Guidance on how to use the readings and assessments is provided within each Chapter Review Lesson. Login to tx.greenninja.org to access the Chapter Review Lesson."
+    },
+    {
+        "type": "images",
+        "startPageNum": 42
+    },
+    {
+        "type": "h1",
+        "startPageNum": 43,
+        "value": "Lesson Introduction"
+    },
+    {
+        "type": "setObjectPageNum",
+        "startPageNum": 43
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.249999999999986,
+        "textHeight": 41.249999999999986,
+        "startPageNum": 43,
+        "value": "Students are introduced to the practice of primary research in ecosystems through observation of interactions of various organisms. They then develop scientific questions that could lead to scientific studies and arguments describing the importance of their questions."
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 27.5,
+        "startPageNum": 43,
+        "firstParagraphHeight": 27.5,
+        "value": "Phenomenon"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 43,
+        "value": "Everything is connected and affected by change."
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 64,
+        "startPageNum": 43,
+        "firstParagraphHeight": 64,
+        "value": "Lesson Activities"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 50.25,
+        "startPageNum": 43,
+        "value": "Students discuss the phenomenon image and statement."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 43
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 37.33499999999998,
+        "startPageNum": 43,
+        "firstParagraphHeight": 37.33499999999998,
+        "value": "Teaching Resources"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 13.550000000000011,
+        "startPageNum": 43,
+        "firstParagraphHeight": 13.550000000000011,
+        "value": "Files"
+    },
+    {
+        "type": "table",
+        "startPageNum": 43
+    },
+    {
+        "type": "custom",
+        "startPageNum": 43
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 73.74999999999977,
+        "startPageNum": 43,
+        "firstParagraphHeight": 73.74999999999977,
+        "value": "Links"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 60.19999999999982,
+        "startPageNum": 43,
+        "value": "An ecologist and his trees, both escaping the crowds (2 min 33 sec): https://www.youtube.com/watch?v=2pwv4BvDkPA "
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 66.39999999999995,
+        "startPageNum": 44,
+        "firstParagraphHeight": 47.64999999999995,
+        "value": "Materials"
+    },
+    {
+        "type": "h3",
+        "sectionHeight": 59.39999999999999,
+        "startPageNum": 44,
+        "firstParagraphHeight": 59.39999999999999,
+        "value": "For each pair of students"
+    },
+    {
+        "type": "list",
+        "textHeight": 27.099999999999994,
+        "startPageNum": 44
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 44,
+        "value": "2"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 451.9558333333333,
+        "startPageNum": 44,
+        "firstParagraphHeight": 55.035,
+        "value": "Lesson Plan"
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 44,
+        "value": "This is the suggested sequence of learning activities for this lesson. Note that session times are estimates. Depending on students' progress, the sessions may be shorter or longer."
+    },
+    {
+        "type": "line",
+        "startPageNum": 44
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 406.92083333333335,
+        "startPageNum": 44,
+        "firstParagraphHeight": 61.25,
+        "value": "1. Nature Ninja Badge Update & Phenomenon Introduction"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.24999999999997,
+        "textHeight": 41.25,
+        "startPageNum": 44,
+        "value": "Explain that students have now earned the “Modeling Earth Processes” Nature Ninja badge. Hand out the badge from the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 44,
+        "value": "Announce the next Nature Ninja badge they are working toward, “Transforming into an Ecologist”. For this badge, students design research questions and carry out investigations. "
+    },
+    {
+        "type": "p",
+        "blockHeight": 308.17083333333335,
+        "textHeight": 68.75,
+        "startPageNum": 44,
+        "value": "Project the "
+    },
+    {
+        "type": "line",
+        "startPageNum": 44
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 75,
+        "startPageNum": 45,
+        "firstParagraphHeight": 75,
+        "value": "2. More Than Scientists"
+    },
+    {
+        "type": "p",
+        "blockHeight": 54.999999999999986,
+        "textHeight": 55,
+        "startPageNum": 45,
+        "value": "Show the "
+    },
+    {
+        "type": "line",
+        "startPageNum": 45
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 635.6708333333333,
+        "startPageNum": 45,
+        "firstParagraphHeight": 88.75,
+        "value": "3. Call for Study Questions"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 45,
+        "value": "Introduce the concept of field study research using the information in the “Content Knowledge” section. This introduction does not need to be too in depth, but should set the stage for developing questions that can then be studied/observed in the field. Ask students to think, pair, and share the following prompt: If we wanted to do our own research outside - let’s say to study local birds or butterflies, how would we get started?"
+    },
+    {
+        "type": "p",
+        "blockHeight": 182.5,
+        "textHeight": 55,
+        "startPageNum": 45,
+        "value": "Use the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 294.42083333333335,
+        "textHeight": 55,
+        "startPageNum": 47,
+        "value": "Hand out the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 47,
+        "value": "Students should complete the worksheet in groups and submit questions about the study of foxes, rabbits, and plants in a healthy ecosystem. Have student groups read through the worksheet, brainstorm, and choose questions they want to answer. Students may include or allude to other ecosystem components, but remind them the only study subjects are foxes, rabbits, and plants."
+    },
+    {
+        "type": "line",
+        "startPageNum": 47
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 390.67083333333335,
+        "startPageNum": 48,
+        "firstParagraphHeight": 328.17083333333335,
+        "value": "4. Homework"
+    },
+    {
+        "type": "p",
+        "blockHeight": 308.17083333333335,
+        "textHeight": 68.75,
+        "startPageNum": 48,
+        "value": "Hand out the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 48,
+        "value": "Students should focus on the interaction between plants and animals, if possible. Tell students that this is likely to occur on a small scale, such as between pollinators and plants, and birds and seeds."
+    },
+    {
+        "type": "lessonPlanHeader",
+        "sectionHeight": 20,
+        "startPageNum": 48,
+        "value": "Total Time"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 91.28500000000003,
+        "startPageNum": 48,
+        "firstParagraphHeight": 91.28500000000003,
+        "value": "Teacher Tips"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.75,
+        "textHeight": 68.75,
+        "startPageNum": 48,
+        "value": "Highlight diverse role models, perspectives, and ideas in science to illuminate career pathways for students of all backgrounds and abilities. This lesson features researcher Tony Chang. Born in Taiwan and moving to Los Angeles inspired Asian-American Tony Chang to become an ecologist. He wanted to escape the crowds of the city, and he now spends as much of his work time as possible out in the natural world."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 744.785,
+        "startPageNum": 48,
+        "firstParagraphHeight": 37.53499999999997,
+        "value": "Background for Teachers"
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 579.75,
+        "startPageNum": 48,
+        "firstParagraphHeight": 110,
+        "value": "Content Knowledge"
+    },
+    {
+        "type": "p",
+        "blockHeight": 96.25,
+        "textHeight": 96.25,
+        "startPageNum": 48,
+        "value": "There are different types of field investigations, including (but not limited to) organism behavioral studies, field transects, and geological field studies. In this lesson sequence, students will study the interactions of organisms in a particular ecosystem, find patterns across multiple ecosystems, and predict results with changed conditions. Through firsthand observations, students will gain practical experience and knowledge. For all organism behavioral studies, the student is a non-intrusive observer in the environment (i.e., does not interfere in any way with the organism or the environment). Students will answer questions by making and recording observations."
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.74999999999999,
+        "textHeight": 68.75,
+        "startPageNum": 49,
+        "value": "Students become scientists that study interactions in an ecosystem—an ecologist. To get students interested in becoming ecologists, expose them to a role model using the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 49,
+        "value": "Students are presented with a scenario that could be studied by an ecologist. The parameters of the ecosystem and organisms involved are defined. From this information, students can:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 144.75,
+        "startPageNum": 49,
+        "value": "Collect background ecological information to identify a question/problem."
+    },
+    {
+        "type": "p",
+        "blockHeight": 27.5,
+        "textHeight": 27.5,
+        "startPageNum": 49,
+        "value": "Students are asked to develop questions for a field research study. You can use the "
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 49,
+        "value": "Student questions should resemble the following:"
+    },
+    {
+        "type": "p",
+        "blockHeight": 0,
+        "textHeight": 83.75,
+        "startPageNum": 49,
+        "value": "What happens to the rabbit population if more foxes are added?"
+    },
+    {
+        "type": "p",
+        "blockHeight": 68.74999999999994,
+        "textHeight": 68.75,
+        "startPageNum": 49,
+        "value": "The questions do not need to be in-depth—simple scientific questions are a sufficient introduction to field research questioning. Some questions will be answered in the explanation of the activity, and that is OK. This exercise is an opportunity for students to get a sense of how researchers begin to craft questions when conducting field research. In reality, questions are later refined in more detailed studies of ecosystem dynamics."
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 68.75,
+        "startPageNum": 49,
+        "firstParagraphHeight": 68.75,
+        "value": "Home to School Connections"
+    },
+    {
+        "type": "p",
+        "blockHeight": 55,
+        "textHeight": 55,
+        "startPageNum": 49,
+        "value": "Students begin a new study of their ecosystem study location that mirrors the activities in class. The performance expectations goal of \"Predicts patterns of interactions among organisms across "
+    },
+    {
+        "type": "h2",
+        "sectionHeight": 55,
+        "startPageNum": 49,
+        "firstParagraphHeight": 55,
+        "value": "Student Prior Experience"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 49,
+        "value": "Students may have had exposure to creating scientific questions in previous lessons. In this lesson, students develop scientific questions that could lead to scientific studies and arguments describing the importance of their questions."
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 50,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Vocabulary"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 50,
+        "value": "Simulation"
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 63.78499999999998,
+        "startPageNum": 50,
+        "firstParagraphHeight": 63.78499999999998,
+        "value": "Tying It All Together"
+    },
+    {
+        "type": "p",
+        "blockHeight": 41.25,
+        "textHeight": 41.25,
+        "startPageNum": 50,
+        "value": "Student work on defining ecosystems and exposure to relationships between resources and organism populations will inform their questions and observations in a primary field research experience through a simulation of ecosystem interactions."
+    },
+    {
+        "type": "h1",
+        "startPageNum": 51,
+        "value": "Chapter Overview"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.5,
+        "textHeight": 82.5,
+        "startPageNum": 51,
+        "value": "Students investigate how traits can affect performance. Students take note of certain traits among classmates and examine variability between traits. Students learn about the anatomy of a seed and collect data on size variation in lima beans. Their graphing skills are enhanced as they create a bar graph to show their data. They construct explanations as to how genetic variation of traits in a population might increase some individuals’ probability of surviving in different environmental conditions."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 51
+    },
+    {
+        "type": "custom",
+        "startPageNum": 51
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 51,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.75,
+        "textHeight": 13.75,
+        "startPageNum": 51,
+        "value": "Unit Challenge:"
+    },
+    {
+        "type": "custom",
+        "startPageNum": 51
+    },
+    {
+        "type": "h1",
+        "startPageNum": 52,
+        "value": "Reading Companion"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.49999999999997,
+        "startPageNum": 52,
+        "value": "A Reading Companion is included with each chapter to summarize the key science concepts and highlight vocabulary that students can use to label and discuss the concepts. At the end of each chapter, the Chapter Review lesson incorporates the Reading Companion so that students have an opportunity to review the various science concepts before completing a short assessment. Guidance on how to use the readings and assessments is provided within each Chapter Review Lesson. Login to tx.greenninja.org to access the Chapter Review Lesson."
+    },
+    {
+        "type": "images",
+        "startPageNum": 52
+    },
+    {
+        "type": "h1",
+        "startPageNum": 53,
+        "value": "Chapter Overview"
+    },
+    {
+        "type": "p",
+        "blockHeight": 96.25,
+        "textHeight": 96.25,
+        "startPageNum": 53,
+        "value": "Based on data collected in the simulation, students predict changes that may occur due to potential climate change disturbances. To develop science communication skills, students will prepare for interviews. By combining scientific knowledge with introspection, communication is enhanced. Students evaluate their Ecosystem Notebook content in preparation for the culminating activity of writing a formal letter in support of ecosystem protection. Students draft their letters, receive peer feedback, and then complete the final copy of their letters. A post-assessment and reflection complete the unit."
+    },
+    {
+        "type": "contentsPush",
+        "startPageNum": 53
+    },
+    {
+        "type": "custom",
+        "startPageNum": 53
+    },
+    {
+        "type": "h1",
+        "sectionHeight": 36.28499999999997,
+        "startPageNum": 53,
+        "firstParagraphHeight": 36.28499999999997,
+        "value": "Unit Roadmap"
+    },
+    {
+        "type": "p",
+        "blockHeight": 13.749999999999943,
+        "textHeight": 13.75,
+        "startPageNum": 53,
+        "value": "Unit Challenge:"
+    },
+    {
+        "type": "custom",
+        "startPageNum": 53
+    },
+    {
+        "type": "h1",
+        "startPageNum": 54,
+        "value": "Reading Companion"
+    },
+    {
+        "type": "p",
+        "blockHeight": 82.49999999999997,
+        "textHeight": 82.49999999999997,
+        "startPageNum": 54,
+        "value": "A Reading Companion is included with each chapter to summarize the key science concepts and highlight vocabulary that students can use to label and discuss the concepts. At the end of each chapter, the Chapter Review lesson incorporates the Reading Companion so that students have an opportunity to review the various science concepts before completing a short assessment. Guidance on how to use the readings and assessments is provided within each Chapter Review Lesson. Login to tx.greenninja.org to access the Chapter Review Lesson."
+    },
+    {
+        "type": "images",
+        "startPageNum": 54
+    }
+]
