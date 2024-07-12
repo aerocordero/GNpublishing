@@ -2444,7 +2444,7 @@ async function main() {
 						columns: [
 							{
 								id: 'fileTitle',
-								header: 'Files Name',
+								header: 'File Name',
 								width: 320,
 								align: 'left',
 								padding: [4,10,4,4],
