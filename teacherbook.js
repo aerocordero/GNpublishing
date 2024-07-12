@@ -409,7 +409,7 @@ async function main() {
 	chapterGroups.forEach((chapter)=>{
 		chapter.lessons=unit.chapterMappings.filter(uch=>uch.chapter_id===chapter.id);
 	})
-	
+	const worksheetsInListMaterials=[];
 	const lessonWorkshetTextReplace=(lesson, obj, fields)=>{
 		obj.files=[];
 		fields.forEach(field=>{
@@ -430,9 +430,17 @@ async function main() {
 				}
 				return '';
 			});
-			
-			obj[field]=obj[field].replace(new RegExp('\(\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+)\)', 'igm'), (match, str, old_lesson_id, str1, str2)=>{
-				//console.log('old_lesson_id', old_lesson_id, str);
+			// (from {{583fa47b0eb64}})
+			/*
+			.replace(new RegExp('\\((\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+))\\)(( \\(from \{\{([a-zA-Z0-9\-\+\$@]+?)\}\}\\))|)', 'igm'), (match, str, old_lesson_id, str1, str2,str3,from_old_lesson_id,str5)=>{
+				console.log('old_lesson_id', old_lesson_id, {field, match, str1, str2, str3,from_old_lesson_id,str5},obj[field]);
+				
+			*/
+			obj[field]=obj[field].replace(new RegExp('\\((\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+))\\)(( \\(from \{\{([a-zA-Z0-9\-\+\$@]+?)\}\}\\))|)', 'igm'), (match, str, old_lesson_id, str1, str2,str3,from_old_lesson_id,str5)=>{
+				console.log('old_lesson_id', old_lesson_id, {field, str, str1, str2, str3,from_old_lesson_id,str5,match},obj[field]);
+				if (from_old_lesson_id && from_old_lesson_id!==old_lesson_id){
+					old_lesson_id=from_old_lesson_id;
+				}
 				const fileLesson=lessons.find(l=>l.old_lesson_id===old_lesson_id);
 				if (!fileLesson){
 					console.log('Not found Lesson', old_lesson_id);
@@ -479,7 +487,10 @@ async function main() {
 					}
 					//console.log('planWorksheet', workshet);					
 					//return workshet.fileTitle;
-					return '%'+workshet.worksheet_id+'%';
+					if (field==='list_materials'){
+						worksheetsInListMaterials.push(workshet);
+					}
+					return '(%'+workshet.worksheet_id+'%)';
 				}
 				return str;
 			});
@@ -2247,7 +2258,7 @@ async function main() {
 						
 						let fromAnotherLesson=false;
 						if (workshet){
-							fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id;
+							fromAnotherLesson=workshet.lesson_id!==lesson.lesson_id ? lessons.find(l=>l.lesson_id==workshet.lesson_id) : false;
 							if (!workshet.isOnlineAccess){
 								if (!params.readOnly && !fromAnotherLesson){
 									if (PDFUtils.showedFiles.indexOf(workshet.fileNameWithExt)<0){
@@ -2279,6 +2290,9 @@ async function main() {
 							}
 							else if (workshet.mentionedInLessonId!==lesson.lesson_id) {
 								referenceStr='access online';
+							}
+							if (fromAnotherLesson){
+								referenceStr+='; from Lesson '+fromAnotherLesson.number+' '+fromAnotherLesson.name;
 							}
 
 							return workshet.fileTitle+(referenceStr ? ' ('+referenceStr+') ' : '');
@@ -2398,6 +2412,12 @@ async function main() {
 							}
 							return found && file.type==='pdf';
 						},
+						(file)=>{
+							if (!file.pageNum && !worksheetsInListMaterials.find(ws=>ws.worksheet_id===file.worksheet_id)){
+								return true;
+							}
+							return false;
+						}
 					];
 					const lessonFiles=lesson.worksheet.filter((file, index)=>{
 						const existing=lesson.worksheet.find((f, i)=>f.originalFileName===file.originalFileName && i < index);
