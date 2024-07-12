@@ -436,7 +436,7 @@ async function main() {
 				console.log('old_lesson_id', old_lesson_id, {field, match, str1, str2, str3,from_old_lesson_id,str5},obj[field]);
 				
 			*/
-			obj[field]=obj[field].replace(new RegExp('\\((\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\.]+))\\)(( \\(from \{\{([a-zA-Z0-9\-\+\$@]+?)\}\}\\))|)', 'igm'), (match, str, old_lesson_id, str1, str2,str3,from_old_lesson_id,str5)=>{
+			obj[field]=obj[field].replace(new RegExp('\\((\{\{([a-zA-Z0-9\-\+\$@]+)\}\}([a-zA-Z0-9\-\. ]+))\\)(( \\(from \{\{([a-zA-Z0-9\-\+\$@]+?)\}\}\\))|)', 'igm'), (match, str, old_lesson_id, str1, str2,str3,from_old_lesson_id,str5)=>{
 				console.log('old_lesson_id', old_lesson_id, {field, str, str1, str2, str3,from_old_lesson_id,str5,match},obj[field]);
 				if (from_old_lesson_id && from_old_lesson_id!==old_lesson_id){
 					old_lesson_id=from_old_lesson_id;
