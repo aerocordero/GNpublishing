@@ -2104,7 +2104,7 @@ async function main() {
 						
 						doc.y+=10;
 						let y=doc.y;
-						const maxImgHeight=792-y-15;
+						const maxImgHeight=792-y-35;
 
 						if ((y+imageHeight)>740){
 							imageWidth=getImgPropWidth({
@@ -2113,46 +2113,56 @@ async function main() {
 							}, maxImgHeight)
 						}
 						
+						if (imageWidth > contentWidth/2.5){
+							imageWidth=contentWidth/2.5;
+						}
+						imageHeight=getImgPropheight(imgInfo, imageWidth, true);
 
 						doc.image(path, leftIdent-30, y, {
 							width: imageWidth,
 						});
-
-						const textHeight=doc
-							.fontSize(10)
-							.font(fonts.regular)
-							.heightOfString(slide.description, {
-								width: textWidth,
-								align: 'left',
-							});
-						
-						const root=parseHtml(slide.description);
-						doc.y=y;
-						
-						if (imageHeight>textHeight){
-							const margin=imageHeight/2-textHeight/2-20;
-							if (margin>0){
-								doc.y+=margin;
+						if (slide.description.trim()){
+							if (chapter.number===1){
+								console.log('slidedescr', slide.description);
 							}
 							
-							if (chapter.number==5){
-								console.log({imageHeight,textHeight,imageWidth, path, margin, imgInfo})
+							const textHeight=doc
+								.fontSize(10)
+								.font(fonts.regular)
+								.heightOfString(slide.description, {
+									width: textWidth,
+									align: 'left',
+								});
+							
+							const root=parseHtml(slide.description);
+							doc.y=y;
+							
+							if (imageHeight>textHeight){
+								const margin=imageHeight/2-textHeight/2-20;
+								if (margin>0){
+									doc.y+=margin;
+								}
+								
+								if (chapter.number==1){
+									console.log({imageHeight,textHeight,imageWidth, path, margin, imgInfo})
+								}
 							}
+							
+
+							root.childNodes.forEach(node=>{
+								PDFUtils.drawActions.p(doc, {
+									value: node.childNodes,
+									parentEl: node,
+									isHtml:true,
+									params: {
+										//addSpaceAfterSize: 3,
+										ident: imageWidth+15,
+										width: textWidth,
+									}
+								})
+							})
 						}
 						
-
-						root.childNodes.forEach(node=>{
-							PDFUtils.drawActions.p(doc, {
-								value: node.childNodes,
-								parentEl: node,
-								isHtml:true,
-								params: {
-									//addSpaceAfterSize: 3,
-									ident: imageWidth+15,
-									width: textWidth,
-								}
-							})
-						})
 					}
 				});	
 			}
